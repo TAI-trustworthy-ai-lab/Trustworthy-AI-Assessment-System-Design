@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div class = "top-bar">
+            <div class="ans-question">
+                <p>填寫問卷</p>
+            </div>
+            <div class="view-result">
+                <p>檢視結果</p>
+            </div>
+        </div>
+        <style>
+            .top-bar {
+                display: flex;
+                height:50px;
+                align-items: center;
+                justify-content: center;
+            }
+            .ans-question{
+                display: flex;
+                width:150px;
+                align-items: center;
+                justify-content: center;
+            }
+            .view-result{
+                display: flex;
+                width:150px;
+                align-items: center;
+                justify-content: center;
+            }
+            .ans-question:hover{
+                background-color: beige;
+            }
+            .ans-question:active{
+                background-color: rgb(232, 232, 208);
+            }
+            .view-result:hover{
+                background-color: beige;
+            }
+            .view-result:active{
+                background-color: rgb(232, 232, 208);
+            }
+            .ans-question p{
+                user-select: none;
+            }
+            .view-result p{
+                user-select: none;
+            }
+        </style>
+        <div class="Questionnaire-framework">
+            <div class="question-block-template" type="text/x-handlebars-template">
+                <div class="question-block" style="{{styleTag}}">
+                    <p class="question-discription">問題一：你今天覺得開心嗎</p>
+                    <div class="level-choices" id="{{number}}">
+                        <p>Agree</p>
+                        <div class="level" id="1">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="2">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="3">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="4">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="5">
+                            <div class="level-fill"></div>
+                        </div>
+                        <p>Disagree</p>
+                    </div>
+                    <style>
+                        .question-block {
+                            display: none;
+                            align-content: center;
+                            justify-content: space-around;
+                            height: 150px;
+                            flex-direction: column;
+                            
+                        }
+
+                        .question-discription {
+                            display: flex;
+                            height: 5vh;
+                        }
+
+                        .level-choices {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            height: 100px;
+                            column-gap: 1vh;
+                        }
+
+                        .level {
+                            display: flex;
+                            width: 5vh;
+                            height: 5vh;
+                            border-radius: 50%;
+                            border: 2px solid aqua;
+                            justify-content: center;
+                            align-items: center;
+                        }
+
+                        .level-fill {
+                            display:none;
+                            width: 4.5vh;
+                            height: 4.5vh;
+                            border-radius: 50%;
+                            background-color: aqua;
+                        }
+                    </style>
+                </div>
+            </div>
+
+            <div class="question-container">
+
+            </div>
+            <style>
+                .question-container {
+                    display: flex;
+                    align-items: center;
+                    flex-direction: column;
+                    row-gap: 25px;
+                }
+            </style>
+            <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+            <script>
+
+                const source = document.querySelector(".question-block-template").innerHTML;
+
+                const template = Handlebars.compile(source);
+                let index = 0;
+                for (let i = 0; i < 3; i++) {
+                    let data = { styleTag: "display:flex;",  number: "question_".concat(index) };
+                    const html = template(data);
+                    document.querySelector('.question-container').innerHTML += html;
+                    let elementsArray = document.querySelectorAll("#question_" + index + " .level");
+                    elementsArray.forEach(function (div) {
+                        div.addEventListener("click", function () {
+                            levelArr = div.parentNode.querySelectorAll(".level");
+                            for (let j = 0; j < levelArr.length; j++) {
+                                if (levelArr[j].id == div.id) {
+                                    levelArr[j].querySelector(".level-fill").style.display = "flex";
+                                    continue;
+                                }
+                                levelArr[j].querySelector(".level-fill").style.display = "none";
+                            }
+                            //div.querySelector(".level-fill").style.display = "flex";
+                            
+                        });
+                    });
+                }
+                
+            </script>
+        </div>
+    </body>
+</html>
