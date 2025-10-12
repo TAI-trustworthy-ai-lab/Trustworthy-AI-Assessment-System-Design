@@ -60,7 +60,7 @@
             <!--問卷的模板，要改動問卷結構請從這邊改(因為問題都是根據模板生成的)-->
             <div class="question-block-template" type="text/x-handlebars-template">
                 <div class="question-block" style="{{styleTag}}">
-                    <p class="question-discription">問題一：你今天覺得開心嗎</p>
+                    <p class="question-discription">{{question_content}}</p>
                     <div class="level-choices" id="{{number}}">
                         <p>Disagree</p>
                         <div class="level" id ="1" onclick="option(this)">
@@ -145,8 +145,9 @@
                 const template = Handlebars.compile(source);
                 let index = 0;
                 let elements = [];
+                const question_contents = ["Question 1 : Who am I ? ", "Question 2 : Where am I ? ", "Question 3 : >w< ? "];
                 for (let i = 0; i < 3; i++) {
-                    let data = { styleTag: "display:flex;", number: `question_${i}` };
+                    let data = { styleTag: "display:flex;", number: `question_${i}`, question_content: `${question_contents[i]}` };
                     const html = template(data);
                     document.querySelector('.question-container').innerHTML += html;
                     
@@ -169,4 +170,5 @@
         </div>
     </body>
 </html>
+
 
