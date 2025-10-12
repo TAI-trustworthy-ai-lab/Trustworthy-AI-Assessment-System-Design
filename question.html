@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html>
-    <!--這邊是調整網頁相關參數的地方 例如編碼阿、網頁名稱之類的阿-->
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <!--這邊是決定網頁畫面的地方-->
     <body>
-        <!--網頁上方的欄位 裝有兩個按鈕-->
         <div class = "top-bar">
             <div class="ans-question">
                 <p>填寫問卷</p>
@@ -16,7 +13,6 @@
                 <p>檢視結果</p>
             </div>
         </div>
-        <!--按鈕樣式、動畫-->
         <style>
             .top-bar {
                 display: flex;
@@ -55,30 +51,28 @@
                 user-select: none;
             }
         </style>
-        <!--問卷架構-->
         <div class="Questionnaire-framework">
-            <!--問卷的模板，要改動問卷結構請從這邊改(因為問題都是根據模板生成的)-->
             <div class="question-block-template" type="text/x-handlebars-template">
                 <div class="question-block" style="{{styleTag}}">
                     <p class="question-discription">問題一：你今天覺得開心嗎</p>
                     <div class="level-choices" id="{{number}}">
-                        <p>Agree</p>
-                        <div class="level" id="1">
-                            <div class="level-fill"></div>
-                        </div>
-                        <div class="level" id ="2">
-                            <div class="level-fill"></div>
-                        </div>
-                        <div class="level" id ="3">
-                            <div class="level-fill"></div>
-                        </div>
-                        <div class="level" id ="4">
-                            <div class="level-fill"></div>
-                        </div>
-                        <div class="level" id ="5">
-                            <div class="level-fill"></div>
-                        </div>
                         <p>Disagree</p>
+                        <div class="level" id ="1" onclick="option(this)">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="2" onclick="option(this)">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="3" onclick="option(this)">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="4" onclick="option(this)">
+                            <div class="level-fill"></div>
+                        </div>
+                        <div class="level" id ="5" onclick="option(this)">
+                            <div class="level-fill"></div>
+                        </div>
+                        <p>Agree</p>
                     </div>
                     <style>
                         .question-block {
@@ -123,11 +117,10 @@
                     </style>
                 </div>
             </div>
-            <!--裝生出來的問題的地方(容器)-->
+
             <div class="question-container">
 
             </div>
-            <!--容器的樣式-->
             <style>
                 .question-container {
                     display: flex;
@@ -136,7 +129,6 @@
                     row-gap: 25px;
                 }
             </style>
-            <!--根據寫模板生成、選項切換的JavaScript-->
             <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
             <script>
 
@@ -144,29 +136,28 @@
 
                 const template = Handlebars.compile(source);
                 let index = 0;
+                let elements = [];
                 for (let i = 0; i < 3; i++) {
-                    let data = { styleTag: "display:flex;",  number: "question_".concat(index) };
+                    let data = { styleTag: "display:flex;", number: `question_${i}` };
                     const html = template(data);
                     document.querySelector('.question-container').innerHTML += html;
-                    let elementsArray = document.querySelectorAll("#question_" + index + " .level");
-                    elementsArray.forEach(function (div) {
-                        div.addEventListener("click", function () {
-                            levelArr = div.parentNode.querySelectorAll(".level");
-                            for (let j = 0; j < levelArr.length; j++) {
-                                if (levelArr[j].id == div.id) {
-                                    levelArr[j].querySelector(".level-fill").style.display = "flex";
-                                    continue;
-                                }
-                                levelArr[j].querySelector(".level-fill").style.display = "none";
-                            }
-                            //div.querySelector(".level-fill").style.display = "flex";
-                            
-                        });
-                    });
+                    
+                    let elementsArray = document.querySelectorAll(`#question_${i} .level`);
+                    elements.push(elementsArray);
+                    
+                }
+                function option(div) {
+                    levelArr = div.parentNode.querySelectorAll(".level");
+                    for (let j = 0; j < levelArr.length; j++) {
+                        if (levelArr[j].id == div.id) {
+                            levelArr[j].querySelector(".level-fill").style.display = "flex";
+                            continue;
+                        }
+                        levelArr[j].querySelector(".level-fill").style.display = "none";
+                    }
                 }
                 
             </script>
         </div>
     </body>
-
 </html>
