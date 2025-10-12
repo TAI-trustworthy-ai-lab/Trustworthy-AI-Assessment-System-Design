@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html>
+    <!--這邊是調整網頁相關參數的地方 例如編碼阿、網頁名稱之類的阿-->
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
+    <!--這邊是決定網頁畫面的地方-->
     <body>
+        <!--網頁上方的欄位 裝有兩個按鈕-->
         <div class = "top-bar">
             <div class="ans-question">
                 <p>填寫問卷</p>
@@ -13,6 +16,7 @@
                 <p>檢視結果</p>
             </div>
         </div>
+        <!--按鈕樣式、動畫-->
         <style>
             .top-bar {
                 display: flex;
@@ -51,7 +55,9 @@
                 user-select: none;
             }
         </style>
+        <!--問卷架構-->
         <div class="Questionnaire-framework">
+            <!--問卷的模板，要改動問卷結構請從這邊改(因為問題都是根據模板生成的)-->
             <div class="question-block-template" type="text/x-handlebars-template">
                 <div class="question-block" style="{{styleTag}}">
                     <p class="question-discription">問題一：你今天覺得開心嗎</p>
@@ -117,10 +123,11 @@
                     </style>
                 </div>
             </div>
-
+            <!--裝生出來的問題的地方(容器)-->
             <div class="question-container">
 
             </div>
+            <!--容器的樣式-->
             <style>
                 .question-container {
                     display: flex;
@@ -129,6 +136,7 @@
                     row-gap: 25px;
                 }
             </style>
+            <!--根據寫模板生成、選項切換的JavaScript-->
             <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
             <script>
 
@@ -160,4 +168,5 @@
             </script>
         </div>
     </body>
+
 </html>
