@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<!--這邊是調整網頁相關參數的地方 例如編碼阿、網頁名稱之類的阿-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!--自己調的大小，可以修改-->
+    <style>
+        body {
+            /* font-family: 'Inter', sans-serif; */
+            background-color: #f7f9fb;
+            min-height: 100vh;
+        }
+  
+        .base-h1 { 
+            font-size: 3rem; /* text-4xl */
+            font-weight: 800; /* font-extrabold */
+            letter-spacing: -0.025em; /* tracking-tight */
+        }
+        
+        .base-h2 { /* For sub-headings or theme titles */
+            font-size: 2.25rem; /* text-3xl */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 1.5rem; /* mb-6 */
+        }
+
+        .base-h3 { /* For minor headings */
+            font-size: 1.875rem; /* text-xl */
+            font-weight: 500; /* font-medium */
+        }
+        
+        .base-p { /* Standard paragraph text */
+            font-size: 1.25rem; /* text-base */
+            color: #4b5563; /* text-gray-600 */
+            line-height: 1.625; /* leading-relaxed */
+            color: grey
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+    <!--網頁上方：左邊（標題）、右邊（登入）-->
+    <header class="top-bar bg-stone-200 shadow-md sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+            <div class="app-title text-2xl font-extrabold text-black tracking-tight">
+                可信任AI評估
+            </div>
+            <button id="loginButton" 
+                    class="flex items-center space-x-2 p-2 rounded-full 
+                           text-gray-600 hover:text-indigo-700 hover:bg-indigo-50 
+                           transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    onclick="handleLoginClick()">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+
+                <span class="hidden md:inline font-medium">登入</span>
+            </button>
+        </div>
+    </header>
+
+    <!--内容-->
+    <main class="flex-grow flex justify-center p-4">
+        <div class="w-full max-w-4xl text-left p-8">
+            <h1 class="base-h1 text-center">可信任AI評估測驗</h1><br><br>
+            <p id="messageBox" class="mt-6 text-lg text-gray-500 transition duration-300 opacity-0 h-0 overflow-hidden"></p>
+            <h2 class="base-h2">什麽是TAI</h2>
+            <h3 class="base-h3">11個指標</h3>
+            <p class="base-p">内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容内容</p>
+            <h2 class="base-h2">測驗目的</h2>
+            <h2 class="base-h2">測驗結果</h2>
+            <h2 class="base-h2">測驗方法</h2>
+            <p class="base-p">之後加加加加加内容</p>
+            <p class="base-p">個人想法，内容可以再修改 / 加照片之類的</p>
+        </div>
+    </main>
+
+    <!-- JavaScript for interaction -->
+    <script>
+        // Custom function to show a message (replaces alert())
+        function showMessage(message) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            
+            // Apply styles to make it visible and take up space
+            messageBox.classList.remove('opacity-0', 'h-0', 'overflow-hidden');
+            messageBox.classList.add('opacity-100', 'h-auto', 'p-4', 'bg-yellow-100', 'border', 'border-yellow-300', 'rounded-lg');
+            
+            // Hide the message after 3 seconds
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100', 'h-auto', 'p-4', 'bg-yellow-100', 'border', 'border-yellow-300', 'rounded-lg');
+                messageBox.classList.add('opacity-0', 'h-0', 'overflow-hidden');
+            }, 3000);
+        }
+
+        // Handler for the login button click
+        function handleLoginClick() {
+            showMessage("AI 給的提示script（應該不打算這樣顯示（？， 登入打算開新的介紹面（？");
+        }
+        
+    </script>
+</body>
+</html>
