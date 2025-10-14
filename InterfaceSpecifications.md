@@ -21,7 +21,7 @@
 * **頁面功能**：提供不同階段的測驗選項，例如**建模前、中、後**的測驗入口。
 * **擴展功能**：**（可選）**考慮在此頁面加入一個**即時 LLM 問答**功能，使用者可以直接向 AI 提問，此功能需要與後端 LLM 服務進行即時資料交換。
 
-### 4. 問卷頁面 (`question.html`)
+### 4. 問卷頁面：分開建模前、中、後頁面 (`question.html`) 
 
 專門用於**測驗問答**的頁面。
 
@@ -56,7 +56,7 @@ This is the **primary interface** after a user has successfully logged in.
 * **Page Functionality**: Provides options for different stages of the questionnaire, such as the **pre-modeling, mid-modeling, and post-modeling** tests.
 * **Extended Functionality**: **(Optional)** A **real-time LLM Q&A** feature is being considered for this page. Users would be able to ask the AI questions directly, which would require real-time data exchange with a back-end LLM service.
 
-### 4. Questionnaire Page (`question.html`)
+### 4. Questionnaire Page: Seperate Pre-, mid-, post-modeling page (`question.html`)
 
 This page is specifically for **administering the test**.
 
