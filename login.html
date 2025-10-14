@@ -97,6 +97,8 @@
                 });
 
                 const data = await response.json();
+                // ************ 成功過一次，之後放什麽random名字都是：message: "User with this name already exists"
+                // ************ 不知道是前端還是後端問題；待查後端資料庫
 
                 if (response.ok) {
                     messageDisplay.textContent = '註冊成功！請登入。';
@@ -130,7 +132,11 @@
                     // 這裡的後端文件沒有說明，先假設是 GET，但通常登入會是 POST
                     // 你可能需要與後端再次確認
                     
-                    // ************ 無法使用！讓後端改成POST試試看
+                    // ************ 無法使用！讓後端改成POST試試看：
+                    /*
+                        TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+                        at HTMLFormElement.<anonymous> (login.html:126:40)
+                    */
                     body: JSON.stringify({ email, password })
                 });
 
