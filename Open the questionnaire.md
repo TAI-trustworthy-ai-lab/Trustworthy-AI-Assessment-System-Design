@@ -1,4 +1,4 @@
-# Front-end webpage using guide (temporary because we just make an html)
+# Front-end webpage using guide (temporary)
 
 ## Prerequisites
 
