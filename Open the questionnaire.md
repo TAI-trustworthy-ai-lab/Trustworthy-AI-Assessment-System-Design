@@ -10,6 +10,7 @@ Download the files
 - questionnaire.html
 - login.html
 - questions.json
+
 and put them in the same folder.
 
 ## 2. Open a localhost server and open the questionnaire.html
