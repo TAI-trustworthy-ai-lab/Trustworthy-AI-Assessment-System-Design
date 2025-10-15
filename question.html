@@ -1,222 +1,337 @@
 <!DOCTYPE html>
-<html>
-<!--這邊是調整網頁相關參數的地方 例如編碼阿、網頁名稱之類的阿-->
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<!--這邊是決定網頁畫面的地方-->
-<body>
-    <!--網頁上方的欄位 裝有兩個按鈕-->
-    <div class="top-bar">
-        <div class="ans-question">
-            <p>填寫問卷</p>
-        </div>
-        <div class="view-result">
-            <p>檢視結果</p>
-        </div>
-    </div>
-    <!--按鈕樣式、動畫-->
+    <title>問卷調查系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .top-bar {
+        body {
+            font-family: "Segoe UI";
+            background: #f6f8fb;
+            margin: 0;
+        }
+
+        header {
+            background: #2b59c3;
+            color: white;
             display: flex;
-            height: 50px;
-            align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 10px 20px;
         }
 
-        .ans-question {
-            display: flex;
-            width: 150px;
-            align-items: center;
-            justify-content: center;
+            header button {
+                background: white;
+                border: none;
+                color: #2b59c3;
+                border-radius: 4px;
+                padding: 6px 12px;
+                cursor: pointer;
+            }
+
+        #intro, #questionnaire, #report, #editor {
+            padding: 40px;
+            text-align: center;
         }
 
-        .view-result {
-            display: flex;
-            width: 150px;
-            align-items: center;
-            justify-content: center;
+        #questionnaire, #report, #editor {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            margin: 30px auto;
+            width: 80%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .ans-question:hover {
-            background-color: beige;
+        button {
+            cursor: pointer;
+            margin: 5px;
         }
 
-        .ans-question:active {
-            background-color: rgb(232, 232, 208);
+        input[type="text"], input[type="number"], select {
+            padding: 4px;
+            margin: 3px;
         }
 
-        .view-result:hover {
-            background-color: beige;
+        .loader {
+            border: 8px solid #eee;
+            border-top: 8px solid #2b59c3;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 50px auto;
         }
 
-        .view-result:active {
-            background-color: rgb(232, 232, 208);
-        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0)
+            }
 
-        .ans-question p {
-            user-select: none;
-        }
-
-        .view-result p {
-            user-select: none;
+            100% {
+                transform: rotate(360deg)
+            }
         }
     </style>
-    <!--問卷架構-->
-    <div class="Questionnaire-framework">
-        <!--問卷的模板，要改動問卷結構請從這邊改(因為問題都是根據模板生成的)-->
-        <div class="question-block-template" type="text/x-handlebars-template">
-            <div class="question-block" style="{{styleTag}}">
-                <p class="question-discription">{{question_content}}</p>
-                <div class="level-choices" id="{{number}}">
-                    <p>Disagree</p>
-                    <div class="level" id="level_1" onclick="option(this)">
-                        <div class="level-fill"></div>
-                    </div>
-                    <div class="level" id="level_2" onclick="option(this)">
-                        <div class="level-fill"></div>
-                    </div>
-                    <div class="level" id="level_3" onclick="option(this)">
-                        <div class="level-fill"></div>
-                    </div>
-                    <div class="level" id="level_4" onclick="option(this)">
-                        <div class="level-fill"></div>
-                    </div>
-                    <div class="level" id="level_5" onclick="option(this)">
-                        <div class="level-fill"></div>
-                    </div>
-                    <p>Agree</p>
-                </div>
-                <style>
-                    .question-block {
-                        display: none;
-                        align-content: center;
-                        justify-content: space-around;
-                        height: 150px;
-                        flex-direction: column;
-                    }
+</head>
+<body>
+    <header>
+        <h1>問卷調查系統</h1>
+        <button onclick="location.href='login.html'">登錄</button>
+    </header>
 
-                    .question-discription {
-                        display: flex;
-                        height: 5vh;
-                    }
+    <section id="intro">
+        <h2>歡迎參加我們的問卷！</h2>
+        <p>請協助我們改善服務品質。</p>
+        <button id="startBtn">開始填寫</button>
+        <button id="editBtn">調整問卷</button>
+    </section>
 
-                    .level-choices {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100px;
-                        column-gap: 1vh;
-                    }
+    <section id="questionnaire"></section>
+    <section id="report">
+        <div id="loading" class="loader"></div>
+        <canvas id="radarChart"></canvas>
+        <div id="reportText"></div>
+    </section>
+    <section id="editor"></section>
 
-                    .level {
-                        display: flex;
-                        width: 5vh;
-                        height: 5vh;
-                        border-radius: 50%;
-                        border: 2px solid aqua;
-                        justify-content: center;
-                        align-items: center;
-                    }
+    <!-- 🔽 問卷與編輯邏輯 -->
+    <script>
+        let questionsJSON = { questions: [] };
+        let answersJSON = { answers: [] };
 
-                    .level-fill {
-                        display: none;
-                        width: 4.5vh;
-                        height: 4.5vh;
-                        border-radius: 50%;
-                        background-color: aqua;
-                    }
-                </style>
-            </div>
-        </div>
-        <!--裝生出來的問題的地方(容器)-->
-        <div class="question-container">
-
-        </div>
-        <!--容器的樣式-->
-        <style>
-            .question-container {
-                display: flex;
-                align-items: center;
-                flex-direction: column;
-                row-gap: 25px;
+        // ===== 問卷載入 =====
+        async function loadQuestions() {
+            const localData = localStorage.getItem('questionsJSON');
+            if (localData) {
+                questionsJSON = JSON.parse(localData);
+            } else {
+                const res = await fetch('questions.json');
+                const text = await res.text();
+                questionsJSON = JSON.parse(text);
+                localStorage.setItem('questionsJSON', text);
             }
-        </style>
-        <!--寫模板生成、選項切換的JavaScript-->
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
-        <script>
+            initAnswersJSON();
+        }
 
-            const source = document.querySelector(".question-block-template").innerHTML;
+        function initAnswersJSON() {
+            answersJSON.answers = questionsJSON.questions.map(q => ({
+                id: q.id,
+                question: q.text,
+                type: q.type,
+                maxSelect: q.maxSelect || null,
+                options: q.options.map(o => ({
+                    label: o.label,
+                    input: o.input,
+                    answer: o.input ? "" : false
+                }))
+            }));
+            localStorage.setItem('answersJSON', JSON.stringify(answersJSON));
+        }
 
-            const template = Handlebars.compile(source);
+        loadQuestions();
 
-            let question_numbers = 3;
-            let question_result = new Array(question_numbers);
-            const question_contents = ["Question 1 : Who am I ? ", "Question 2 : Where am I ? ", "Question 3 : >w< ? "];
+        // ===== 啟動問卷 =====
+        document.getElementById('startBtn').addEventListener('click', () => {
+            document.getElementById('intro').style.display = 'none';
+            document.getElementById('editor').style.display = 'none';
+            startQuestionnaire();
+        });
 
-            question_result.fill(0);
-
-            for (let i = 0; i < question_numbers; i++) {
-                let data = { styleTag: "display:flex;", number: `question_${i + 1}`, question_content: `${question_contents[i]}` };
-                const html = template(data);
-                document.querySelector('.question-container').innerHTML += html;
-            }
-            function option(div) {
-                levelArr = div.parentNode.querySelectorAll(".level");
-                let index = parseInt(div.parentNode.id.split("_")[1]);
-                for (let j = 0; j < levelArr.length; j++) {
-                    if (levelArr[j].id == div.id) {
-                        levelArr[j].querySelector(".level-fill").style.display = "flex";
-                        question_result[index - 1] = j + 1;
-                        continue;
-                    }
-                    levelArr[j].querySelector(".level-fill").style.display = "none";
+        // ===== 問卷區塊生成 =====
+        function startQuestionnaire() {
+            const qDiv = document.getElementById('questionnaire');
+            qDiv.style.display = 'block';
+            qDiv.innerHTML = "<h2>問卷填寫</h2>";
+            questionsJSON.questions.forEach((q, qi) => {
+                const div = document.createElement('div');
+                div.className = 'question';
+                div.innerHTML = `<p><b>${qi + 1}. ${q.text}</b></p>`;
+                if (q.type === "text") {
+                    div.innerHTML += `<input type="text" name="q${q.id}" placeholder="請輸入">`;
+                } else {
+                    q.options.forEach((opt, oi) => {
+                        const optDiv = document.createElement('div');
+                        const input = document.createElement('input');
+                        input.type = q.type === 'multi' ? 'checkbox' : 'radio';
+                        input.name = 'q' + q.id;
+                        input.value = opt.label;
+                        input.addEventListener('change', e => limitSelect(q, q.maxSelect, e));
+                        const lbl = document.createElement('label');
+                        lbl.textContent = opt.label;
+                        optDiv.appendChild(input);
+                        optDiv.appendChild(lbl);
+                        if (opt.input) {
+                            const txt = document.createElement('input');
+                            txt.type = 'text';
+                            txt.placeholder = '請輸入';
+                            optDiv.appendChild(txt);
+                        }
+                        div.appendChild(optDiv);
+                    });
                 }
-            }
+                qDiv.appendChild(div);
+            });
+            const btn = document.createElement('button');
+            btn.textContent = '送出問卷';
+            btn.onclick = submitSurvey;
+            qDiv.appendChild(btn);
+            qDiv.scrollIntoView({ behavior: 'smooth' });
+        }
 
-        </script>
-        <!--sumbit按鈕設計-->
-        <div class="sumbit_block">
-            <div class="sumbit_btn" onclick="sumbit_function()">
-                <p>Sumbit</p>
-            </div>
-        </div>
-        <!--按鈕樣式、動畫-->
-        <style>
-            .sumbit_block {
-                display: flex;
-                height: 50px;
-                align-items: center;
-                justify-content: center;
+        function limitSelect(q, max, e) {
+            if (!max) return;
+            const cks = document.querySelectorAll(`input[name='q${q.id}']:checked`);
+            if (cks.length > max) {
+                alert(`最多只能選 ${max} 個`);
+                e.target.checked = false;
             }
+        }
 
-            .sumbit_btn {
-                display: flex;
-                width: 150px;
-                align-items: center;
-                justify-content: center;
-            }
-
-                .sumbit_btn:hover {
-                    background-color: beige;
+        // ===== 問卷提交 =====
+        function submitSurvey() {
+            questionsJSON.questions.forEach(q => {
+                if (q.type === 'text') {
+                    const val = document.querySelector(`input[name='q${q.id}']`).value;
+                    updateAnswer(q.id, null, val);
+                } else {
+                    const checked = Array.from(document.querySelectorAll(`input[name='q${q.id}']:checked`));
+                    q.options.forEach((opt, i) => {
+                        const match = checked.find(c => c.value === opt.label);
+                        const inputBox = match ? match.parentNode.querySelector('input[type="text"]') : null;
+                        updateAnswer(q.id, i, match ? (opt.input ? inputBox.value : true) : false);
+                    });
                 }
+            });
+            localStorage.setItem('answersJSON', JSON.stringify(answersJSON));
+            showReport();
+        }
 
-                .sumbit_btn:active {
-                    background-color: rgb(232, 232, 208);
-                }
+        function updateAnswer(qid, optIndex, val) {
+            const ans = answersJSON.answers.find(a => a.id === qid);
+            if (!ans) return;
+            if (optIndex === null) ans.textAnswer = val;
+            else ans.options[optIndex].answer = val;
+        }
 
-                .sumbit_btn p {
-                    user-select: none;
-                }
-        </style>
-        <!--sumbit按鈕的功能-->
-        <script>
-            function sumbit_function() {
-                alert(`問卷的答案依次為 ${question_result} 之後會傳回後端現在只是先alert出來`);
-            }
-        </script>
-    </div>
+        // ===== 報告顯示 =====
+        function showReport() {
+            document.getElementById('questionnaire').style.display = 'none';
+            const rpt = document.getElementById('report');
+            rpt.style.display = 'block';
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+            setTimeout(() => {
+                loading.style.display = 'none';
+                renderReport();
+            }, 1000);
+        }
+
+        function renderReport() {
+            const ctx = document.getElementById('radarChart');
+            const labels = answersJSON.answers.map(a => a.question);
+            const data = labels.map((_, i) => Math.random() * 100);
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '問卷結果',
+                        data,
+                        borderColor: '#2b59c3',
+                        backgroundColor: 'rgba(43,89,195,0.3)'
+                    }]
+                },
+                options: { scales: { r: { beginAtZero: true } } }
+            });
+            const rptText = document.getElementById('reportText');
+            rptText.innerHTML = `<h3>感謝填寫！</h3><pre>${JSON.stringify(answersJSON, null, 2)}</pre>`;
+            const reBtn = document.createElement('button');
+            reBtn.textContent = '重新填寫';
+            reBtn.onclick = () => {
+                document.getElementById('report').style.display = 'none';
+                document.getElementById('questionnaire').innerHTML = '';
+                startQuestionnaire();
+            };
+            const homeBtn = document.createElement('button');
+            homeBtn.textContent = '回首頁';
+            homeBtn.onclick = () => {
+                document.getElementById('report').style.display = 'none';
+                document.getElementById('intro').style.display = 'block';
+            };
+            rptText.appendChild(reBtn);
+            rptText.appendChild(homeBtn);
+        }
+
+        // ===== 問卷編輯器 =====
+        document.getElementById('editBtn').addEventListener('click', () => {
+            document.getElementById('intro').style.display = 'none';
+            renderEditor();
+        });
+
+        function renderEditor() {
+            const editor = document.getElementById('editor');
+            editor.style.display = 'block';
+            editor.innerHTML = `<h3>問卷編輯</h3>`;
+            questionsJSON.questions.forEach((q, qi) => {
+                const qDiv = document.createElement('div');
+                qDiv.innerHTML = `
+            <input type="text" value="${q.text}" onchange="editQuestionText(${qi}, this.value)">
+            <select onchange="editQuestionType(${qi}, this.value)">
+              <option value="single" ${q.type === 'single' ? 'selected' : ''}>單選</option>
+              <option value="multi" ${q.type === 'multi' ? 'selected' : ''}>多選</option>
+              <option value="text" ${q.type === 'text' ? 'selected' : ''}>文字</option>
+            </select>
+            <input type="number" value="${q.maxSelect || ''}" placeholder="多選最大數" onchange="editQuestionMax(${qi}, this.value)">
+            <button onclick="deleteQuestion(${qi})">刪除此題</button>
+          `;
+                const optDiv = document.createElement('div');
+                q.options.forEach((opt, oi) => {
+                    const oDiv = document.createElement('div');
+                    oDiv.innerHTML = `
+              <input type="text" value="${opt.label}" onchange="editOptionLabel(${qi}, ${oi}, this.value)">
+              <label>有輸入框 <input type="checkbox" ${opt.input ? 'checked' : ''} onchange="editOptionInput(${qi}, ${oi}, this.checked)"></label>
+              <button onclick="deleteOption(${qi}, ${oi})">刪除選項</button>
+            `;
+                    optDiv.appendChild(oDiv);
+                });
+                const addOptBtn = document.createElement('button');
+                addOptBtn.textContent = "新增選項";
+                addOptBtn.onclick = () => addOption(qi);
+                optDiv.appendChild(addOptBtn);
+                qDiv.appendChild(optDiv);
+                editor.appendChild(qDiv);
+            });
+            const addQBtn = document.createElement('button');
+            addQBtn.textContent = "新增題目";
+            addQBtn.onclick = addQuestion;
+            editor.appendChild(addQBtn);
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = "確認修改";
+            confirmBtn.onclick = () => {
+                saveQuestions();
+                document.getElementById('editor').style.display = 'none';
+                document.getElementById('intro').style.display = 'block';
+            };
+            editor.appendChild(confirmBtn);
+        }
+
+        // ===== 編輯器操作 =====
+        function editQuestionText(i, text) { questionsJSON.questions[i].text = text; }
+        function editQuestionType(i, type) { questionsJSON.questions[i].type = type; }
+        function editQuestionMax(i, val) { questionsJSON.questions[i].maxSelect = parseInt(val) || 0; }
+        function editOptionLabel(qi, oi, text) { questionsJSON.questions[qi].options[oi].label = text; }
+        function editOptionInput(qi, oi, checked) { questionsJSON.questions[qi].options[oi].input = checked; }
+        function deleteQuestion(i) { questionsJSON.questions.splice(i, 1); renderEditor(); }
+        function deleteOption(qi, oi) { questionsJSON.questions[qi].options.splice(oi, 1); renderEditor(); }
+        function addOption(qi) { questionsJSON.questions[qi].options.push({ label: "新選項", input: false }); renderEditor(); }
+        function addQuestion() {
+            questionsJSON.questions.push({ id: Date.now(), text: "新題目", type: "single", options: [] });
+            renderEditor();
+        }
+        function saveQuestions() {
+            localStorage.setItem('questionsJSON', JSON.stringify(questionsJSON));
+            initAnswersJSON();
+        }
+    </script>
 </body>
 </html>
-
