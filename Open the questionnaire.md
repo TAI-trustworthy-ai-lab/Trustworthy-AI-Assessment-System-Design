@@ -17,7 +17,7 @@ and put them in the same folder.
 
 Use command or terminal to open the server
 
-first use `cd` command go to the folder which you save the file and type
+First, use the `cd` command to go to the folder where you saved the files, then type the command to start the server
 
 ```sh
 python -m http.server 8000
