@@ -26,6 +26,7 @@
                 border-radius: 4px;
                 padding: 6px 12px;
                 cursor: pointer;
+                margin-left: 5px;
             }
 
         #intro, #questionnaire, #report, #editor {
@@ -75,13 +76,16 @@
 </head>
 <body>
     <header>
-        <h1>問卷調查系統</h1>
-        <button onclick="location.href='login.html'">登錄</button>
+        <h1 id="title">問卷調查系統</h1>
+        <div>
+            <button onclick="location.href='login.html'" id="loginBtn">登錄</button>
+            <button id="langBtn">EN</button>
+        </div>
     </header>
 
     <section id="intro">
-        <h2>歡迎參加我們的問卷！</h2>
-        <p>請協助我們改善服務品質。</p>
+        <h2 id="welcomeTitle">歡迎參加我們的問卷！</h2>
+        <p id="welcomeText">請協助我們改善服務品質。</p>
         <button id="startBtn">開始填寫</button>
         <button id="editBtn">調整問卷</button>
     </section>
@@ -94,12 +98,49 @@
     </section>
     <section id="editor"></section>
 
-    <!-- 🔽 問卷與編輯邏輯 -->
     <script>
         let questionsJSON = { questions: [] };
         let answersJSON = { answers: [] };
+        let currentLang = 'zh'; // 預設中文
 
-        // ===== 問卷載入 =====
+        // ===== 語言資料 =====
+        function translateText() {
+            if (currentLang === 'en') {
+                document.getElementById('title').textContent = 'Survey System';
+                document.getElementById('loginBtn').textContent = 'Login';
+                document.getElementById('startBtn').textContent = 'Start Survey';
+                document.getElementById('editBtn').textContent = 'Edit Survey';
+                document.getElementById('welcomeTitle').textContent = 'Welcome to our Survey!';
+                document.getElementById('welcomeText').textContent = 'Please help us improve our service quality.';
+                document.querySelectorAll('.submitBtn').forEach(b => b.textContent = 'Submit');
+                document.querySelectorAll('.reBtn').forEach(b => b.textContent = 'Retake Survey');
+                document.querySelectorAll('.homeBtn').forEach(b => b.textContent = 'Back Home');
+                document.querySelectorAll('.editorTitle').forEach(e => e.textContent = 'Survey Editor');
+            } else {
+                document.getElementById('title').textContent = '問卷調查系統';
+                document.getElementById('loginBtn').textContent = '登錄';
+                document.getElementById('startBtn').textContent = '開始填寫';
+                document.getElementById('editBtn').textContent = '調整問卷';
+                document.getElementById('welcomeTitle').textContent = '歡迎參加我們的問卷！';
+                document.getElementById('welcomeText').textContent = '請協助我們改善服務品質。';
+                document.querySelectorAll('.submitBtn').forEach(b => b.textContent = '送出問卷');
+                document.querySelectorAll('.reBtn').forEach(b => b.textContent = '重新填寫');
+                document.querySelectorAll('.homeBtn').forEach(b => b.textContent = '回首頁');
+                document.querySelectorAll('.editorTitle').forEach(e => e.textContent = '問卷編輯');
+            }
+        }
+
+        // ===== 語言切換 =====
+        document.getElementById('langBtn').addEventListener('click', () => {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            document.getElementById('langBtn').textContent = currentLang === 'zh' ? 'EN' : '中';
+            translateText();
+            renderQuestions();
+            renderReport();
+            if (document.getElementById('editor').style.display === 'block') renderEditor();
+        });
+
+        // ===== 載入問卷 =====
         async function loadQuestions() {
             const localData = localStorage.getItem('questionsJSON');
             if (localData) {
@@ -115,15 +156,8 @@
 
         function initAnswersJSON() {
             answersJSON.answers = questionsJSON.questions.map(q => ({
-                id: q.id,
-                question: q.text,
-                type: q.type,
-                maxSelect: q.maxSelect || null,
-                options: q.options.map(o => ({
-                    label: o.label,
-                    input: o.input,
-                    answer: o.input ? "" : false
-                }))
+                id: q.id, question: q.text, type: q.type, maxSelect: q.maxSelect || null,
+                options: q.options.map(o => ({ label: o.label, input: o.input, answer: o.input ? "" : false }))
             }));
             localStorage.setItem('answersJSON', JSON.stringify(answersJSON));
         }
@@ -137,17 +171,21 @@
             startQuestionnaire();
         });
 
-        // ===== 問卷區塊生成 =====
         function startQuestionnaire() {
             const qDiv = document.getElementById('questionnaire');
             qDiv.style.display = 'block';
-            qDiv.innerHTML = "<h2>問卷填寫</h2>";
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const qDiv = document.getElementById('questionnaire');
+            qDiv.innerHTML = '<h2>' + (currentLang === 'zh' ? '問卷填寫' : 'Survey Filling') + '</h2>';
             questionsJSON.questions.forEach((q, qi) => {
                 const div = document.createElement('div');
                 div.className = 'question';
                 div.innerHTML = `<p><b>${qi + 1}. ${q.text}</b></p>`;
-                if (q.type === "text") {
-                    div.innerHTML += `<input type="text" name="q${q.id}" placeholder="請輸入">`;
+                if (q.type === 'text') {
+                    div.innerHTML += `<input type="text" name="q${q.id}" placeholder="${currentLang === 'zh' ? '請輸入' : 'Please enter'}">`;
                 } else {
                     q.options.forEach((opt, oi) => {
                         const optDiv = document.createElement('div');
@@ -158,12 +196,11 @@
                         input.addEventListener('change', e => limitSelect(q, q.maxSelect, e));
                         const lbl = document.createElement('label');
                         lbl.textContent = opt.label;
-                        optDiv.appendChild(input);
-                        optDiv.appendChild(lbl);
+                        optDiv.appendChild(input); optDiv.appendChild(lbl);
                         if (opt.input) {
                             const txt = document.createElement('input');
                             txt.type = 'text';
-                            txt.placeholder = '請輸入';
+                            txt.placeholder = currentLang === 'zh' ? '請輸入' : 'Please enter';
                             optDiv.appendChild(txt);
                         }
                         div.appendChild(optDiv);
@@ -172,7 +209,8 @@
                 qDiv.appendChild(div);
             });
             const btn = document.createElement('button');
-            btn.textContent = '送出問卷';
+            btn.textContent = currentLang === 'zh' ? '送出問卷' : 'Submit';
+            btn.className = 'submitBtn';
             btn.onclick = submitSurvey;
             qDiv.appendChild(btn);
             qDiv.scrollIntoView({ behavior: 'smooth' });
@@ -181,13 +219,9 @@
         function limitSelect(q, max, e) {
             if (!max) return;
             const cks = document.querySelectorAll(`input[name='q${q.id}']:checked`);
-            if (cks.length > max) {
-                alert(`最多只能選 ${max} 個`);
-                e.target.checked = false;
-            }
+            if (cks.length > max) { alert(currentLang === 'zh' ? `最多只能選 ${max} 個` : `You can select up to ${max}`); e.target.checked = false; }
         }
 
-        // ===== 問卷提交 =====
         function submitSurvey() {
             questionsJSON.questions.forEach(q => {
                 if (q.type === 'text') {
@@ -213,56 +247,36 @@
             else ans.options[optIndex].answer = val;
         }
 
-        // ===== 報告顯示 =====
+        // ===== 報告 =====
         function showReport() {
             document.getElementById('questionnaire').style.display = 'none';
             const rpt = document.getElementById('report');
             rpt.style.display = 'block';
             const loading = document.getElementById('loading');
             loading.style.display = 'block';
-            setTimeout(() => {
-                loading.style.display = 'none';
-                renderReport();
-            }, 1000);
+            setTimeout(() => { loading.style.display = 'none'; renderReport(); }, 1000);
         }
 
         function renderReport() {
             const ctx = document.getElementById('radarChart');
             const labels = answersJSON.answers.map(a => a.question);
             const data = labels.map((_, i) => Math.random() * 100);
-            new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: '問卷結果',
-                        data,
-                        borderColor: '#2b59c3',
-                        backgroundColor: 'rgba(43,89,195,0.3)'
-                    }]
-                },
-                options: { scales: { r: { beginAtZero: true } } }
-            });
+            new Chart(ctx, { type: 'radar', data: { labels, datasets: [{ label: currentLang === 'zh' ? '問卷結果' : 'Survey Result', data, borderColor: '#2b59c3', backgroundColor: 'rgba(43,89,195,0.3)' }] }, options: { scales: { r: { beginAtZero: true } } } });
             const rptText = document.getElementById('reportText');
-            rptText.innerHTML = `<h3>感謝填寫！</h3><pre>${JSON.stringify(answersJSON, null, 2)}</pre>`;
+            rptText.innerHTML = `<h3>${currentLang === 'zh' ? '感謝填寫！' : 'Thank you for filling!'}</h3><pre>${JSON.stringify(answersJSON, null, 2)}</pre>`;
+            rptText.querySelectorAll('*').forEach(el => el.className = ''); // 清除舊class
             const reBtn = document.createElement('button');
-            reBtn.textContent = '重新填寫';
-            reBtn.onclick = () => {
-                document.getElementById('report').style.display = 'none';
-                document.getElementById('questionnaire').innerHTML = '';
-                startQuestionnaire();
-            };
+            reBtn.textContent = currentLang === 'zh' ? '重新填寫' : 'Retake Survey';
+            reBtn.className = 'reBtn';
+            reBtn.onclick = () => { document.getElementById('report').style.display = 'none'; document.getElementById('questionnaire').innerHTML = ''; startQuestionnaire(); };
             const homeBtn = document.createElement('button');
-            homeBtn.textContent = '回首頁';
-            homeBtn.onclick = () => {
-                document.getElementById('report').style.display = 'none';
-                document.getElementById('intro').style.display = 'block';
-            };
-            rptText.appendChild(reBtn);
-            rptText.appendChild(homeBtn);
+            homeBtn.textContent = currentLang === 'zh' ? '回首頁' : 'Back Home';
+            homeBtn.className = 'homeBtn';
+            homeBtn.onclick = () => { document.getElementById('report').style.display = 'none'; document.getElementById('intro').style.display = 'block'; };
+            rptText.appendChild(reBtn); rptText.appendChild(homeBtn);
         }
 
-        // ===== 問卷編輯器 =====
+        // ===== 編輯器 =====
         document.getElementById('editBtn').addEventListener('click', () => {
             document.getElementById('intro').style.display = 'none';
             renderEditor();
@@ -271,42 +285,42 @@
         function renderEditor() {
             const editor = document.getElementById('editor');
             editor.style.display = 'block';
-            editor.innerHTML = `<h3>問卷編輯</h3>`;
+            editor.innerHTML = `<h3 class="editorTitle">${currentLang === 'zh' ? '問卷編輯' : 'Survey Editor'}</h3>`;
             questionsJSON.questions.forEach((q, qi) => {
                 const qDiv = document.createElement('div');
                 qDiv.innerHTML = `
-            <input type="text" value="${q.text}" onchange="editQuestionText(${qi}, this.value)">
-            <select onchange="editQuestionType(${qi}, this.value)">
-              <option value="single" ${q.type === 'single' ? 'selected' : ''}>單選</option>
-              <option value="multi" ${q.type === 'multi' ? 'selected' : ''}>多選</option>
-              <option value="text" ${q.type === 'text' ? 'selected' : ''}>文字</option>
-            </select>
-            <input type="number" value="${q.maxSelect || ''}" placeholder="多選最大數" onchange="editQuestionMax(${qi}, this.value)">
-            <button onclick="deleteQuestion(${qi})">刪除此題</button>
-          `;
+<input type="text" value="${q.text}" onchange="editQuestionText(${qi},this.value)">
+<select onchange="editQuestionType(${qi},this.value)">
+<option value="single" ${q.type === 'single' ? 'selected' : ''}>${currentLang === 'zh' ? '單選' : 'Single'}</option>
+<option value="multi" ${q.type === 'multi' ? 'selected' : ''}>${currentLang === 'zh' ? '多選' : 'Multiple'}</option>
+<option value="text" ${q.type === 'text' ? 'selected' : ''}>${currentLang === 'zh' ? '文字' : 'Text'}</option>
+</select>
+<input type="number" value="${q.maxSelect || ''}" placeholder="${currentLang === 'zh' ? '多選最大數' : 'Max Select'}" onchange="editQuestionMax(${qi},this.value)">
+<button onclick="deleteQuestion(${qi})">${currentLang === 'zh' ? '刪除此題' : 'Delete Question'}</button>
+`;
                 const optDiv = document.createElement('div');
                 q.options.forEach((opt, oi) => {
                     const oDiv = document.createElement('div');
                     oDiv.innerHTML = `
-              <input type="text" value="${opt.label}" onchange="editOptionLabel(${qi}, ${oi}, this.value)">
-              <label>有輸入框 <input type="checkbox" ${opt.input ? 'checked' : ''} onchange="editOptionInput(${qi}, ${oi}, this.checked)"></label>
-              <button onclick="deleteOption(${qi}, ${oi})">刪除選項</button>
-            `;
+<input type="text" value="${opt.label}" onchange="editOptionLabel(${qi},${oi},this.value)">
+<label>${currentLang === 'zh' ? '有輸入框' : 'Has input'} <input type="checkbox" ${opt.input ? 'checked' : ''} onchange="editOptionInput(${qi},${oi},this.checked)"></label>
+<button onclick="deleteOption(${qi},${oi})">${currentLang === 'zh' ? '刪除選項' : 'Delete Option'}</button>
+`;
                     optDiv.appendChild(oDiv);
                 });
                 const addOptBtn = document.createElement('button');
-                addOptBtn.textContent = "新增選項";
+                addOptBtn.textContent = currentLang === 'zh' ? '新增選項' : 'Add Option';
                 addOptBtn.onclick = () => addOption(qi);
                 optDiv.appendChild(addOptBtn);
                 qDiv.appendChild(optDiv);
                 editor.appendChild(qDiv);
             });
             const addQBtn = document.createElement('button');
-            addQBtn.textContent = "新增題目";
+            addQBtn.textContent = currentLang === 'zh' ? '新增題目' : 'Add Question';
             addQBtn.onclick = addQuestion;
             editor.appendChild(addQBtn);
             const confirmBtn = document.createElement('button');
-            confirmBtn.textContent = "確認修改";
+            confirmBtn.textContent = currentLang === 'zh' ? '確認修改' : 'Confirm';
             confirmBtn.onclick = () => {
                 saveQuestions();
                 document.getElementById('editor').style.display = 'none';
@@ -323,15 +337,9 @@
         function editOptionInput(qi, oi, checked) { questionsJSON.questions[qi].options[oi].input = checked; }
         function deleteQuestion(i) { questionsJSON.questions.splice(i, 1); renderEditor(); }
         function deleteOption(qi, oi) { questionsJSON.questions[qi].options.splice(oi, 1); renderEditor(); }
-        function addOption(qi) { questionsJSON.questions[qi].options.push({ label: "新選項", input: false }); renderEditor(); }
-        function addQuestion() {
-            questionsJSON.questions.push({ id: Date.now(), text: "新題目", type: "single", options: [] });
-            renderEditor();
-        }
-        function saveQuestions() {
-            localStorage.setItem('questionsJSON', JSON.stringify(questionsJSON));
-            initAnswersJSON();
-        }
+        function addOption(qi) { questionsJSON.questions[qi].options.push({ label: currentLang === 'zh' ? '新選項' : 'New Option', input: false }); renderEditor(); }
+        function addQuestion() { questionsJSON.questions.push({ id: Date.now(), text: currentLang === 'zh' ? '新題目' : 'New Question', type: 'single', options: [] }); renderEditor(); }
+        function saveQuestions() { localStorage.setItem('questionsJSON', JSON.stringify(questionsJSON)); initAnswersJSON(); }
     </script>
 </body>
 </html>
