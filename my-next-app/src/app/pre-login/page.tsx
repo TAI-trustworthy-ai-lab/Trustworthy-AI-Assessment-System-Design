@@ -5,32 +5,44 @@ export default function PreLoginPage() {
 
   return (
     <div className="flex flex-col justify-center">
+        <header className='
+            bg-blue-100/85
+            fixed top-0 left-0 w-full
+        '>
+            <div className='
+                flex justify-end space-x-5 items-center
+                my-5 
+            '>
+                <div>
+                    關於
+                </div>
+                <div>
+                    語言
+                </div>
+                
+                {/* login button */}
+                <Link href="/login" className='mr-3'>
+                    <button className="
+                        py-2 px-4 rounded-2xl
+                        bg-blue-500 hover:bg-blue-400 active:bg-blue-600
+                        text-white font-bold
+                        transition duration-100
+                    ">
+                        Login
+                    </button>
+            </Link>
+            </div>
+            
+        </header>
         {/* header */}
         <div className="
-            flex-col           /* 佈局/Flex */
-            mb-10                                     /* 間距 */
-            w-full h-fit                             /* 尺寸 */
-            bg-amber-500                   /* 顏色/文字 */
-            rounded-b-4xl shadow-xl border                 /* 裝飾 */
+            flex-col
+            mb-10
+            w-full h-fit
         ">
-            {/* hover:bg-amber-600 transition duration-100    /* 互動 */}
-            <Link href="/login" className='
-                flex justify-end
-                mt-5 mr-3
-            '>
-                {/* login button */}
-                <button className="
-                    py-2 px-4 rounded-2xl
-                    bg-blue-500 hover:bg-blue-400 active:bg-blue-600
-                    text-white font-bold
-                    transition duration-100
-                ">
-                    Login
-                </button>
-            </Link>
             <div className="
                 flex justify-center items-end
-                mt-30 mb-10 pb-2
+                mt-50
                 text-7xl text-center
                 text-gray-800
             ">
