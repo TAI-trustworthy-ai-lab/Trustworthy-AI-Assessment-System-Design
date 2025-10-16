@@ -1,4 +1,5 @@
 "use client";
+import Link from 'next/link';
 
 export default function PreLoginPage() {
 
@@ -6,15 +7,35 @@ export default function PreLoginPage() {
     <div className="flex flex-col justify-center">
         {/* header */}
         <div className="
-            flex justify-center items-end           /* 佈局/Flex */
+            flex-col           /* 佈局/Flex */
             mb-10                                     /* 間距 */
-            w-full h-70                             /* 尺寸 */
-            bg-amber-500 text-gray-800                  /* 顏色/文字 */
-            text-7xl text-center
+            w-full h-fit                             /* 尺寸 */
+            bg-amber-500                   /* 顏色/文字 */
             rounded-b-4xl shadow-xl border                 /* 裝飾 */
-            hover:bg-amber-600 transition duration-100    /* 互動 */
         ">
-            我是標題
+            {/* hover:bg-amber-600 transition duration-100    /* 互動 */}
+            <Link href="/login" className='
+                flex justify-end
+                mt-5 mr-3
+            '>
+                {/* login button */}
+                <button className="
+                    py-2 px-4 rounded-2xl
+                    bg-blue-500 hover:bg-blue-400 active:bg-blue-600
+                    text-white font-bold
+                    transition duration-100
+                ">
+                    Login
+                </button>
+            </Link>
+            <div className="
+                flex justify-center items-end
+                mt-30 mb-10 pb-2
+                text-7xl text-center
+                text-gray-800
+            ">
+                我是標題
+            </div>
         </div>
 
         {/* body */}
