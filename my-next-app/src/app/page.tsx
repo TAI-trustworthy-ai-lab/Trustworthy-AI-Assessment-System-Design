@@ -1,103 +1,142 @@
-import Image from "next/image";
+"use client";
+import Link from 'next/link';
 
-export default function Home() {
+export default function PreLoginPage() {
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex flex-col justify-center">
+        <header className='
+            bg-blue-100/85
+            fixed top-0 left-0 w-full
+        '>
+            <div className='
+                flex justify-end space-x-5 items-center
+                my-5 
+            '>
+                <div>
+                    關於
+                </div>
+                <div>
+                    語言
+                </div>
+                
+                {/* login button */}
+                <Link href="/login" className='mr-3'>
+                    <button className="
+                        py-2 px-4 rounded-2xl
+                        bg-blue-500 hover:bg-blue-400 active:bg-blue-600
+                        text-white font-bold
+                        transition duration-100
+                    ">
+                        Login
+                    </button>
+            </Link>
+            </div>
+            
+        </header>
+        {/* header */}
+        <div className="
+            flex-col
+            mb-10
+            w-full h-fit
+        ">
+            <div className="
+                flex justify-center items-end
+                mt-50
+                text-7xl text-center
+                text-gray-800
+            ">
+                我是標題
+            </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* body */}
+        <div className="
+            flex flex-col justify-center items-center
+            space-y-12
+            ">
+            <InfoBlock title="甚麼是 ATI" content="TAI 是一個指標"/>
+            <TaiIntroduction />
+            <InfoBlock title="問卷目的" content="用紙本不方便"/>
+        </div>
+
+        {/* end */}
+        <div className="
+            flex justify-center items-center
+            w-full h-70
+            text-7xl text-center
+        ">
+            -end-
+        </div>
     </div>
   );
+}
+
+function InfoBlock({ title, content }: { title: string, content: string }){
+    return(
+        <div className="
+            flex
+            flex-col justify-center
+        ">
+            <div className="
+                mb-5
+                text-center
+                text-4xl
+            ">
+                {title}
+            </div>
+            <div className="
+                w-150
+                text-left
+            ">
+                {content}
+            </div>
+        </div>
+    )
+}
+
+function TaiIntroduction(){
+    return(
+        <div>
+            <div className="grid grid-cols-4 gap-2">
+            
+            <TaiElement title="你好" content="這是你好" color="bg-blue-200" />
+            <TaiElement title="你好ㄛ" content="這個也是你好，這個也是你好，這個也是你好<><>這個也是你好" color="bg-blue-200" />
+            <TaiElement title="你好" content="這是你好" color="bg-blue-200" />
+            <TaiElement title="你好ㄛ" content="這個也是你好" color="bg-blue-200" />
+
+            <TaiElement title="你好" content="這是你好" color="bg-blue-300" />
+            <TaiElement title="你好ㄛ" content="這個也是你好" color="bg-blue-300" />
+            <TaiElement title="你好" content="這是你好" color="bg-blue-300" />
+            <TaiElement title="你好ㄛ" content="這個也是你好" color="bg-blue-300" />
+
+            <TaiElement title="你好" content="這是你好" color="bg-blue-400" />
+            <TaiElement title="你好ㄛ" content="這個也是你好" color="bg-blue-400" />
+            <TaiElement title="你好" content="這是你好" color="bg-blue-400" />
+            
+            </div>
+        </div>
+    )
+}
+
+function TaiElement({title, content, color}: {title: string, content: string, color: string}){
+    const taiStyle = "w-50 h-50 " + color;
+    return (
+        <div className={taiStyle}>
+            <div className="
+                flex justify-center
+                py-4
+                text-2xl font-bold
+            ">
+                {title}
+            </div>
+            <div className="
+                flex justify-center items-center
+                px-5
+                text-left
+            ">
+                {content}
+            </div>
+        </div>
+    )
 }
