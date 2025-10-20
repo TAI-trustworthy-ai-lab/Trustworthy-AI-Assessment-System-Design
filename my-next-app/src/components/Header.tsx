@@ -1,26 +1,34 @@
 import React from 'react';
+import Link from 'next/link';
 
-// 定義 Header 組件的 props
-// 這裡我們只接受一個標準的 React 屬性：children，它是組件內容
 interface HeaderProps {
   children: React.ReactNode;
+  titleHref: string; 
 }
 
-export default function Header({ children }: HeaderProps) {
+export default function Header({ children, titleHref }: HeaderProps) {
   return (
     <header className='
-      bg-blue-100/85
-      fixed top-0 left-0 w-full
+        bg-blue-100/85
+        fixed top-0 left-0 w-full
     '>
-      {/* 將客製化的內容渲染在裡面。 
-        這裡可以加上一些統一的 padding/margin 或 flexbox 設置，
-        但為了最大的靈活性，我建議將內部的結構 (如 justify-end space-x-5)
-        留給父組件來定義，或者在這裡設定最基礎的容器樣式。
-      */}
-      <div className='
-        my-5 
-      '>
-        {children}
+        <div className='
+            flex justify-between items-center
+            my-5 
+            px-6
+        '>
+        {/*  titleHref是每個標題要待的不同頁面  */}
+        <Link href={titleHref} className='
+            text-2xl font-bold text-gray-800 hover:text-blue-600 transition
+        '>
+            可信任AI評估測驗
+        </Link>
+
+        {/* 右側：客製化的內容 */}
+        <div className='flex space-x-5 items-center'>
+          {/* 在這裏加上語言切換按鈕 */}
+            {children}
+        </div>
       </div>
     </header>
   );
