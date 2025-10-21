@@ -6,7 +6,8 @@ export default function PreLoginPage() {
   return (
     <div className="flex flex-col justify-center">
         <header className='
-            bg-blue-100/85
+            bg-blue-100/90
+            shadow-md
             fixed top-0 left-0 w-full
         '>
             <div className='
@@ -43,6 +44,7 @@ export default function PreLoginPage() {
             <div className="
                 flex justify-center items-end
                 mt-50
+                whitespace-nowrap
                 text-7xl text-center
                 text-gray-800
             ">
@@ -54,11 +56,11 @@ export default function PreLoginPage() {
         <div className="
             w-full
             justify-center items-center
-            space-y-12
+            px-5 space-y-12
 
             md:flex md:flex-col 
             ">
-            <InfoBlock title="甚麼是 ATI" content="TAI 是一個指標"/>
+            <InfoBlock title="甚麼是 ATI" content="TAI 是一個指標，昨天的我淒慘的ㄌ還是不，看三要⋯路這是進村所以會，像很突然想，機率到這個樣子上讓他們。我都不我不知看到到都好好，沒有任在看沒有。是一個有沒有可能泡需要羅蘭，居然外國人食看到沒辦。"/>
             <TaiIntroduction />
             <InfoBlock title="問卷目的" content="用紙本不方便"/>
         </div>
@@ -83,14 +85,18 @@ function InfoBlock({ title, content }: { title: string, content: string }){
         ">
             <div className="
                 mb-5
+                whitespace-nowrap
                 text-center
                 text-4xl
             ">
                 {title}
             </div>
             <div className="
-                w-150
-                text-left
+                text-center
+                text-2xl
+
+                md:w-150
+                md:text-xl
             ">
                 {content}
             </div>
@@ -126,13 +132,15 @@ function TaiIntroduction(){
 }
 
 function TaiElement({title, content, color}: {title: string, content: string, color: string}){
-    const taiStyle = "grow h-20 md:grow md:max-w-50 md:h-50 " + color;
+    const taiStyle = "grow h-20\
+        md:grow md:max-w-50 md:h-50 " + color;
     return (
         <div className={taiStyle}>
             <div className="
-                flex justify-center
-                py-4
+                flex justify-center items-center h-full
                 text-2xl font-bold
+                md:h-fit
+                md:py-4
             ">
                 {title}
             </div>
