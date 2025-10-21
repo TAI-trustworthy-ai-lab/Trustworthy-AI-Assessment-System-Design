@@ -34,16 +34,24 @@ export default function LoginPage() {
        // 後端回傳錯誤處理 (Backend error handling)
        if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Login failed with status: ${response.status}`);
+        let defaultMessage = `登入失敗，狀態碼: ${response.status}`; // 預設至輸出訊息
+
+        // API 特定狀態碼處理
+        if (response.status === 401) {
+          defaultMessage = "憑證無效，請檢查電子郵件或密碼。";
+        } else if (response.status === 500) {
+          defaultMessage = "伺服器內部錯誤，請稍後再試。";
+        }
+        throw new Error(defaultMessage);
       }
       
       // 登入成功！(Login successful!)
       const data = await response.json();
       console.log("Login successful!"); 
-      router.push('/admin'); // 跳到home page
+      router.push('/home'); // 跳到home page
     } catch (err) {
-      console.error("Login Error:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      console.error("登入失敗:", err);
+      setError(err instanceof Error ? err.message : "發生未知錯誤");
     } finally {
       setLoading(false);
     }
@@ -65,14 +73,22 @@ export default function LoginPage() {
       // 後端回傳錯誤處理 (Backend error handling)
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Registration failed with status: ${response.status}`);
+        let defaultMessage = `註冊失敗，狀態碼: ${response.status}`; // 預設至輸出訊息
+
+        // API 特定狀態碼處理
+        if (response.status === 409) {
+          defaultMessage = "帳戶已存在，請直接登入。";
+        } else if (response.status === 500) {
+          defaultMessage = "伺服器內部錯誤，請稍後再試。";
+        }
+        throw new Error(defaultMessage);
       }
 
       // 注冊成功！(Registration successful!)
       const data = await response.json();
       console.log("Registration successful! Data:", data);
       setIsRegistering(false); // 切換回登入模式
-      setSuccess("Registration successful! Please sign in."); // 提示用戶註冊成功
+      setSuccess("注冊成功！請登入"); // 提示用戶註冊成功
 
       // 讓使用者再填多一次
       setName("");
@@ -81,7 +97,7 @@ export default function LoginPage() {
 
     } catch (err) {
       console.error("Registration Error:", err);
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setError(err instanceof Error ? err.message : "發生未知錯誤");
     } finally {
       setLoading(false);
     }
@@ -97,17 +113,17 @@ export default function LoginPage() {
     <div className="max-w-md w-full p-8 space-y-8 bg-white border border-blue-200 rounded-xl shadow-xl">
       <div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isRegistering ? "Create your account" : "Sign in to your account"}
+          {isRegistering ? "注冊賬戶" : "登入您的賬戶"}
         </h2>
       </div>
       {error && (
         <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
-          <strong>Error:</strong> {error}
+          <strong>發生錯誤:</strong> {error}
         </div>
       )} 
       {success && (
         <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm" role="alert">
-          <strong>Success:</strong> {success}
+          <strong>成功:</strong> {success}
         </div>
       )}
       <form
@@ -120,7 +136,7 @@ export default function LoginPage() {
         {isRegistering && (
           <div>
           <label htmlFor="full-name" className="sr-only">
-              Name
+              名字
           </label>
           <input
               id="full-name"
@@ -129,7 +145,7 @@ export default function LoginPage() {
               autoComplete="name"
               required
               className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-              placeholder="Full Name"
+              placeholder="名字"
               disabled={loading}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -139,7 +155,7 @@ export default function LoginPage() {
 
         <div>
           <label htmlFor="email-address" className="sr-only">
-            Email address
+            電子郵件地址
           </label>
           <input
             id="email-address"
@@ -148,7 +164,7 @@ export default function LoginPage() {
             autoComplete="email"
             required
             className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="Email address" 
+            placeholder="電子郵件地址" 
             disabled={loading}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -156,7 +172,7 @@ export default function LoginPage() {
         </div>
         <div>
           <label htmlFor="password" className="sr-only">
-            Password
+            密碼
           </label>
           <input
             id="password"
@@ -165,7 +181,7 @@ export default function LoginPage() {
             autoComplete={isRegistering ? "new-password" : "current-password"}
             required
             className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-            placeholder="Password"
+            placeholder="密碼"
             disabled={loading}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -179,7 +195,7 @@ export default function LoginPage() {
             disabled={loading}
             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
-            {loading ? "Processing..." : (isRegistering ? "Register" : "Sign in")}
+            {loading ? "處理中..." : (isRegistering ? "注冊" : "登入")}
           </button>
           <button
             type="button"
@@ -191,7 +207,7 @@ export default function LoginPage() {
 
             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
-            {isRegistering? "Already have an account? Sign in": "Don't have an account? Register"}
+            {isRegistering? "已有帳戶？立即登入": "沒有帳戶？立即註冊"}
           </button>
         </div>
       </form>
