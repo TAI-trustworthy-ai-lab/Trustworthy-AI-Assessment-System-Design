@@ -40,7 +40,7 @@ export default function LoginPage() {
       // 登入成功！(Login successful!)
       const data = await response.json();
       console.log("Login successful!"); 
-      router.push('/home'); // 跳到home page
+      router.push('/admin'); // 跳到home page
     } catch (err) {
       console.error("Login Error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
