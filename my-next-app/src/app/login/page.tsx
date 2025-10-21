@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from '@/components/Header';
 
 export default function LoginPage() {
@@ -10,6 +11,9 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null); 
+
+  const router = useRouter(); 
 
   // 後端API基礎URL (Backend API Base URL)
   const BASE_URL = "http://localhost:3001/api/user";
@@ -22,7 +26,7 @@ export default function LoginPage() {
     
     try {
       const response = await fetch(`${BASE_URL}/login`, {
-        method: "GET", 
+        method: "POST", 
         headers: {"Content-Type": "application/json",},
         body: JSON.stringify({ email, password }),
        });
@@ -36,6 +40,7 @@ export default function LoginPage() {
       // 登入成功！(Login successful!)
       const data = await response.json();
       console.log("Login successful!"); 
+      router.push('/home'); // 跳到home page
     } catch (err) {
       console.error("Login Error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -66,7 +71,14 @@ export default function LoginPage() {
       // 注冊成功！(Registration successful!)
       const data = await response.json();
       console.log("Registration successful! Data:", data);
-      setIsRegistering(false); // Switch to login view after successful registration
+      setIsRegistering(false); // 切換回登入模式
+      setSuccess("Registration successful! Please sign in."); // 提示用戶註冊成功
+
+      // 讓使用者再填多一次
+      setName("");
+      setEmail("");
+      setPassword("");
+
     } catch (err) {
       console.error("Registration Error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -93,6 +105,11 @@ export default function LoginPage() {
           <strong>Error:</strong> {error}
         </div>
       )} 
+      {success && (
+        <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm" role="alert">
+          <strong>Success:</strong> {success}
+        </div>
+      )}
       <form
         className="mt-8 space-y-6"
         onSubmit={isRegistering ? handleRegister : handleLogin}
@@ -166,7 +183,12 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => setIsRegistering(!isRegistering)}
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setError(null); // 切換頁面時清除錯誤
+              setSuccess(null); // 切換頁面時清除成功訊息
+            }}
+
             className="group relative w-full flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
             >
             {isRegistering? "Already have an account? Sign in": "Don't have an account? Register"}
