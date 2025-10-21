@@ -52,8 +52,11 @@ export default function PreLoginPage() {
 
         {/* body */}
         <div className="
-            flex flex-col justify-center items-center
+            w-full
+            justify-center items-center
             space-y-12
+
+            md:flex md:flex-col 
             ">
             <InfoBlock title="甚麼是 ATI" content="TAI 是一個指標"/>
             <TaiIntroduction />
@@ -98,7 +101,10 @@ function InfoBlock({ title, content }: { title: string, content: string }){
 function TaiIntroduction(){
     return(
         <div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="
+                w-full grid grid-cols-2 gap-2
+                md:grid md:grid-cols-4 md:gap-2
+            ">
             
             <TaiElement title="你好" content="這是你好" color="bg-blue-200" />
             <TaiElement title="你好ㄛ" content="這個也是你好，這個也是你好，這個也是你好<><>這個也是你好" color="bg-blue-200" />
@@ -120,7 +126,7 @@ function TaiIntroduction(){
 }
 
 function TaiElement({title, content, color}: {title: string, content: string, color: string}){
-    const taiStyle = "w-50 h-50 " + color;
+    const taiStyle = "grow h-20 md:grow md:max-w-50 md:h-50 " + color;
     return (
         <div className={taiStyle}>
             <div className="
@@ -131,9 +137,11 @@ function TaiElement({title, content, color}: {title: string, content: string, co
                 {title}
             </div>
             <div className="
-                flex justify-center items-center
-                px-5
-                text-left
+                hidden
+
+                md:flex md:justify-center md:items-center
+                md:px-5
+                md:text-left
             ">
                 {content}
             </div>
