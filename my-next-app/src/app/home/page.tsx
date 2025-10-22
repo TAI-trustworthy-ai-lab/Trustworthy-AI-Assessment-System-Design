@@ -98,7 +98,7 @@ export default function HomePage() {
           
           {/* 按鈕 1: 開始測驗 */}
           <button
-            onClick={() => router.push('/test')}
+            onClick={() => router.push('/tai_sort')}
             className="w-full py-4 text-xl font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-transform transform hover:scale-[1.02] shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
             disabled={isLoggingOut} // 登出中禁用
           >
