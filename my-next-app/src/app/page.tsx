@@ -57,7 +57,7 @@ export default function PreLoginPage() {
 
             md:flex md:flex-col 
             ">
-            <InfoBlock title="甚麼是 ATI" content="人工智慧（AI）技術近年來逐漸在社會各領域受到重視，為了提升AI技術在應用上的可信任程度，歐盟於2019年釋出可信任的AI倫理準則（Ethics Guidelines for Trustworthy AI），我國行政院數位發展部亦於2023年成立AI 產品與系統評測中心，為建立國內AI產品與系統評測體系而擬發展評測項目。"/>
+            <InfoBlock title="甚麼是 TAI" content="人工智慧（AI）技術近年來逐漸在社會各領域受到重視，為了提升AI技術在應用上的可信任程度，歐盟於2019年釋出可信任的AI倫理準則（Ethics Guidelines for Trustworthy AI），我國行政院數位發展部亦於2023年成立AI 產品與系統評測中心，為建立國內AI產品與系統評測體系而擬發展評測項目。"/>
             <TaiIntroduction />
             <InfoBlock title="問卷目的" content="本評估表根據歐盟可信任的AI倫理準則與數位發展部擬發展的評測項目，研擬11項可信任的AI倫理自我評鑑指標，提供AI模型開發者與潛在使用者於建模後，部署AI系統時進行檢視，以期符合可信任AI倫理標準。"/>
         </div>
