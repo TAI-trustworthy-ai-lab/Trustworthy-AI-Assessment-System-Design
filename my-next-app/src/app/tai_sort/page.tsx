@@ -1,7 +1,10 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from 'next/navigation';
+
 
 export default function TAISorter() {
+    const router = useRouter();
     const [enableSort, setEnableSort] = useState(false);
     const [indicators, setIndicators] = useState([
         "準確性", "可靠性", "安全性", "韌性", "透明性",
@@ -161,7 +164,8 @@ export default function TAISorter() {
     }, [dragging]);
 
     const handleStart = () => {
-        alert("目前 TAI 指標優先順序：\n" + indicators.join(" → "));
+        alert("目前 TAI 指標優先順序：\n" + indicators.join(" → ") + "\n 是否啟用TAI指標優先順序：" + enableSort);
+        router.push('/choose_questionnaire');
     };
 
     return (
