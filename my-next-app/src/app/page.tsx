@@ -1,16 +1,13 @@
 "use client";
 import Link from 'next/link';
+import Header from '@/components/Header';
 
 export default function PreLoginPage() {
-
+    const titleLinkTarget = '/home';
   return (
     <div className="flex flex-col justify-center">
-        <header className='
-            bg-blue-100/90
-            shadow-md
-            fixed top-0 left-0 w-full
-        '>
-            <div className='
+        <Header titleHref={titleLinkTarget}>
+             <div className='
                 flex justify-end space-x-5 items-center
                 my-5 
             '>
@@ -31,10 +28,10 @@ export default function PreLoginPage() {
                     ">
                         Login
                     </button>
-            </Link>
+                </Link>
             </div>
-            
-        </header>
+        </Header>
+        
         {/* header */}
         <div className="
             flex-col
