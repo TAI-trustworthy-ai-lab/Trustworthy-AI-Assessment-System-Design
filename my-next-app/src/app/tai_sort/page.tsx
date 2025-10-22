@@ -164,7 +164,7 @@ export default function TAISorter() {
     }, [dragging]);
 
     const handleStart = () => {
-        alert("目前 TAI 指標優先順序：\n" + indicators.join(" → "));
+        alert("目前 TAI 指標優先順序：\n" + indicators.join(" → ") + "\n 是否啟用TAI指標優先順序：" + enableSort);
         router.push('/choose_questionnaire');
     };
 
