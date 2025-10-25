@@ -47,8 +47,16 @@ export default function LoginPage() {
       
       // 登入成功！(Login successful!)
       const data = await response.json();
-      console.log("Login successful!"); 
-      router.push('/home'); // 跳到home page
+      const token = data?.data?.token;
+
+      if (token) {
+        // 2. 將 Token 儲存到瀏覽器的本地儲存
+        localStorage.setItem('authToken', token);  
+        console.log("Login successful! Token saved."); 
+        router.push('/home'); 
+      } else {
+        throw new Error("登入成功但未收到授權憑證 (Token)。請聯繫管理員。");
+      }
     } catch (err) {
       console.error("登入失敗:", err);
       setError(err instanceof Error ? err.message : "發生未知錯誤");
