@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
+import ProtectedLayout from '@/components/ProtectedLayout';
 
 const BASE_URL = "http://localhost:3001/api/user";
 
@@ -16,6 +17,7 @@ export default function choose_questionnaire_page() {
     };
 
     return (
+        <ProtectedLayout>
         <div className="min-h-screen bg-gray-50">
         <AuthHeader />
 
@@ -49,5 +51,6 @@ export default function choose_questionnaire_page() {
                 </div>
             </main>
         </div>
+        </ProtectedLayout>
     );
 }

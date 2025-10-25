@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
+import ProtectedLayout from '@/components/ProtectedLayout';
 
 // 後端 API 基礎 URL
 const BASE_URL = "http://localhost:3001/api/user";
@@ -172,6 +173,7 @@ export default function TAISorter() {
     };
 
     return (
+        <ProtectedLayout>
         <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 p-6 space-y-6 select-none pt-30">
             <AuthHeader />
 
@@ -215,5 +217,6 @@ export default function TAISorter() {
                 開始作答
             </button>
         </div>
+        </ProtectedLayout>
     );
 }

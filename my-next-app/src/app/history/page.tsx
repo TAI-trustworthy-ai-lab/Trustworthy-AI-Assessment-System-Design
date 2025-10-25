@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react'; // 引入 useState
 import AuthHeader from '@/components/AuthHeader';
+import ProtectedLayout from '@/components/ProtectedLayout';
 
 // 後端 API 基礎 URL
 const BASE_URL = "http://localhost:3001/api/user";
@@ -11,6 +11,7 @@ export default function HistoryPage() {
   const router = useRouter();
  
   return (
+    <ProtectedLayout>
     <div className="min-h-screen bg-gray-50">
       <AuthHeader />
       
@@ -21,5 +22,6 @@ export default function HistoryPage() {
         </h1>
       </main>
     </div>
+    </ProtectedLayout>
   );
 }
