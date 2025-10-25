@@ -9,19 +9,20 @@ interface HeaderProps {
 export default function Header({ children, titleHref }: HeaderProps) {
   return (
     <header className='
-        bg-blue-100/85
-        fixed top-0 left-0 w-full
+      bg-blue-100/85
+      fixed top-0 left-0 w-full 
+      z-50
     '>
-        <div className='
-            flex justify-between items-center
-            my-5 
-            px-6
-        '>
+      <div className='
+        flex justify-between items-center
+        my-5 
+        px-6
+      '>
         {/*  titleHref是每個標題要待的不同頁面  */}
         <Link href={titleHref} className='
-            text-2xl font-bold text-gray-800 hover:text-blue-600 transition
+          text-2xl font-bold text-gray-800 hover:text-blue-600 transition
         '>
-            可信任AI評估測驗
+          可信任AI評估測驗
         </Link>
 
         {/* 右側：客製化的內容 */}

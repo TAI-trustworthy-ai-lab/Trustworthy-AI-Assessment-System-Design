@@ -23,7 +23,7 @@ export default function choose_questionnaire_page() {
 
             if (userToken) {
                 const response = await fetch(`${BASE_URL}/logout`, {
-                    method: "POST",
+                    method: "DELETE",
                     headers: {
                         'Authorization': `Bearer ${userToken}`,
                         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ export default function choose_questionnaire_page() {
     const baseButtonClasses = "flex items-center justify-center space-x-2 py-2 px-6 rounded-2xl text-white font-bold transition duration-100 shadow-md";
 
     // 模擬三個階段的點擊行為
-    const handleStageClick = (stage) => {
+    const handleStageClick = (stage: "before" | "during" | "after") => {
         console.log(`進入 ${stage} 階段`);
         router.push(`/model/${stage}`); // 例如跳轉到 /model/before、/model/during、/model/after
     };

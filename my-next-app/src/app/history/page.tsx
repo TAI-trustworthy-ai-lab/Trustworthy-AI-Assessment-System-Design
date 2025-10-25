@@ -27,7 +27,7 @@ export default function HistoryPage() {
       }
       if (userToken) {
         const response = await fetch(`${BASE_URL}/logout`, { 
-            method: "POST", 
+            method: "DELETE", 
             headers: {
                 'Authorization': `Bearer ${userToken}`, 
                 'Content-Type': 'application/json',
