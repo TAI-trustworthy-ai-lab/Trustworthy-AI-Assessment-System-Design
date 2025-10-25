@@ -112,12 +112,9 @@ export default function LoginPage() {
   };
 
   // 界面設計
-  const titleLinkTarget = '/';
   return (
   <div className="min-h-screen flex items-center justify-center px-4">
-    <Header titleHref={titleLinkTarget}>
-      <div className='flex justify-end space-x-5 items-center'></div>
-    </Header>
+    <Header titleHref="/" />
     <div className="max-w-md w-full p-8 space-y-8 bg-white border border-blue-200 rounded-xl shadow-xl">
       <div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

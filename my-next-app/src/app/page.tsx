@@ -3,10 +3,9 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 
 export default function PreLoginPage() {
-    const titleLinkTarget = '/';
   return (
     <div className="flex flex-col justify-center">
-        <Header titleHref={titleLinkTarget}>
+        <Header titleHref="/">
             <div className='flex justify-end space-x-5 items-center'>
                 <div>
                     關於
