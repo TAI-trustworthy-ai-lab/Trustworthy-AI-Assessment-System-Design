@@ -111,25 +111,33 @@ export default function TAISorter() {
             if (floatingMiddle > childMiddle) newIndex++;
         }
 
-        // 更新浮動元素順位
+        // ✅ Step 1. 立即移除所有 transform（避免跳動）
+        children.forEach(c => {
+            c.style.transition = "none";
+            c.style.transform = "translateY(0)";
+            c.style.visibility = "visible";
+        });
+
+        // ✅ Step 2. 更新順序
         const updated = [...indicators];
         const [moved] = updated.splice(draggingIndexRef.current, 1);
         updated.splice(newIndex, 0, moved);
         setIndicators(updated);
 
-        // 移除浮動元素
+        // ✅ Step 3. 平滑落位動畫
+        requestAnimationFrame(() => {
+            const newChildren = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
+            newChildren.forEach((c) => {
+                c.style.transition = "transform 0.25s ease";
+                c.style.transform = "translateY(0)";
+            });
+        });
+
+        // ✅ Step 4. 清理
         floating.remove();
         floatingElRef.current = null;
         draggingIndexRef.current = null;
         setDragging(false);
-
-        // 恢復其他元素 transform
-        children.forEach(c => {
-            c.style.visibility = "visible";
-            c.style.transform = "translateY(0)";
-            c.style.transition = "transform 0.2s ease";
-        });
-        
     };
 
 
