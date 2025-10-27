@@ -110,7 +110,7 @@ export default function AfterPage() {
 
       if (response.ok) {
         alert("問卷提交成功！");
-        router.push('/dashboard'); // 提交成功後導航到儀表板
+        router.push('/report'); // 提交成功後導航到儀表板
       } else {
         // 處理 API 錯誤
         const errorData = await response.json();
@@ -140,12 +140,12 @@ export default function AfterPage() {
             {/* 進度條 (Progress Bar) */}
             <div className="w-full mb-8">
               <div className="text-sm font-medium text-gray-700 mb-2 flex justify-between">
-                  <span>進度：第 {currentPage} / {TOTAL_PAGES} 頁</span>
+                  <span>進度：第 {currentPage + 1} / {TOTAL_PAGES} 頁</span>
                   <span>{progressPercent}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div 
-                  className="bg-purple-600 h-2.5 rounded-full transition-all duration-500" 
+                  className="bg-purple-700 h-2.5 rounded-full transition-all duration-500" 
                   style={{ width: `${progressPercent}%` }}
                 ></div>
               </div>
@@ -167,7 +167,7 @@ export default function AfterPage() {
                                     onClick={() => handleAnswer(q.id, '是')}
                                     className={`py-2 px-6 rounded-lg font-medium transition duration-150 
                                       ${answers[q.id] === '是' 
-                                        ? 'bg-purple-600 text-white shadow-md' 
+                                        ? 'bg-purple-700 text-white shadow-md' 
                                         : 'bg-white text-gray-800 border hover:bg-purple-50'
                                       }`}
                                 >
@@ -178,7 +178,7 @@ export default function AfterPage() {
                                     onClick={() => handleAnswer(q.id, '否')}
                                     className={`py-2 px-6 rounded-lg font-medium transition duration-150 
                                       ${answers[q.id] === '否' 
-                                        ? 'bg-purple-600 text-white shadow-md' 
+                                        ? 'bg-purple-700 text-white shadow-md' 
                                         : 'bg-white text-gray-800 border hover:bg-purple-50'
                                       }`}
                                 >
@@ -204,7 +204,7 @@ export default function AfterPage() {
                 <button
                   onClick={handleNext}
                   disabled={!isCurrentPageComplete} // 未填完不給進入下一頁
-                  className="py-2 px-6 bg-purple-600 text-white font-bold rounded-lg transition duration-150 hover:bg-purple-500 disabled:opacity-50"
+                  className="py-2 px-6 bg-purple-700 text-white font-bold rounded-lg transition duration-150 hover:bg-purple-500 disabled:opacity-50"
                 >
                   下一步
                 </button>
