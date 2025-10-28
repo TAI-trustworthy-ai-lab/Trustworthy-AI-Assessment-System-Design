@@ -1,7 +1,7 @@
 // app/model/after/page.tsx
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo} from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
@@ -27,8 +27,9 @@ const TOTAL_PAGES = allPages.length;
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api/";
+const QUESTIONNAIRE_ID = 2;
 
-export default function AfterPage() {
+export default function BeforePage() {
   const router = useRouter();
   
   // 狀態：當前分頁 (從 0 開始)
@@ -93,19 +94,37 @@ export default function AfterPage() {
     // **********************************************
     // 將資料傳給後端的邏輯
     // **********************************************
+
+    const answersPayload = Object.entries(answers).map(([idString, value]) => {
+      const questionId = parseInt(idString, 10); 
+      const score = value === '是' ? 100 : 0; 
+      return {
+        questionId: questionId, 
+        score: score,
+      };
+    });
+    
+    const finalPayload = {
+      questionnaireId: QUESTIONNAIRE_ID,
+      answers: answersPayload,
+    };
+
+    // **********************************************
+
+
+
+
     try {
-      const response = await fetch(`${BASE_URL}questionnaire/after`, {
+      const response = await fetch(`${BASE_URL}questionnaire`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           // ⚠️ 如果需要，請加入認證 token
           // 'Authorization': `Bearer ${userToken}`, 
         },
-        // 將 collected answers 以 JSON 格式傳送
-        body: JSON.stringify({ 
-          stage: 'after', 
-          answers: answers 
-        }), 
+
+        // 傳送包含 TAI_ID 和結構化答案的 Payload
+        body: JSON.stringify(finalPayload), 
       });
 
       if (response.ok) {
@@ -122,7 +141,6 @@ export default function AfterPage() {
     } finally {
       setIsSubmitting(false);
     }
-    // **********************************************
   };
 
 
@@ -134,7 +152,7 @@ export default function AfterPage() {
         <main className="pt-24 flex flex-col items-center min-h-[calc(100vh-6rem)] px-4">
           <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-8">
             <h1 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">
-                建模後測驗問卷
+                建模前測驗問卷
             </h1>
 
             {/* 進度條 (Progress Bar) */}
