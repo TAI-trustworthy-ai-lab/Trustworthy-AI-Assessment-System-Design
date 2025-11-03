@@ -48,10 +48,14 @@ export default function LoginPage() {
       // 登入成功！(Login successful!)
       const data = await response.json();
       const token = data?.data?.token;
+      // const userId = data?.data?.userId;
 
-      if (token) {
+      // if (token && userId) {
+      if (token ) {
         // 2. 將 Token 儲存到瀏覽器的本地儲存
-        localStorage.setItem('authToken', token);  
+        localStorage.setItem('authToken', token);
+        // localStorage.setItem('userId', userId.toString());  
+
         console.log("Login successful! Token saved."); 
         router.push('/home'); 
       } else {

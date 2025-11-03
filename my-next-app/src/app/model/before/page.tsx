@@ -27,7 +27,7 @@ const TOTAL_PAGES = allPages.length;
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api/";
-const QUESTIONNAIRE_ID = 2;
+const QUESTIONNAIRE_ID = 1;
 
 export default function BeforePage() {
   const router = useRouter();
@@ -94,6 +94,16 @@ export default function BeforePage() {
     // **********************************************
     // 將資料傳給後端的邏輯
     // **********************************************
+    /*
+    const currentUserId = localStorage.getItem('userId');
+    const userToken = localStorage.getItem('authToken');
+
+    // 檢查是否已登入
+    if (!currentUserId || !userToken) {
+        alert("您尚未登入或登入資訊已過期，請重新登入。");
+        return;
+    }
+    */
 
     const answersPayload = Object.entries(answers).map(([idString, value]) => {
       const questionId = parseInt(idString, 10); 
@@ -105,17 +115,15 @@ export default function BeforePage() {
     });
     
     const finalPayload = {
+      // userId: parseInt(currentUserId, 10),
       questionnaireId: QUESTIONNAIRE_ID,
       answers: answersPayload,
     };
 
     // **********************************************
 
-
-
-
     try {
-      const response = await fetch(`${BASE_URL}questionnaire`, {
+      const response = await fetch(`${BASE_URL}response`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
