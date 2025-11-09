@@ -205,6 +205,13 @@ export default function QuestionnairePage() {
     const currentUserId = localStorage.getItem('userId');
     const userToken = localStorage.getItem('authToken');
 
+    if (!currentUserId || !userToken) {
+      alert("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。"); 
+      setIsSubmitting(false);
+      router.push('/login'); 
+      return;
+    }
+
     // 转换为后端需要的格式
     const answersPayload = Object.entries(answers).map(([idString, value]) => {
       // 🚨 关键：ID 已经是数字类型，但在 Object.entries 中会被转为字符串，需要转回数字
@@ -214,13 +221,12 @@ export default function QuestionnairePage() {
       
       return {
         questionId: questionId, 
-        value: score, // 💥 变动：根据之前的 API 结构，这里使用 value
+        value: score,
       };
     });
     
     const finalPayload = {
-      // userId: parseInt(currentUserId, 10), // 💥 变动：从 localStorage 获取
-      userId: 1, /* **************************************************************** 改改改改 */
+      userId: parseInt(currentUserId, 10),
       questionnaireId: QUESTIONNAIRE_ID,
       answers: answersPayload,
     };

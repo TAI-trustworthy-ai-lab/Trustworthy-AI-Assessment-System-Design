@@ -3,8 +3,9 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
-// 假設您的 Token 儲存鍵是 'authToken'
 const AUTH_TOKEN_KEY = 'authToken'; 
+const USER_ID_KEY = 'userId'; 
+const USER_ROLE_KEY = 'userRole';
 
 // 假設您的後端基礎 URL 和登出 API 端點
 const BASE_URL = 'http://localhost:3001/api/user'; 
@@ -48,6 +49,8 @@ export const useAuth = () => {
             // 3. 移除前端 Token
             if (typeof window !== 'undefined') {
                 localStorage.removeItem(AUTH_TOKEN_KEY);
+                localStorage.removeItem(USER_ID_KEY);     
+                localStorage.removeItem(USER_ROLE_KEY);
             }
 
             // 4. 跳轉到登入頁面 (假設登入頁面是 '/')

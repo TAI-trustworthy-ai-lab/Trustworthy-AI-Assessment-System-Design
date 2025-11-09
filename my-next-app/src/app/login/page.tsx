@@ -44,9 +44,9 @@ export default function LoginPage() {
           defaultMessage = "伺服器內部錯誤，請稍後再試。";
         } else if (response.status === 404) {
           if (errorMessageFromBackend === "User not found") {
-               defaultMessage = "查無此帳戶，請確認電子郵件是否正確或先進行註冊。";
+            defaultMessage = "查無此帳戶，請確認電子郵件是否正確或先進行註冊。";
           } else {
-               defaultMessage = "請求路徑錯誤或資源不存在。";
+            defaultMessage = "請求路徑錯誤或資源不存在。";
           }
         }
 
@@ -56,14 +56,22 @@ export default function LoginPage() {
       // 登入成功！(Login successful!)
       const data = await response.json();
       const token = data?.data?.token;
+      const user = data?.data?.user; 
 
-      if (token) {
+      // 檢查所有必需的數據是否存在
+      if (token && user && user.id && user.role) {
+        // 存 user information 進 local storage
         localStorage.setItem('authToken', token);
+        localStorage.setItem('userId', user.id.toString()); 
+        localStorage.setItem('userRole', user.role); 
 
-        console.log("Login successful! Token saved."); 
+        console.log("Login successful! Token, ID, and Role saved.");
+        console.log(`User ID: ${user.id}, Role: ${user.role}`);
+        
+        // 導航到下一頁
         router.push('/home'); 
       } else {
-        throw new Error("登入成功但未收到授權憑證");
+        throw new Error("登入成功但未收到完整的授權憑證或用戶資訊缺失)");
       }
     } catch (err) {
       console.error("登入失敗:", err);
