@@ -1,12 +1,22 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
 
+const useRouter = () => {
+    return {
+        push: (url: string) => {
+            if (typeof window !== 'undefined') {
+                window.location.href = url;
+            }
+        },
+    };
+};
+
 export default function TAISorter() {
     const router = useRouter();
-    const [enableSort, setEnableSort] = useState(false);
+    const [enableSort, setEnableSort] = useState(true);
     const [indicators, setIndicators] = useState([
         "準確性",
         "可靠性",
@@ -212,20 +222,33 @@ export default function TAISorter() {
         <ProtectedLayout>
             <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 p-6 space-y-6 select-none pt-30">
                 <AuthHeader />
-                <h1 className="text-3xl font-bold mb-6">TAI 指標排序系統</h1>
-                <button
-                    onClick={() => setEnableSort(!enableSort)}
-                    className={`px-6 py-3 rounded-xl text-white shadow-md transition ${enableSort ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-500 hover:bg-gray-600"
-                        }`}
-                >
-                    {enableSort ? "停用排序功能" : "啟用 11 項 TAI 指標排序功能"}
-                </button>
 
-                <div className="flex flex-col w-full max-w-lg space-y-3 relative">
+                <div className="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl border-t-4 border-indigo-500">
+                    <h1 className="text-3xl text-center font-extrabold text-gray-900">TAI 指標優先排序</h1><br />
+                    <p className="text-gray-600 text-left mb-6 max-w-xl leading-relaxed">
+                        本系統提供<b>TAI 指標優先排序</b>以讓報告將更貼近您專案之特性及核心需求。 <br />
+                        請<b>拖曳指標</b>以決定其重要性。若選擇<b>不使用排序功能</b>，所有指標將採相同權重。
+                    </p>
+
+                    {/* 啟用/停用按鈕 */}
+                    <div className="flex justify-center mb-6">
+                        <button
+                            onClick={() => setEnableSort(!enableSort)}
+                            className={`px-8 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 ${!enableSort ? "bg-gray-500 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"
+                                }`}
+                        >
+                            {enableSort ? "🔴 不使用排序功能" : "🟢 啟用 11 項 TAI 指標排序功能"}
+                        </button>
+                    </div>
+                </div>
+
+                <div className={`flex flex-col w-full max-w-2xl space-y-3 relative ${!enableSort ? 'opacity-50 cursor-default' : ''}`}>
                     {indicators.map((indicator, index) => (
                         <div
                             key={indicator}
-                            className="sortable-item flex items-center p-4 rounded-lg border bg-gray-50 hover:bg-gray-100 transition-all duration-200 cursor-grab active:cursor-grabbing"
+                            className="sortable-item flex items-center p-4 rounded-xl border bg-white shadow-md transition-all duration-200"
+                            style={{ cursor: enableSort ? 'grab' : 'default', boxShadow: enableSort ? '0 4px 6px rgba(0,0,0,0.05)' : 'none' }}
+
                             onMouseDown={(e) => {
                                 e.preventDefault();
                                 handleDragStart(e.clientY, index, e.currentTarget);
@@ -235,6 +258,7 @@ export default function TAISorter() {
                                 handleDragStart(e.touches[0].clientY, index, e.currentTarget);
                             }}
                         >
+                            <span className="text-2xl font-extrabold mr-4 text-indigo-500 w-8">{index + 1}.</span>
                             <div className="flex flex-col justify-between h-5 w-4 mr-3">
                                 <div className="flex justify-center space-x-0.5">
                                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
