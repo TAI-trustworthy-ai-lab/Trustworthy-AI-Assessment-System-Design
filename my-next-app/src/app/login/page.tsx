@@ -35,31 +35,35 @@ export default function LoginPage() {
        if (!response.ok) {
         const errorData = await response.json();
         let defaultMessage = `登入失敗，狀態碼: ${response.status}`; // 預設至輸出訊息
+        let errorMessageFromBackend = errorData?.error?.message;
 
         // API 特定狀態碼處理
         if (response.status === 401) {
           defaultMessage = "憑證無效，請檢查電子郵件或密碼。";
         } else if (response.status === 500) {
           defaultMessage = "伺服器內部錯誤，請稍後再試。";
+        } else if (response.status === 404) {
+          if (errorMessageFromBackend === "User not found") {
+               defaultMessage = "查無此帳戶，請確認電子郵件是否正確或先進行註冊。";
+          } else {
+               defaultMessage = "請求路徑錯誤或資源不存在。";
+          }
         }
+
         throw new Error(defaultMessage);
       }
       
       // 登入成功！(Login successful!)
       const data = await response.json();
       const token = data?.data?.token;
-      // const userId = data?.data?.userId;
 
-      // if (token && userId) {
-      if (token ) {
-        // 2. 將 Token 儲存到瀏覽器的本地儲存
+      if (token) {
         localStorage.setItem('authToken', token);
-        // localStorage.setItem('userId', userId.toString());  
 
         console.log("Login successful! Token saved."); 
         router.push('/home'); 
       } else {
-        throw new Error("登入成功但未收到授權憑證 (Token)。請聯繫管理員。");
+        throw new Error("登入成功但未收到授權憑證");
       }
     } catch (err) {
       console.error("登入失敗:", err);
