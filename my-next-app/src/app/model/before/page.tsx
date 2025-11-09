@@ -1,7 +1,7 @@
 // app/model/after/page.tsx
 "use client";
 
-import { useState, useMemo} from 'react';
+import { useState, useMemo, useEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
@@ -43,6 +43,10 @@ export default function BeforePage() {
 
   // 獲取當前分頁的資料
   const currentPageData: PageData = allPages[currentPage];
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
 
   // 計算進度百分比
   const progressPercent = useMemo(() => {

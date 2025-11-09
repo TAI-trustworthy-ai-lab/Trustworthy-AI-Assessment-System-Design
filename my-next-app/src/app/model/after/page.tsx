@@ -148,12 +148,16 @@ export default function QuestionnairePage() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
+
+  useEffect(() => {
     fetchQuestionnaire();
   }, [fetchQuestionnaire]);
 
   // --- 状态计算 ---
   const progressPercent = useMemo(() => {
-    return TOTAL_PAGES > 0 ? Math.round(((currentPage + 1) / TOTAL_PAGES) * 100) : 0;
+    return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
   }, [currentPage, TOTAL_PAGES]);
   
   const isCurrentPageComplete = useMemo(() => {
