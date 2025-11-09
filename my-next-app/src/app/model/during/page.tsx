@@ -5,7 +5,7 @@ import QuestionnaireContent from '@/components/QuestionnaireContent';
 
 const DURING_QUESTIONNAIRE_ID = 2; 
 
-export default function BeforeQuestionnairePage() {
+export default function DuringQuestionnairePage() {
     return (
         <ProtectedLayout> 
           <AuthHeader />

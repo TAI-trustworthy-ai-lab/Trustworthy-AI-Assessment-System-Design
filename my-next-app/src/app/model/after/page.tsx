@@ -5,7 +5,7 @@ import QuestionnaireContent from '@/components/QuestionnaireContent';
 
 const AFTER_QUESTIONNAIRE_ID = 3; 
 
-export default function BeforeQuestionnairePage() {
+export default function AfterQuestionnairePage() {
     return (
         <ProtectedLayout> 
           <AuthHeader />
