@@ -234,7 +234,7 @@ export default function TAISorter() {
                     <div className="flex justify-center mb-6">
                         <button
                             onClick={() => setEnableSort(!enableSort)}
-                            className={`px-8 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 ${!enableSort ? "bg-gray-500 hover:bg-gray-600" : "bg-red-600 hover:bg-red-700"
+                            className={`px-8 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 ${!enableSort ? "bg-gray-500 hover:bg-gray-600" : "bg-rose-700 hover:bg-rose-800"
                                 }`}
                         >
                             {enableSort ? "🔴 不使用排序功能" : "🟢 啟用 11 項 TAI 指標排序功能"}
