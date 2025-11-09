@@ -303,7 +303,7 @@ export default function QuestionnairePage() {
             {/* 进度条 (Progress Bar) */}
             <div className="w-full mb-8">
               <div className="text-sm font-medium text-gray-700 mb-2 flex justify-between">
-                <span>進度：第 {currentPage + 1} / {TOTAL_PAGES} 頁</span>
+                <span>第 {currentPage + 1} / {TOTAL_PAGES} 頁</span>
                 <span>{progressPercent}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
