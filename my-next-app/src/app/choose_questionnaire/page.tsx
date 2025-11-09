@@ -30,21 +30,21 @@ export default function choose_questionnaire_page() {
                 <div className="flex flex-col space-y-6 w-full max-w-xs">
                     <button
                         onClick={() => handleStageClick("before")}
-                        className={`${baseButtonClasses} bg-green-500 hover:bg-green-400 active:bg-green-600`}
+                        className={`${baseButtonClasses} bg-indigo-300 hover:bg-indigo-200 active:bg-green-600`}
                     >
                         建模前
                     </button>
 
                     <button
                         onClick={() => handleStageClick("during")}
-                        className={`${baseButtonClasses} bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600`}
+                        className={`${baseButtonClasses} bg-indigo-500 hover:bg-indigo-400 active:bg-yellow-600`}
                     >
                         建模中
                     </button>
 
                     <button
                         onClick={() => handleStageClick("after")}
-                        className={`${baseButtonClasses} bg-purple-500 hover:bg-purple-400 active:bg-purple-600`}
+                        className={`${baseButtonClasses} bg-indigo-800 hover:bg-indigo-700 active:bg-purple-600`}
                     >
                         建模後
                     </button>
