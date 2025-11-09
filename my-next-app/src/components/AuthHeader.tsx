@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import { LogOut, Loader2 } from 'lucide-react';
 import Header from './Header'; // 引入基礎 Header
