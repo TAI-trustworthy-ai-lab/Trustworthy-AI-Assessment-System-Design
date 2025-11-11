@@ -64,9 +64,6 @@ export default function LoginPage() {
         localStorage.setItem('authToken', token);
         localStorage.setItem('userId', user.id.toString()); 
         localStorage.setItem('userRole', user.role); 
-
-        console.log("Login successful! Token, ID, and Role saved.");
-        console.log(`User ID: ${user.id}, Role: ${user.role}`);
         
         // 導航到下一頁
         router.push('/home'); 
