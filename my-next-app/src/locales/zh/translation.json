@@ -1,0 +1,39 @@
+{
+  "header": {
+    "title": "可信任AI評估測驗",
+    "about": "關於",
+    "language": {
+      "en": "英文",
+      "zh": "中文"
+    }
+  },
+  "preloginPage": {
+    "title": "我是標題",
+    "taiExplain": "甚麼是 TAI",
+    "taiExplainContent": "人工智慧（AI）技術近年來逐漸在社會各領域受到重視，為了提升AI技術在應用上的可信任程度，歐盟於2019年釋出可信任的AI倫理準則（Ethics Guidelines for Trustworthy AI），我國行政院數位發展部亦於2023年成立AI 產品與系統評測中心，為建立國內AI產品與系統評測體系而擬發展評測項目。",
+    "questionnairePurpose": "問卷目的",
+    "purposeContent": "本評估表根據歐盟可信任的AI倫理準則與數位發展部擬發展的評測項目，研擬11項可信任的AI倫理自我評鑑指標，提供AI模型開發者與潛在使用者於建模後，部署AI系統時進行檢視，以期符合可信任AI倫理標準。",
+    "accuracy": "準確性",
+    "accuracyContent": "AI判斷的結果與真實情況相近程度",
+    "reliability": "相似性",
+    "reliabilityContent": "AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定",
+    "security": "安全性",
+    "securityContent": "AI系統若出錯，不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害",
+    "toughness": "韌性",
+    "toughnessContent": "AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰",
+    "transparency": "透明性",
+    "transparencyContent": "AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則",
+    "responsibility": "當責性",
+    "responsibilityContent": "當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人",
+    "interpretability": "可解釋性",
+    "interpretabilityContent": "AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由",
+    "autonomy": "自主性",
+    "autonomyContent": "AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策",
+    "privacy": "隱私",
+    "privacyContent": "在使用AI系統時，不會侵犯到個人隱私",
+    "fairness": "公平性",
+    "fairnessContent": "AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
+    "informationSecurity": "資訊安全性",
+    "informationSecurityContent": "這是你好"
+  }
+}
