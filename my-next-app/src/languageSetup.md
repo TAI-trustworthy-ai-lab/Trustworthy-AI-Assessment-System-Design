@@ -30,4 +30,4 @@ yourKey is related to the key in translation.json
 
 ## Update translation.json
 
-"Navigate to the /locales directory, open each folder, and update every translation.json file by adding yourKey along with the corresponding content."
+Navigate to the `/locales` directory, open each folder, and update every `translation.json` by adding yourKey along with the corresponding content.
