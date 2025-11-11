@@ -1,18 +1,24 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-// import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
 
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
+const BASE_URL = "http://localhost:3001/api";
+const TAI_INDICATOR_MAP: { [key: string]: string } = {
+    "準確性": "ACCURACY",
+    "可靠性": "RELIABILITY",
+    "安全性": "SAFETY",
+    "韌性": "RESILIENCE",
+    "透明性": "TRANSPARENCY",
+    "當責性": "ACCOUNTABILITY",
+    "可解釋性": "EXPLAINABILITY",
+    "自主性": "AUTONOMY",
+    "隱私": "PRIVACY",
+    "公平性": "FAIRNESS",
+    "資訊安全": "SECURITY", 
 };
+
 
 export default function TAISorter() {
     const router = useRouter();
@@ -39,6 +45,73 @@ export default function TAISorter() {
     const placeholderHeightsRef = useRef<number[]>([]);
     const initialTopsRef = useRef<number[]>([]);
     const [dragging, setDragging] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); 
+
+
+    useEffect(() => {
+        const checkStatusAndRedirect = async () => {
+            const projectId = localStorage.getItem('currentProjectId');
+
+            if (!projectId) {
+                console.warn("未找到專案 ID，允許用戶操作。");
+                setIsLoading(false);
+                return;
+            }
+
+            // 使用 Date.now() 參數來防止瀏覽器快取 GET 請求
+            const url = `${BASE_URL}/project/${projectId}/tai-priority?t=${Date.now()}`; 
+
+            try {
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        // 請在這裡加入您的認證 Header，例如：
+                        // 'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                    },
+                });
+
+                // 後端回傳錯誤處理 (Backend error handling)
+                if (!response.ok) {
+                    // ... 錯誤處理邏輯 (保持不變) ...
+                    console.error(`檢查 TAI 狀態失敗，狀態碼: ${response.status}`);
+                    setIsLoading(false); 
+                    return; 
+                }
+
+                let responseBody: any = {};
+                
+                // 成功的回應，嘗試解析 body
+                try {
+                    responseBody = await response.json();
+                } catch (e) {
+                    console.warn("API 回應成功但 body 無法解析為 JSON (可能是 204 No Content)。");
+                    setIsLoading(false);
+                    return;
+                }
+
+                // ⚠️ 修正: 從 responseBody.data 中取出陣列，並確保它始終是陣列
+                // 如果 responseBody.data 不存在或為 falsy 值，則使用空陣列 []
+                const taiSortData = responseBody.data || [];
+
+                // 檢查 taiSortData 是否為一個陣列，並且長度大於 0
+                if (Array.isArray(taiSortData) && taiSortData.length > 0) {
+                    console.log("TAI 排序已完成，跳轉至問卷選擇頁。", taiSortData);
+                    router.push('/choose_questionnaire'); 
+                } else {
+                    console.log("TAI 排序未完成，允許用戶進行排序。", responseBody);
+                    setIsLoading(false);
+                }
+
+            } catch (error) {
+                console.error("檢查 TAI 排序狀態時發生網路或解析錯誤:", error);
+                setIsLoading(false); 
+            }
+        };
+
+        checkStatusAndRedirect();
+        
+    }, []);
 
     const handleDragStart = (clientY: number, index: number, itemEl: HTMLDivElement) => {
         if (!enableSort) return;
@@ -208,15 +281,69 @@ export default function TAISorter() {
         };
     }, [dragging]);
 
-    const handleStart = () => {
-        alert(
-            "目前 TAI 指標優先順序：\n" +
-            indicators.join(" → ") +
-            "\n 是否啟用TAI指標優先順序：" +
-            enableSort
-        );
-        router.push("/choose_questionnaire");
+    const handleStart = async () => { 
+        const projectId = localStorage.getItem('currentProjectId'); 
+        if (!projectId) {
+            alert("錯誤：無法找到專案 ID。請重新選擇專案。");
+            return;
+        }
+
+        const payload = indicators.map((indicatorZh, index) => {
+            const indicatorEn = TAI_INDICATOR_MAP[indicatorZh];
+            if (!indicatorEn) {
+                console.error(`unknown TAI: ${indicatorZh}`);
+            }
+            return {
+                indicator: indicatorEn, 
+                rank: index + 1, 
+                weight: enableSort ? 1 : 0, 
+            };
+        });
+
+        const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
+        
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    //'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                console.log("TAI 指標優先順序已成功儲存！");
+                
+                // 成功後顯示 alert
+                alert(
+                    "目前 TAI 指標優先順序：\n" +
+                    indicators.join(" → ") +
+                    "\n 是否啟用TAI指標優先順序：" +
+                    (enableSort ? "是" : "否")
+                );
+
+                router.push("/choose_questionnaire");
+            } else {
+                const errorData = await response.json();
+                console.error("儲存 TAI 指標優先順序失敗:", response.status, errorData);
+                alert(`儲存失敗 (${response.status})：${errorData.message || '請檢查後端日誌。'}`);
+            }
+        } catch (error) {
+            console.error("呼叫 API 時發生錯誤:", error);
+            alert("網路錯誤或呼叫 API 失敗。");
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                <p className="text-xl font-semibold text-indigo-600">
+                    載入中，檢查專案狀態...
+                </p>
+            </div>
+        );
+    }
 
     return (
         <ProtectedLayout>
@@ -229,9 +356,12 @@ export default function TAISorter() {
                         本系統提供<b>TAI 指標優先排序</b>以讓報告將更貼近您專案之特性及核心需求。 <br />
                         請<b>拖曳指標</b>以決定其重要性。若選擇<b>不使用排序功能</b>，所有指標將採相同權重。
                     </p>
+                    <p className="text-red-700 mt-1">
+                        為確保專案指標一致性及準確性，<b>指標排序功能僅限執行一次</b>。一旦排序完成或跳過，系統將鎖定此功能。
+                    </p>
 
                     {/* 啟用/停用按鈕 */}
-                    <div className="flex justify-center mb-6">
+                    <div className="flex justify-center mb-6 pt-4">
                         <button
                             onClick={() => setEnableSort(!enableSort)}
                             className={`px-8 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 ${!enableSort ? "bg-gray-500 hover:bg-gray-600" : "bg-rose-700 hover:bg-rose-800"

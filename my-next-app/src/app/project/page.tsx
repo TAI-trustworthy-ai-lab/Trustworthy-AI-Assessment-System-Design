@@ -79,22 +79,6 @@ const createProject = async (name, userId, description) => {
     });
 };
 
-// GET api/project/{projectID}/tai_sort ：檢查專案的 TAI Sort 狀態
-const checkTaiSortStatus = async (projectId) => {
-    if (!projectId) {
-        throw new Error('Project ID is required for status check.');
-    }
-    const url = `${BASE_URL}/project/${projectId}/tai-priority`;
-    
-    // 注意：這裡假設後端成功時返回 { success: true, data: [...] }
-    // 如果 data 是一個空陣列 []，表示沒有 tai_sort 數據
-    const data = await fetchWithRetry(url, { method: 'GET' });
-    
-    // 返回數據陣列，讓 handleProjectClick 檢查它的長度
-    return data; 
-};
-
-
 
 // =================================================================
 // 2. 專案卡片元件 (Project Card Component) 
@@ -292,18 +276,7 @@ const Project = () => {
     const handleProjectClick = async (project) => {
         const projectId = project.id;
         localStorage.setItem('currentProjectId', projectId);
-        try {
-            const taiSortData = await checkTaiSortStatus(projectId);
-            let targetRoute = '';
-            if (!taiSortData || taiSortData.length === 0) {
-                router.push('/tai_sort');
-            } else {
-                router.push('/choose_questionnaire');
-            }
-        } catch (error) {
-            console.error("處理專案點擊失敗，無法檢查 tai_sort 狀態:", error.message);
-        }
-        
+        router.push('/tai_sort');
     };
 
     // 載入中狀態顯示
