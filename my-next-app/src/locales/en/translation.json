@@ -1,0 +1,39 @@
+{
+  "header": {
+    "title": "Trustworthy AI Evaluation Test",
+    "about": "About",
+    "language": {
+      "en": "English",
+      "zh": "Chinese"
+    }
+  },
+  "preloginPage": {
+    "title": "I am the title",
+    "taiExplain": "What is TAI",
+    "taiExplainContent": "Artificial Intelligence (AI) technology has gradually gained importance across various fields in society in recent years. To enhance the trustworthiness of AI technology in applications, the European Union released the Ethics Guidelines for Trustworthy AI in 2019. In 2023, Taiwan's Ministry of Digital Affairs established the AI Product and System Evaluation Center to develop evaluation projects for building a domestic AI product and system evaluation framework.",
+    "questionnairePurpose": "Purpose of the Questionnaire",
+    "purposeContent": "This evaluation form is based on the EU Ethics Guidelines for Trustworthy AI and the evaluation projects proposed by Taiwan's Ministry of Digital Affairs. It designs 11 trustworthy AI ethical self-assessment indicators to provide AI model developers and potential users with a checklist during deployment, aiming to meet trustworthy AI ethical standards.",
+    "accuracy": "Accuracy",
+    "accuracyContent": "The degree to which AI judgments are close to the real situation",
+    "reliability": "Reliability",
+    "reliabilityContent": "When facing different types of interference or abnormal situations, the AI model maintains moderate sensitivity without being overly sensitive, ensuring stable performance",
+    "security": "Safety",
+    "securityContent": "If the AI system fails, it will not cause adverse impacts or harm to the surrounding environment or stakeholders (such as users and the public)",
+    "toughness": "Resilience",
+    "toughnessContent": "AI systems and related equipment can adapt to different environments, requirements, and conditions, flexibly adjusting and expanding to meet changing needs and challenges",
+    "transparency": "Transparency",
+    "transparencyContent": "AI system users can trace the data, algorithms, or rules used when AI makes judgments or decisions",
+    "responsibility": "Accountability",
+    "responsibilityContent": "When AI systems cause unexpected negative impacts, there must be supervision mechanisms or responsible units or individuals",
+    "interpretability": "Explainability",
+    "interpretabilityContent": "The decision logic of AI (i.e., the causal relationship between data input and decision results) can be clearly described and presented, helping users and stakeholders better understand the reasons behind AI decisions",
+    "autonomy": "Autonomy",
+    "autonomyContent": "During interactions between AI system users and AI, users can maintain sufficient autonomy without overly relying on AI judgments or decisions",
+    "privacy": "Privacy",
+    "privacyContent": "The use of AI systems will not infringe on personal privacy",
+    "fairness": "Fairness",
+    "fairnessContent": "AI systems treat different groups equally when making judgments or decisions, avoiding unfair situations",
+    "informationSecurity": "Information Security",
+    "informationSecurityContent": "Hello there"
+  }
+}
