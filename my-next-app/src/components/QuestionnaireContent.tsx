@@ -22,7 +22,7 @@ const CATEGORY_MAP: Record<string, string> = {
     "RESILIENCE": "四、韌性(Resilience)：AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰",
     "TRANSPARENCY": "五、透明性(Transparency)：AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則",
     "ACCOUNTABILITY": "六、當責性(Accountability)：當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人",
-    "EXPLANABILITY": "七、可解釋性(Explanability)：AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由",
+    "EXPLAINABILITY": "七、可解釋性(Explanability)：AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由",
     "AUTONOMY": "八、自主性(Autonomy)：AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策",
     "PRIVACY": "九、隱私(Privacy)：在使用AI系統時，不會侵犯到個人隱私",
     "FAIRNESS": "十、公平性(Fairness)：AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
@@ -341,7 +341,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
-        const currentProjectId = localStorage.getItem('currentProjectId'); // ⭐️ 從 LocalStorage 獲取 Project ID
+        const currentProjectId = localStorage.getItem('currentProjectId');
 
         if (!currentUserId || !userToken) {
             alert("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。");    
@@ -372,8 +372,8 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             if (question.type === 'SCALE') {
                 return [{
                     questionId: questionId,
+                    optionId: question.options?.[0]?.id,
                     value: answerValue.score, // 1-5 分
-                    optionId: question.options?.[0]?.id, // SCALE 題通常沒有選項 ID 或使用預設 ID
                     textValue: null,
                 }];
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
@@ -399,10 +399,14 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         
         const finalPayload = {
             userId: parseInt(currentUserId, 10),
-            projectId: parseInt(currentProjectId, 10), // ⭐️ 新增 projectId
-            versionId: questionnaireId, 
+            projectId: parseInt(currentProjectId, 10), 
+            versionId: parseInt(questionnaireId, 10),
             answers: answersPayload,
         };
+
+        console.log('--- 準備提交的 finalPayload ---');
+        console.log(finalPayload);
+        console.log('---------------------------------');
 
         try {
             const response = await fetch(`${API_BASE_URL}/response`, {
@@ -418,8 +422,24 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 alert("問卷提交成功！");
                 router.push('/report');    
             } else {
-                const errorData = await response.json();
-                alert(`提交失敗: ${errorData.message || '伺服器錯誤'}`);
+                let errorDetail = '伺服器錯誤 (500)';
+                try {
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const errorData = await response.json();
+                        // 嘗試提取 message 或 error 字段
+                        errorDetail = errorData.message || errorData.error || errorDetail;
+                    } else {
+                        // 嘗試獲取非 JSON 文本，例如 HTML 錯誤頁面
+                        const errorText = await response.text();
+                        console.error('伺服器 500 錯誤的原始回應:', errorText.substring(0, 200)); // 只顯示前 200 字元
+                        errorDetail = `伺服器 500 錯誤，請檢查後台日誌。`;
+                    }
+                } catch (parseError) {
+                    console.error('解析錯誤訊息失敗:', parseError);
+                    errorDetail = '伺服器返回了無法解析的回應。';
+                }
+                alert(`提交失敗: ${errorDetail}`);
             }
         } catch (error) {
             console.error('提交錯誤:', error);
