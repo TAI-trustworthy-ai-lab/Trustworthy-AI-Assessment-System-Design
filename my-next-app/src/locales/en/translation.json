@@ -35,5 +35,44 @@
     "fairnessContent": "AI systems treat different groups equally when making judgments or decisions, avoiding unfair situations",
     "informationSecurity": "Information Security",
     "informationSecurityContent": "Hello there"
-  }
+  },
+
+  
+    "loginPage": {
+      "login": {
+        "title": "Sign in to your account",
+        "emailLabel": "Email address",
+        "emailPlaceholder": "Enter your email address",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "Enter your password",
+        "button": "Login",
+        "loading": "Processing...",
+        "error401": "Invalid credentials, please check your email or password.",
+        "error404UserNotFound": "User not found, please check your email or register first.",
+        "error404Path": "Request path error or resource not found.",
+        "error500": "Internal server error, please try again later.",
+        "errorIncomplete": "Login successful but missing required credentials or user information.",
+        "errorUnknown": "An unknown error occurred",
+        "switchToRegister": "Don't have an account? Register now"
+      },
+      "register": {
+        "title": "Register an account",
+        "fullNameLabel": "Full name",
+        "fullNamePlaceholder": "Enter your full name",
+        "button": "Register",
+        "success": "Registration successful! Please login",
+        "error409": "Account already exists, please login directly.",
+        "error500": "Internal server error, please try again later.",
+        "errorUnknown": "Registration failed, an unknown error occurred",
+        "switchToLogin": "Already have an account? Login now"
+      },
+      "common": {
+        "errorLabel": "Error:",
+        "successLabel": "Success:",
+        "loading": "Processing..."
+      }
+    }
+  
+
+  
 }
