@@ -321,7 +321,12 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         }
     };
 
-    // ... (handlePrevious 保持不變) ...
+    const handlePrevious = () => {
+        if (currentPage > 0) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
 
     // ----------------------------------------------------
     // 提交問卷 (重大修改)
@@ -427,14 +432,60 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
     // --- 渲染邏輯 (UI 部分) ---
 
     // ... (Loading 和 Error 狀態渲染保持不變) ...
+    if (loadingStatus === 'loading') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <p className="text-xl font-medium text-purple-800">正在加载问卷...</p>
+            </div>
+        );
+    }
+
+    if (loadingStatus === 'error' || !questionnaire) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="p-8 bg-white rounded-xl shadow-lg text-center">
+                    <p className="text-xl font-bold text-red-600 mb-4">问卷加载失败或不存在。</p>
+                    <button 
+                        onClick={fetchQuestionnaire} 
+                        className="py-2 px-4 bg-purple-800 text-white rounded-lg hover:bg-purple-700"
+                    >
+                        重试加载
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
 
 
     // 渲染主體
     return (
         <div className="min-h-screen bg-gray-50">
             <main className="pt-8 flex flex-col items-center min-h-[calc(100vh)] px-4">
-                <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-8">
-                    {/* ... (標題、描述、進度條保持不變) ... */}
+                <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
+                    {/* 問卷題目 titleA */}
+                    <h1 className="text-3xl font-extrabold text-gray-900 text-center">
+                        {questionnaire.title}
+                    </h1>
+
+                    {/* 问卷描述 description */}
+                    {questionnaire.description && (
+                        <p className="text-center text-gray-600 mb-8 italic">{questionnaire.description}</p>
+                    )}
+
+                    {/* 进度条 (Progress Bar) */}
+                    <div className="w-full mb-8">
+                        <div className="text-sm font-medium text-gray-700 mb-2 flex justify-between">
+                            <span>第 {currentPage + 1} / {TOTAL_PAGES} 頁</span>
+                            <span>{progressPercent}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                            <div 
+                                className="bg-purple-700 h-2.5 rounded-full transition-all duration-500" 
+                                style={{ width: `${progressPercent}%` }}
+                            ></div>
+                        </div>
+                    </div>
 
                     {/* 當期分頁內容 */}
                     {currentPageData && (
@@ -465,8 +516,35 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                         </div>
                     )}
 
-                    {/* 導航按鈕 (保持不變) */}
-                    {/* ... */}
+                    {/* 導航按鈕 */}
+                    <div className="flex justify-between mt-10 pt-6 border-t">
+
+                        <button
+                            onClick={handlePrevious}
+                            disabled={currentPage === 0 || isSubmitting}
+                            className="py-2 px-6 bg-gray-500 text-white font-bold rounded-lg transition duration-150 hover:bg-gray-400 disabled:opacity-50"
+                        >
+                            上一步
+                        </button>
+
+                        {currentPage < TOTAL_PAGES - 1 ? (
+                            <button
+                                onClick={handleNext}
+                                disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
+                                className="py-2 px-6 bg-purple-700 text-white font-bold rounded-lg transition duration-150 hover:bg-purple-500 disabled:opacity-50"
+                            >
+                                下一步
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || !isCurrentPageComplete}
+                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50"
+                            >
+                                {isSubmitting ? '提交中...' : '完成並提交'}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </main>
         </div>
