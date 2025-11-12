@@ -75,13 +75,14 @@
     "startTest": "Start Test",
     "viewReports": "View Previous Reports"
   },
-  
-    "auth": {
-      "logout": "Logout",
-      "loggingOut": "Logging out...",
-      "logoutTitle": "Logout",
-      "loggingOutTitle": "Logging out..."
-    }
+
+  "auth": {
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "logoutTitle": "Logout",
+    "loggingOutTitle": "Logging out...",
+    "verifying": "Verifying, please wait..."
+  }
   
   
 
