@@ -37,41 +37,48 @@
     "informationSecurityContent": "這是你好"
   },
 
-  
-    "loginPage": {
-      "login": {
-        "title": "登入您的賬戶",
-        "emailLabel": "電子郵件地址",
-        "emailPlaceholder": "請輸入電子郵件地址",
-        "passwordLabel": "密碼",
-        "passwordPlaceholder": "請輸入密碼",
-        "button": "登入",
-        "loading": "處理中...",
-        "error401": "憑證無效，請檢查電子郵件或密碼。",
-        "error404UserNotFound": "查無此帳戶，請確認電子郵件是否正確或先進行註冊。",
-        "error404Path": "請求路徑錯誤或資源不存在。",
-        "error500": "伺服器內部錯誤，請稍後再試。",
-        "errorIncomplete": "登入成功但未收到完整的授權憑證或用戶資訊缺失。",
-        "errorUnknown": "發生未知錯誤",
-        "switchToRegister": "沒有帳戶？立即註冊"
-      },
-      "register": {
-        "title": "注冊賬戶",
-        "fullNameLabel": "全名",
-        "fullNamePlaceholder": "請輸入全名",
-        "button": "注冊",
-        "success": "注冊成功！請登入",
-        "error409": "帳戶已存在，請直接登入。",
-        "error500": "伺服器內部錯誤，請稍後再試。",
-        "errorUnknown": "註冊失敗，發生未知錯誤",
-        "switchToLogin": "已有帳戶？立即登入"
-      },
-      "common": {
-        "errorLabel": "發生錯誤:",
-        "successLabel": "成功:",
-        "loading": "處理中..."
-      }
+
+  "loginPage": {
+    "login": {
+      "title": "登入您的賬戶",
+      "emailLabel": "電子郵件地址",
+      "emailPlaceholder": "請輸入電子郵件地址",
+      "passwordLabel": "密碼",
+      "passwordPlaceholder": "請輸入密碼",
+      "button": "登入",
+      "loading": "處理中...",
+      "error401": "憑證無效，請檢查電子郵件或密碼。",
+      "error404UserNotFound": "查無此帳戶，請確認電子郵件是否正確或先進行註冊。",
+      "error404Path": "請求路徑錯誤或資源不存在。",
+      "error500": "伺服器內部錯誤，請稍後再試。",
+      "errorIncomplete": "登入成功但未收到完整的授權憑證或用戶資訊缺失。",
+      "errorUnknown": "發生未知錯誤",
+      "switchToRegister": "沒有帳戶？立即註冊"
+    },
+    "register": {
+      "title": "注冊賬戶",
+      "fullNameLabel": "全名",
+      "fullNamePlaceholder": "請輸入全名",
+      "button": "注冊",
+      "success": "注冊成功！請登入",
+      "error409": "帳戶已存在，請直接登入。",
+      "error500": "伺服器內部錯誤，請稍後再試。",
+      "errorUnknown": "註冊失敗，發生未知錯誤",
+      "switchToLogin": "已有帳戶？立即登入"
+    },
+    "common": {
+      "errorLabel": "發生錯誤:",
+      "successLabel": "成功:",
+      "loading": "處理中..."
     }
+  },
+  
+    "homePage": {
+      "title": "AI評估系統主頁",
+      "startTest": "開始測驗",
+      "viewReports": "檢視先前報告"
+    }
+  
   
 
   
