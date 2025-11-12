@@ -22,7 +22,7 @@ export default function PreLoginPage() {
                         text-white font-bold
                         transition duration-100
                     ">
-                            Login
+                            {t('header.login')}
                         </button>
                     </Link>
                 </div>
