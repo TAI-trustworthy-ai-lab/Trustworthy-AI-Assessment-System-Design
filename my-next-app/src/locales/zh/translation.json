@@ -75,13 +75,14 @@
     "startTest": "開始測驗",
     "viewReports": "檢視先前報告"
   },
-  
-    "auth": {
-      "logout": "登出",
-      "loggingOut": "登出中...",
-      "logoutTitle": "登出",
-      "loggingOutTitle": "登出中..."
-    }
+
+  "auth": {
+    "logout": "登出",
+    "loggingOut": "登出中...",
+    "logoutTitle": "登出",
+    "loggingOutTitle": "登出中...",
+    "verifying": "驗證中，請稍候..."
+  }
   
   
   
