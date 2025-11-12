@@ -1,10 +1,17 @@
 "use client";
 
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 
-const BASE_URL = "http://localhost:3001/api/user";
+const QUESTIONNAIRE_API_URL = `http://localhost:3001/api/questionnaire/group/latest`;
+
+const STAGE_ID_MAP: { [key: number]: 'before' | 'during' | 'after' } = {
+    1: 'before', 
+    2: 'during',
+    3: 'after',
+};
 
 const stages = {
     before: {
@@ -36,8 +43,66 @@ const stages = {
     },
 };
 
-export default function choose_questionnaire_page() {
+const fetchLatestQuestionnaires = async () => {
+    try {
+        const response = await fetch(QUESTIONNAIRE_API_URL, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                // 假設這個 API 不需要 Authorization，如果需要，請加上
+            },
+        });
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || `HTTP error! Status: ${response.status}`);
+        }
+        return result.data;
+    } catch (error) {
+        console.error("獲取最新問卷列表失敗:", error);
+        throw error;
+    }
+};
+
+
+export default function ChooseQuestionnairePage() {
     const router = useRouter();
+    const [questionnaireMap, setQuestionnaireMap] = useState({}); // 用來儲存 {stageKey: versionId}
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadQuestionnaireData = async () => {
+            try {
+                const data = await fetchLatestQuestionnaires();
+                
+                const newMap = {};
+                
+                // 遍歷所有後端群組資料
+                data.forEach((group: any) => {
+                    const groupId = group.id; // <--- 獲取 Group ID
+                    const latestVersion = group.versions?.[0]; // 假設 versions 陣列的第一個是最新/所需版本
+                    
+                    // 1. 根據後端 Group ID，查找對應的前端 stageKey
+                    const stageKey = STAGE_ID_MAP[groupId]; 
+                    
+                    // 2. 如果找到對應的 stageKey 且有 latestVersion，則建立映射
+                    if (stageKey && latestVersion) {
+                        // 儲存 stageKey (before/during/after) -> versionId
+                        newMap[stageKey] = latestVersion.id;
+                    }
+                });
+                
+                setQuestionnaireMap(newMap);
+            } catch (error) {
+                console.error("問卷資料初始化失敗:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadQuestionnaireData();
+    }, []);
+
     const baseButtonClasses = `
         w-full p-6 text-left border-2 border-gray-200 rounded-xl shadow-lg cursor-pointer
         transition duration-300 ease-in-out transform 
@@ -46,17 +111,32 @@ export default function choose_questionnaire_page() {
 
     // 模擬三個階段的點擊行為
     const handleStageClick = (stage: "before" | "during" | "after") => {
-        console.log(`進入 ${stage} 階段`);
-        router.push(`/model/${stage}`); // 例如跳轉到 /model/before、/model/during、/model/after
+        const versionId = questionnaireMap[stage];
+        
+        if (!versionId) {
+            alert(`錯誤：找不到 ${stages[stage].title} 階段對應的最新問卷版本。`);
+            console.error(`Missing QuestionnaireID for stage: ${stage}`);
+            return;
+        }
+
+        console.log(`進入 ${stage} 階段，VersionID: ${versionId}`);
+        
+        // 將 versionId 存入 localStorage
+        localStorage.setItem("QuestionnaireID", versionId);
+        
+        // 跳轉頁面
+        router.push(`/model/${stage}`); 
     };
 
     const StageButton = ({ stageKey }: { stageKey: keyof typeof stages }) => {
         const stage = stages[stageKey];
+        const isDisabled = isLoading || !questionnaireMap[stageKey];
         
         return (
             <button
                 onClick={() => handleStageClick(stageKey)}
-                className={`${baseButtonClasses} ${stage.bg} ${stage.hoverBorder}`}
+                className={`${baseButtonClasses} ${stage.bg} ${stage.hoverBorder} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group'}`}
+                disabled={isDisabled}
             >
                 {/* 按鈕內容佈局：左邊圖標，右邊文字 */}
                 <div className="flex items-center space-x-5">
@@ -73,6 +153,7 @@ export default function choose_questionnaire_page() {
                         {/* 標題 */}
                         <h2 className="text-center text-2xl font-bold text-gray-800">
                             {stage.title}
+                            {isDisabled && !isLoading && <span className="ml-2 text-sm text-red-500 font-normal">(問卷缺失)</span>}
                         </h2>
                         {/* 描述 */}
                         <p className="text-center text-gray-500 text-md mt-1">
@@ -90,6 +171,20 @@ export default function choose_questionnaire_page() {
             </button>
         );
     };
+
+    if (isLoading) {
+        return (
+            <ProtectedLayout>
+                <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="text-gray-600">正在載入問卷資料...</p>
+                </div>
+            </ProtectedLayout>
+        );
+    }
 
     return (
         <ProtectedLayout>

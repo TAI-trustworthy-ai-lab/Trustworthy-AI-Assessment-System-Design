@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import AuthHeader from '@/components/AuthHeader';
