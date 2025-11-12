@@ -419,51 +419,65 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
 
         // ⭐️ 構建新的 API 答案 payload 結構
-        const answersPayload = Object.entries(answers).flatMap(([idString, answerValue]) => {
-            const questionId = parseInt(idString, 10);    
+        const answersPayload = Object.entries(answers).reduce<{
+            questionId: number;
+            optionId: number | null;
+            value: number | null;
+            textValue: string | null;
+        }[]>((acc, [idString, answerValue]) => {
+            const questionId = parseInt(idString, 10);
             const question = questionnaire.questions.find(q => q.id === questionId);
 
-            if (!question) return []; // 忽略找不到的問題
+            if (!question) return acc; // 忽略找不到的問題
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
-                const scaleValue = answerValue.score;
+                // 確保 scaleValue 為數字；如果不存在，回傳 null 作為 value（與其他類型保持一致）
+                const scaleValue = typeof answerValue.score === 'number' ? answerValue.score : null;
 
-                return [{
+                acc.push({
                     questionId: questionId,
                     optionId: null,
-                    value: scaleValue * 20, 
+                    value: scaleValue !== null ? scaleValue * 20 : null,
                     textValue: null,
-                }];
+                });
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
                 const optionId = answerValue.optionIds[0];
-    
+
                 // 根據您的要求計算分數
                 const choiceValue = (optionId === 2) ? 0 : 100; // 這是前端計算的分數
 
-                return [{
+                acc.push({
                     questionId: questionId,
                     optionId: optionId, // ⭐️ 確保這裡傳遞的是選項 ID (數字)
                     value: choiceValue, // 傳遞計算好的分數
                     textValue: null,
-                }];
-                
+                });
+
             } else if (question.type === 'TEXT') {
-                return [{
+                acc.push({
                     questionId: questionId,
-                    textValue: answerValue.textValue, // 文字回答
-                    value: null,
                     optionId: null,
-                }];
+                    value: null,
+                    textValue: answerValue.textValue ?? null, // 文字回答或 null
+                });
             }
             // 忽略其他類型或未完成的答案
-            return [];
-        });
+            return acc;
+        }, []);
         
+        const parsedUserId = parseInt(currentUserId, 10);
+        const parsedProjectId = parseInt(currentProjectId, 10);
+        const parsedVersionId = typeof questionnaireId === 'number'
+            ? questionnaireId
+            : questionnaireId !== null && questionnaireId !== undefined
+                ? parseInt(String(questionnaireId), 10)
+                : NaN;
+
         const finalPayload = {
-            userId: parseInt(currentUserId, 10),
-            projectId: parseInt(currentProjectId, 10), 
-            versionId: parseInt(questionnaireId, 10),
+            userId: parsedUserId,
+            projectId: parsedProjectId,
+            versionId: parsedVersionId,
             answers: answersPayload,
         };
 
