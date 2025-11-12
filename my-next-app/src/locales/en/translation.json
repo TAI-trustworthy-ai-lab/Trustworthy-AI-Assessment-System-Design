@@ -2,10 +2,7 @@
   "header": {
     "title": "Trustworthy AI Evaluation Test",
     "about": "About",
-    "language": {
-      "en": "English",
-      "zh": "Chinese"
-    }
+    "login": "Login"
   },
   "preloginPage": {
     "title": "I am the title",
@@ -72,12 +69,21 @@
       "loading": "Processing..."
     }
   },
+
+  "homePage": {
+    "title": "AI Evaluation System Homepage",
+    "startTest": "Start Test",
+    "viewReports": "View Previous Reports"
+  },
+
+  "auth": {
+    "logout": "Logout",
+    "loggingOut": "Logging out...",
+    "logoutTitle": "Logout",
+    "loggingOutTitle": "Logging out...",
+    "verifying": "Verifying, please wait..."
+  }
   
-    "homePage": {
-      "title": "AI Evaluation System Homepage",
-      "startTest": "Start Test",
-      "viewReports": "View Previous Reports"
-    }
   
 
   

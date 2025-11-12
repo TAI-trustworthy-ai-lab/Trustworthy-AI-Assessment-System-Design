@@ -44,8 +44,8 @@ export default function Header({ children, titleHref = '/' }: HeaderProps) {
                         onChange={changeLanguage}
                         className='border rounded px-2 py-1 bg-white text-gray-800'
                     >
-                        <option value='en'>{t('header.language.en')}</option>
-                        <option value='zh'>{t('header.language.zh')}</option>
+                        <option value='en'>English</option>
+                        <option value='zh'>中文</option>
                     </select>
                     {children}
                 </div>
