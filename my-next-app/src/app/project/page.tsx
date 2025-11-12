@@ -5,6 +5,29 @@ import { useRouter } from "next/navigation"
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 
+const TAI_INDICATOR_MAP_ZH_EN: { [key: string]: string } = {
+    "準確性": "ACCURACY",
+    "可靠性": "RELIABILITY",
+    "安全性": "SAFETY",
+    "韌性": "RESILIENCE",
+    "透明性": "TRANSPARENCY",
+    "當責性": "ACCOUNTABILITY",
+    "可解釋性": "EXPLAINABILITY",
+    "自主性": "AUTONOMY",
+    "隱私": "PRIVACY",
+    "公平性": "FAIRNESS",
+    "資訊安全": "SECURITY", 
+};
+
+// 建立英文到中文的反向對應表 (更常用於從 API 資料翻譯)
+const TAI_INDICATOR_MAP_EN_ZH: { [key: string]: string } = Object.entries(TAI_INDICATOR_MAP_ZH_EN).reduce(
+    (acc, [zh, en]) => {
+        acc[en] = zh;
+        return acc;
+    },
+    {}
+);
+
 // =================================================================
 // 1. API 配置與通用輔助函式 (API Configuration and Helper)
 // =================================================================
@@ -226,13 +249,156 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
 
 
 // =================================================================
-// 4. 主要儀表板元件 (Main Dashboard Component) - 使用實際 API 函式
+// 4. 新增：查看專案
+// =================================================================
+
+const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, router }) => {
+    // 如果 projectData 是 null 或 modal 沒開，則不渲染
+    if (!isModalOpen || !projectData) return null;
+
+    // 將日期格式化為更易讀的格式
+    const formatDate = (dateString) => {
+        if (!dateString) return '無日期資訊';
+        try {
+            // 嘗試解析為 Date 物件
+            const date = new Date(dateString);
+            // 檢查是否是有效的日期
+            if (isNaN(date)) return dateString; // 如果解析失敗，則返回原始字串
+            
+            // 格式化為 YYYY-MM-DD HH:MM:SS
+            return date.toLocaleString('zh-TW', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        } catch (e) {
+            return dateString; // 解析錯誤
+        }
+    };
+
+    const renderTaiOrders = (taiOrders) => {
+        if (!taiOrders || taiOrders.length === 0) {
+            return (
+                <p className="text-sm text-gray-500 italic">
+                    此專案尚未設定 TAI 排序指標。點擊「進入專案」進行排序。
+                </p>
+            );
+        }
+
+        // 2. 檢查所有項目的 weight 是否都為 0
+        const allWeightsAreZero = taiOrders.every(order => order.weight === 0);
+
+        if (allWeightsAreZero) {
+            return (
+                <p className="text-base font-semibold text-orange-600 bg-orange-50 p-2 rounded-lg border border-orange-200">
+                    此專案不使用 TAI 排序
+                </p>
+            );
+        }
+
+        // 1. 根據 rank 欄位排序
+        const sortedIndicators = [...taiOrders].sort((a, b) => a.rank - b.rank);
+
+        // 2. 提取 indicator 並用 " → " 連接
+        const indicatorString = sortedIndicators
+            .map(order => {
+                // 從英文翻譯成中文
+                const chineseIndicator = TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator; 
+                return chineseIndicator;
+            })
+            .join(' → ');
+
+        return (
+            <div className="text-sm p-3 bg-gray-50 rounded-lg border border-gray-200 overflow-x-auto">
+                <p className="whitespace-nowrap font-mono text-gray-700 tracking-wider text-base">
+                    {indicatorString}
+                </p>
+            </div>
+        );
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100/50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-300">
+                <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center justify-center">
+                    專案詳細資訊 
+                </h2>
+
+                <div className="space-y-4">
+                    {/* 專案名稱 */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-500">專案名稱:</p>
+                        <p className="text-base font-bold text-gray-900">{projectData.name}</p>
+                    </div>
+
+                    {/* 專案描述 */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-500">專案描述:</p>
+                        <p className="text-base text-gray-700 whitespace-pre-wrap">
+                            {projectData.description || '此專案未填寫描述。'}
+                        </p>
+                    </div>
+
+                    {/* TAI 排序指標 */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-500">TAI 排序指標:</p>
+                        {renderTaiOrders(projectData.taiOrders)}
+                    </div>
+
+                    {/* 建立日期 */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-500">建立日期:</p>
+                        <p className="text-base text-gray-700">
+                            {formatDate(projectData.createdAt)}
+                        </p>
+                    </div>
+
+                    {/* 更新日期 */}
+                    <div>
+                        <p className="text-sm font-semibold text-gray-500">最後更新日期:</p>
+                        <p className="text-base text-gray-700">
+                            {formatDate(projectData.updatedAt)}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-8">
+                    <button
+                        type="button"
+                        onClick={closeModal}
+                        className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150"
+                    >
+                        關閉
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onConfirm(projectData)} // 傳遞完整的 projectData
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 flex items-center"
+                    >
+                        進入專案
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// =================================================================
+// 5. 主要儀表板元件 (Main Dashboard Component) - 使用實際 API 函式
 // =================================================================
 
 const Project = () => {
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [currentProject, setCurrentProject] = useState(null);
     const userId = MOCK_USER_ID; 
     const router = useRouter();
 
@@ -273,9 +439,22 @@ const Project = () => {
     }, [userId, loadProjects]);
 
     // 3. 專案卡片點擊處理
-    const handleProjectClick = async (project) => {
+    const handleProjectClick = (project) => {
+        // 儲存被點擊的專案資料
+        setCurrentProject(project); 
+        // 打開查看 Modal
+        setIsViewModalOpen(true); 
+    };
+
+    // 4. 確認進入專案頁面處理
+    const handleConfirmEnterProject = (project) => {
         const projectId = project.id;
-        localStorage.setItem('currentProjectId', projectId);
+        // 儲存 ID 以供下一頁使用
+        localStorage.setItem('currentProjectId', projectId); 
+        // 關閉 Modal
+        setIsViewModalOpen(false); 
+        setCurrentProject(null);
+        // 跳轉頁面
         router.push('/tai_sort');
     };
 
@@ -320,7 +499,8 @@ const Project = () => {
                 {/* 1. 新增專案 (+) 框框 (永遠在左上角) */}
                 <div
                     className="p-4 h-48 rounded-2xl border-4 border-dashed border-gray-300 hover:border-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between items-center text-gray-500 hover:text-blue-600 bg-white"
-                    onClick={() => setIsModalOpen(true)}
+                    // onClick={() => setIsModalOpen(true)}
+                    onClick={() => setIsAddModalOpen(true)}
                 >
                     {/* 中央 "+" Icon */}
                     <div className="flex-grow flex items-center justify-center">
@@ -348,9 +528,21 @@ const Project = () => {
             </div>
             {/* 新增專案 Modal */}
             <AddProjectModal
-                isModalOpen={isModalOpen}
-                closeModal={() => setIsModalOpen(false)}
+                isModalOpen={isAddModalOpen} 
+                closeModal={() => setIsAddModalOpen(false)} 
                 onAddProject={handleAddProject}
+             />
+
+            {/* 查看/編輯專案 Modal (新增) */}
+            <ViewProjectModal
+                isModalOpen={isViewModalOpen}
+                closeModal={() => {
+                    setIsViewModalOpen(false);
+                    setCurrentProject(null); // 關閉時清空資料
+                }}
+                projectData={currentProject} // 傳遞當前專案資料
+                onConfirm={handleConfirmEnterProject} // 確認進入專案
+                router={router} // 傳遞 router 以便 Modal 中可以導航
             />
         </div>
     </ProtectedLayout>
