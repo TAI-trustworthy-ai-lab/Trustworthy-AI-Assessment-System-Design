@@ -2,10 +2,7 @@
   "header": {
     "title": "可信任AI評估測驗",
     "about": "關於",
-    "language": {
-      "en": "英文",
-      "zh": "中文"
-    }
+    "login": "登入"
   },
   "preloginPage": {
     "title": "我是標題",
@@ -72,12 +69,20 @@
       "loading": "處理中..."
     }
   },
+
+  "homePage": {
+    "title": "AI評估系統主頁",
+    "startTest": "開始測驗",
+    "viewReports": "檢視先前報告"
+  },
   
-    "homePage": {
-      "title": "AI評估系統主頁",
-      "startTest": "開始測驗",
-      "viewReports": "檢視先前報告"
+    "auth": {
+      "logout": "登出",
+      "loggingOut": "登出中...",
+      "logoutTitle": "登出",
+      "loggingOutTitle": "登出中..."
     }
+  
   
   
 
