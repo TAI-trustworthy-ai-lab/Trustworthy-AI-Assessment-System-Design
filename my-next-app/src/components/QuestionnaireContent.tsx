@@ -141,6 +141,49 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
     );
 };
 
+const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
+    const options = question.options || []; // 確保 options 存在
+    const selectedOptionIds = currentAnswer.optionIds || [];
+
+    const handleOptionClick = (optionId: number) => {
+        let newSelectedOptionIds;
+        if (selectedOptionIds.includes(optionId)) {
+            // 如果已經選中，則取消選中
+            newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
+        } else {
+            // 如果未選中，則選中
+            newSelectedOptionIds = [...selectedOptionIds, optionId];
+        }
+
+        // 可以根據需求計算總分數，這裡簡單地把所有選中選項的分數加起來
+        const newScore = options
+            .filter(opt => newSelectedOptionIds.includes(opt.id))
+            .reduce((sum, opt) => sum + opt.score, 0);
+
+        onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
+    };
+
+    return (
+        <div className="flex flex-wrap gap-3"> {/* 使用 flex-wrap 和 gap 讓選項在一行並自動換行 */}
+            {options.map(opt => (
+                <button
+                    key={opt.id}
+                    onClick={() => handleOptionClick(opt.id)}
+                    className={`
+                        py-2 px-4 rounded-lg font-medium transition duration-150 border
+                        ${selectedOptionIds.includes(opt.id)
+                            ? 'bg-blue-600 text-white shadow-md border-blue-600' // 選中時的樣式
+                            : 'bg-white text-gray-800 hover:bg-blue-50 border-gray-300' // 未選中時的樣式
+                        }
+                    `}
+                >
+                    {opt.text}
+                </button>
+            ))}
+        </div>
+    );
+};
+
 // 文字輸入題 (Text)
 const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const textValue = currentAnswer.textValue || '';
@@ -167,7 +210,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
             return <SingleChoiceQuestion {...props} />;
         case 'MULTIPLE_CHOICE':
             // 這裡可以實現多選邏輯
-            return <p className="text-red-500">多選題尚未實現 UI。</p>; // Placeholder
+            return <MultipleChoiceQuestion {...props} />; // Placeholder
         case 'TEXT':
             return <TextQuestion {...props} />;
         default:
@@ -206,17 +249,31 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         const grouped = questionnaire.questions.reduce((acc, question) => {
             const category = question.category;
             if (!acc[category]) {
-                acc[category] = { pageTitle: category, questions: [] };
+                acc[category] = { category: category, pageTitle: category, questions: [] };
             }
             acc[category].questions.push(question);
             return acc;
-        }, {} as Record<string, PageData>);
+        }, {} as Record<string, PageData & { category: string }>);
         
         // 2. 將對象轉換為陣列，應用映射標題，並對每個頁面的問題按 order 排序
-        return Object.values(grouped).map(page => ({
-            pageTitle: getPageTitle(page.pageTitle),    
-            questions: page.questions.sort((a, b) => a.order - b.order)
-        }));
+        return Object.values(grouped)
+            // ⭐️ 核心變動：根據 CATEGORY_MAP 的鍵順序來排序頁面
+            .sort((a, b) => {
+                const keys = Object.keys(CATEGORY_MAP); // 獲取正確的 category 順序
+                const indexA = keys.indexOf(a.category.toUpperCase());
+                const indexB = keys.indexOf(b.category.toUpperCase());
+                // 如果 CATEGORY_MAP 中有定義，就用它的順序，否則保持原始順序
+                if (indexA !== -1 && indexB !== -1) {
+                    return indexA - indexB;
+                }
+                // 如果不在 CATEGORY_MAP 裡，則回退到按 order 排序 (但這部分比較難實現，通常建議所有 category 都在 map 中)
+                // 這裡簡單回退到 0 (不排序)，但最好確保所有 category 都在 map 中
+                return 0; 
+            })
+            .map(page => ({
+                pageTitle: getPageTitle(page.pageTitle),    
+                questions: page.questions.sort((a, b) => a.order - b.order) // 保持頁面內的問題按 order 排序
+            }));
     }, [questionnaire]);
 
     const TOTAL_PAGES = allPages.length;
@@ -289,7 +346,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 case 'SCALE':
                     return answer.score !== undefined;
                 case 'SINGLE_CHOICE':
-                    return answer.optionIds && answer.optionIds.length === 1;
+                    return answer.optionIds;
                 case 'MULTIPLE_CHOICE':
                     return answer.optionIds && answer.optionIds.length > 0;
                 case 'TEXT':
@@ -370,21 +427,27 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
+                const scaleValue = answerValue.score;
+
                 return [{
                     questionId: questionId,
-                    optionId: question.options?.[0]?.id,
-                    value: answerValue.score, // 1-5 分
+                    optionId: null,
+                    value: scaleValue * 20, 
                     textValue: null,
                 }];
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
                 const optionId = answerValue.optionIds[0];
-                const option = question.options?.find(opt => opt.id === optionId);
+    
+                // 根據您的要求計算分數
+                const choiceValue = (optionId === 2) ? 0 : 100; // 這是前端計算的分數
+
                 return [{
                     questionId: questionId,
-                    optionId: optionId, // 選項 ID
-                    value: option?.score, // 選項分數 (100/0)
+                    optionId: optionId, // ⭐️ 確保這裡傳遞的是選項 ID (數字)
+                    value: choiceValue, // 傳遞計算好的分數
                     textValue: null,
                 }];
+                
             } else if (question.type === 'TEXT') {
                 return [{
                     questionId: questionId,
@@ -451,7 +514,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
     // --- 渲染邏輯 (UI 部分) ---
 
-    // ... (Loading 和 Error 狀態渲染保持不變) ...
+    // Loading 和 Error 狀態渲染
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
