@@ -186,9 +186,6 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
             {/* Modal 內容框 */}
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-300">
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
-                <p className="text-sm text-red-500 mb-4">
-                    提醒您：專案一旦建立，將無法從此介面刪除。
-                </p>
                 {/* 錯誤提示 */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -283,7 +280,7 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
     const renderTaiOrders = (taiOrders) => {
         if (!taiOrders || taiOrders.length === 0) {
             return (
-                <p className="text-sm text-gray-500 italic">
+                <p className="text-sm text-gray-400 italic">
                     此專案尚未設定 TAI 排序指標。點擊「進入專案」進行排序。
                 </p>
             );
@@ -294,7 +291,7 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
 
         if (allWeightsAreZero) {
             return (
-                <p className="text-base font-semibold text-orange-600 bg-orange-50 p-2 rounded-lg border border-orange-200">
+                <p className="text-sm italic text-orange-600">
                     此專案不使用 TAI 排序
                 </p>
             );
@@ -321,6 +318,13 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
         );
     };
 
+    const hasDescription = projectData.description && projectData.description.trim() !== '';
+
+    // 根據有無內容，選擇不同的 class name
+    const descriptionClassName = hasDescription
+        ? "text-base text-gray-700 whitespace-pre-wrap" // 有描述時的樣式
+        : "text-sm text-gray-400 italic";
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100/50 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-300">
@@ -328,7 +332,7 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
                     專案詳細資訊 
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-4 border-t border-b border-blue-200 py-4">
                     {/* 專案名稱 */}
                     <div>
                         <p className="text-sm font-semibold text-gray-500">專案名稱:</p>
@@ -338,7 +342,7 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
                     {/* 專案描述 */}
                     <div>
                         <p className="text-sm font-semibold text-gray-500">專案描述:</p>
-                        <p className="text-base text-gray-700 whitespace-pre-wrap">
+                        <p className={descriptionClassName}>
                             {projectData.description || '此專案未填寫描述。'}
                         </p>
                     </div>

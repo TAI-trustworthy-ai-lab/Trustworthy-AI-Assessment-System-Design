@@ -300,6 +300,25 @@ export default function TAISorter() {
             };
         });
 
+        let confirmationMessage = "請注意：設定完成後將無法再次修改！\n\n";
+
+        if (enableSort) {
+            confirmationMessage += 
+                "目前 TAI 指標優先順序：\n" +
+                indicators.join(" → ") + 
+                "\n\n點擊「確定」送出並鎖定排序。";
+        } else {
+            confirmationMessage += 
+                "您選擇不使用 TAI 指標排序。\n" + 
+                "點擊「確定」送出設定並鎖定。";
+        }
+
+        const isConfirmed = confirm(confirmationMessage);
+        if (!isConfirmed) {
+            console.log("使用者取消了 TAI 排序的送出。");
+            return; 
+        }
+
         const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
         
         try {
@@ -314,15 +333,6 @@ export default function TAISorter() {
 
             if (response.ok) {
                 console.log("TAI 指標優先順序已成功儲存！");
-                
-                // 成功後顯示 alert
-                alert(
-                    "目前 TAI 指標優先順序：\n" +
-                    indicators.join(" → ") +
-                    "\n 是否啟用TAI指標優先順序：" +
-                    (enableSort ? "是" : "否")
-                );
-
                 router.push("/choose_questionnaire");
             } else {
                 const errorData = await response.json();
