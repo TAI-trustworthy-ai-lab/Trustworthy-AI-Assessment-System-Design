@@ -1,91 +1,88 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 
-const TAI_INDICATOR_MAP_ZH_EN: { [key: string]: string } = {
-    "準確性": "ACCURACY",
-    "可靠性": "RELIABILITY",
-    "安全性": "SAFETY",
-    "韌性": "RESILIENCE",
-    "透明性": "TRANSPARENCY",
-    "當責性": "ACCOUNTABILITY",
-    "可解釋性": "EXPLAINABILITY",
-    "自主性": "AUTONOMY",
-    "隱私": "PRIVACY",
-    "公平性": "FAIRNESS",
-    "資訊安全": "SECURITY", 
+// 英翻中：後端回傳英文，以中文顯示
+const TAI_INDICATOR_MAP_EN_ZH: { [key: string]: string } = {
+    "ACCURACY": "準確性",
+    "RELIABILITY": "可靠性",
+    "SAFETY": "安全性",
+    "RESILIENCE": "韌性",
+    "TRANSPARENCY": "透明性",
+    "ACCOUNTABILITY": "當責性",
+    "EXPLAINABILITY": "可解釋性",
+    "AUTONOMY": "自主性",
+    "PRIVACY": "隱私",
+    "FAIRNESS": "公平性",
+    "SECURITY": "資訊安全",
 };
 
-// 建立英文到中文的反向對應表 (更常用於從 API 資料翻譯)
-const TAI_INDICATOR_MAP_EN_ZH: { [key: string]: string } = Object.entries(TAI_INDICATOR_MAP_ZH_EN).reduce(
-    (acc, [zh, en]) => {
-        acc[en] = zh;
-        return acc;
-    },
-    {}
-);
+// 後端回傳之專案資料結構定義
+interface TaiOrder {
+    indicator: string;
+    weight: number;
+    rank: number;
+}
+interface ProjectData {
+    id: number;
+    name: string;
+    description: string;
+    taiOrders?: TaiOrder[];
+    createdAt: string;
+    updatedAt: string;
+}
 
 // =================================================================
-// 1. API 配置與通用輔助函式 (API Configuration and Helper)
+// 1. API 配置與通用輔助函式
 // =================================================================
 
 const BASE_URL = "http://localhost:3001/api";
-const MOCK_USER_ID = typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : 'fallback-user-id'; 
-const MOCK_AUTH_TOKEN = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : 'fallback-auth-token'; 
 
-const MAX_RETRIES = 3;
-const INITIAL_BACKOFF_MS = 1000;
-
-const fetchWithRetry = async (url, options = {}, retries = 0) => {
-    const currentToken = MOCK_AUTH_TOKEN;
+const fetchWithRetry = async <T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T> => {
+    if (!authToken || authToken === 'fallback-auth-token') {
+         throw new Error('認證失敗：未提供有效的 authToken。');
+    }
 
     try {
         const response = await fetch(url, {
             ...options,
             headers: {
-                'Authorization': `Bearer ${currentToken}`,
+                'Authorization': `Bearer ${authToken}`,
                 'Content-Type': 'application/json',
                 ...options.headers,
             },
         });
 
-        const result = await response.json();
+        const result: { data?: T, error?: string, message?: string } = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || `HTTP error! Status: ${response.status}`);
+            const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+            throw new Error(errorMessage);
         }
 
-        // 請求成功，返回資料
-        return result.data; 
-    } catch (error) {
-        if (retries < MAX_RETRIES) {
-            const delay = INITIAL_BACKOFF_MS * Math.pow(2, retries) + Math.floor(Math.random() * 1000);
-            console.warn(`API 請求失敗，嘗試第 ${retries + 1} 次重試，延遲 ${delay}ms...`);
-            
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return fetchWithRetry(url, options, retries + 1);
-        }
-        console.error(`API 請求在 ${MAX_RETRIES} 次重試後仍然失敗:`, error.message);
-        throw error; // 最終失敗後拋出錯誤
+        // 確保回傳的是 data 欄位
+        return result.data as T; 
+    } catch (error: any) {
+        console.error(`API 請求最終失敗 (${url}):`, error.message);
+        throw error; 
     }
 };
 
 // GET api/project/user/{userID} ：獲取專案列表
-const fetchProjects = async (userId) => {
-    // 如果沒有 userId 或 token，則不執行請求
+const fetchProjects = async (userId: string, authToken: string): Promise<ProjectData[]> => {
     if (!userId || userId === 'fallback-user-id') {
         console.warn('用戶 ID 無效，無法獲取專案。');
         return [];
     }
     const url = `${BASE_URL}/project/user/${userId}`;
-    return fetchWithRetry(url, { method: 'GET' });
+    return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
 };
 
 // POST api/project/ ：建立新專案
-const createProject = async (name, userId, description) => {
+const createProject = async (name: string, userId: string, description: string, authToken: string): Promise<ProjectData> => {
     if (!userId || userId === 'fallback-user-id') {
         throw new Error('用戶 ID 無效，無法建立專案。');
     }
@@ -96,10 +93,18 @@ const createProject = async (name, userId, description) => {
         description: description, 
     };
 
-    return fetchWithRetry(url, {
+    return fetchWithRetry<ProjectData>(url, {
         method: 'POST',
         body: JSON.stringify(body),
-    });
+    }, authToken);
+};
+
+// DELETE api/project/{id} ：刪除專案
+const deleteProject = async (projectId: number, authToken: string): Promise<void> => {
+    const url = `${BASE_URL}/project/${projectId}`;
+    await fetchWithRetry<any>(url, {
+        method: 'DELETE',
+    }, authToken);
 };
 
 
@@ -107,13 +112,20 @@ const createProject = async (name, userId, description) => {
 // 2. 專案卡片元件 (Project Card Component) 
 // =================================================================
 
-const ProjectCard = ({ index, projectName, projectDescription, onClick }) => { 
-    // 根據索引決定背景顏色
+interface ProjectCardProps {
+    index: number;
+    projectName: string;
+    projectDescription: string;
+    onClick: () => void;
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = ({ index, projectName, projectDescription, onClick }) => { 
     const colors = [
         'bg-sky-400', 'bg-cyan-400', 'bg-blue-400', 'bg-indigo-400', 
-        'bg-purple-400', 'bg-fuchsia-300', 'bg-pink-300', 'bg-rose-300', 
+        'bg-sky-500', 'bg-cyan-500', 'bg-blue-500', 'bg-indigo-500', 
     ];
-    const bgColor = colors[index % colors.length];
+    // 循環使用顏色
+    const bgColor = colors[(index - 1) % colors.length]; 
 
     return (
         <div
@@ -125,19 +137,16 @@ const ProjectCard = ({ index, projectName, projectDescription, onClick }) => {
             `}
             onClick={onClick}
         >
-            {/* 卡片中間顯示數字 (排序) - NEW STRUCTURE */}
             <div className="text-up flex-grow flex items-center justify-center">
                 <span className="text-6xl font-extrabold opacity-90">
                     {index}
                 </span>
             </div>
 
-            {/* 卡片底部顯示專案名稱和描述 */}
-            <div className="text-left w-full border-t border-white/30">
+            <div className="text-left w-full border-t border-white/30 pt-2">
                 <p className="text-xl font-bold truncate" title={projectName}>
                     {projectName}
                 </p>
-                {/* 顯示專案描述，最多兩行 */}
                 <p 
                     className="text-sm font-light line-clamp-1 mt-1 opacity-90" 
                     title={projectDescription || '無描述'}
@@ -154,13 +163,36 @@ const ProjectCard = ({ index, projectName, projectDescription, onClick }) => {
 // 3. 新增專案 Modal (Add Project Modal) 
 // =================================================================
 
-const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
+interface AddProjectModalProps {
+    isModalOpen: boolean;
+    closeModal: () => void;
+    onAddProject: (name: string, description: string) => Promise<void>;
+    currentProjectCount: number;
+}
+
+const AddProjectModal: React.FC<AddProjectModalProps> = ({ 
+    isModalOpen, 
+    closeModal, 
+    onAddProject, 
+    currentProjectCount 
+}) => {
+    const MAX_PROJECTS = 10;
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState(''); 
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null); 
+    const [error, setError] = useState<string | null>(null); 
 
-    const handleSubmit = async (e) => {
+    // 當 Modal 打開時重置狀態
+    useEffect(() => {
+        if (isModalOpen) {
+            setProjectName('');
+            setProjectDescription('');
+            setError(null);
+        }
+    }, [isModalOpen]);
+
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null); 
         if (!projectName.trim()) return;
@@ -168,11 +200,10 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
         setIsLoading(true);
         try {
             await onAddProject(projectName.trim(), projectDescription.trim()); 
-            setProjectName('');
-            setProjectDescription(''); // 清空描述
+            // 成功後關閉
             closeModal();
-        } catch (error) {
-            console.error('新增專案失敗 (Modal 捕獲):', error);
+        } catch (error: any) {
+            console.error('新增專案失敗 (Modal 捕獲):', error.message);
             setError(`新增失敗: ${error.message}`); 
         } finally {
             setIsLoading(false);
@@ -182,15 +213,21 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
     if (!isModalOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm"> 
             {/* Modal 內容框 */}
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-300">
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
-                <div className="mb-6"> {/* <--- 新增 mb-6 間距，讓提醒與輸入框保持距離 */}
-                    <p className="text-sm text-red-600 border-l-4 border-red-400 pl-3">
-                        提醒您：專案名稱與描述一旦建立，後續將無法進行修改
+                
+                {/* 提示訊息優化區塊 */}
+                <div className="mb-6 space-y-2">
+                    <p className="text-sm text-indigo-600 border-l-4 border-indigo-400 pl-2">
+                        <b>系統限制：</b> 最多可新增 <b>{MAX_PROJECTS}</b> 個專案 (當前: <b>{currentProjectCount}</b> 個)
+                    </p>
+                    <p className="text-sm text-amber-600 border-l-4 border-amber-400 pl-2">
+                        <b>重要提醒：</b> 專案名稱與描述在建立後將無法變更
                     </p>
                 </div>
+                
                 {/* 錯誤提示 */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -200,7 +237,9 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
 
                 <form onSubmit={handleSubmit}>
                     {/* 專案名稱輸入 */}
+                    <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">專案名稱<span className="text-red-500"> *</span></label>
                     <input
+                        id="projectName"
                         type="text"
                         placeholder="請輸入專案名稱..."
                         value={projectName}
@@ -210,9 +249,11 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
                         required
                     />
 
-                    {/* 專案描述輸入 (新增) */}
+                    {/* 專案描述輸入 */}
+                    <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">專案描述</label>
                     <textarea
-                        rows="3"
+                        id="projectDescription"
+                        rows={3}
                         placeholder="請輸入專案描述..."
                         value={projectDescription}
                         onChange={(e) => setProjectDescription(e.target.value)}
@@ -232,7 +273,7 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
                         <button
                             type="submit"
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 disabled:bg-blue-400 flex items-center"
-                            disabled={isLoading || !projectName.trim()}
+                            disabled={isLoading || !projectName.trim() || currentProjectCount >= MAX_PROJECTS}
                         >
                             {isLoading ? (
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -251,23 +292,114 @@ const AddProjectModal = ({ isModalOpen, closeModal, onAddProject }) => {
 
 
 // =================================================================
-// 4. 新增：查看專案
+// 5. 確認刪除 Modal (Confirmation Modal)
 // =================================================================
 
-const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, router }) => {
-    // 如果 projectData 是 null 或 modal 沒開，則不渲染
+interface ConfirmDeleteModalProps {
+    isModalOpen: boolean;
+    closeModal: () => void;
+    projectName: string;
+    onConfirmDelete: () => void;
+    isLoading: boolean;
+}
+
+const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isModalOpen, closeModal, projectName, onConfirmDelete, isLoading }) => {
+    if (!isModalOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in duration-300 border-t-4 border-red-500">
+                <h2 className="text-xl font-bold mb-4 text-red-700">確認刪除專案</h2>
+                <p className="text-gray-700 mb-6">
+                    您確定要永久刪除專案「<b>{projectName}</b>」嗎？
+                    此操作無法復原。
+                </p>
+
+                <div className="flex justify-end space-x-3">
+                    <button
+                        type="button"
+                        onClick={closeModal}
+                        className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150"
+                        disabled={isLoading}
+                    >
+                        取消
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onConfirmDelete}
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-150 disabled:bg-red-400 flex items-center"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : null}
+                        確認刪除
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// =================================================================
+// 6. 查看/編輯專案 Modal (View Project Modal) 
+// =================================================================
+
+interface ViewProjectModalProps {
+    isModalOpen: boolean;
+    closeModal: () => void;
+    projectData: ProjectData | null;
+    onConfirm: (project: ProjectData) => void;
+    reloadProjects: () => void; 
+    authToken: string | null; // 傳遞 token 給 API 呼叫
+}
+
+const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ isModalOpen, closeModal, projectData, onConfirm, reloadProjects, authToken }) => {
+    
+    // 1. Hook Calls 
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null); 
+
+    // Hook 4: handleDeleteProject (使用 useCallback 穩定函式實例)
+    const handleDeleteProject = useCallback(async () => {
+        if (!projectData || !authToken) return;
+
+        setIsDeleting(true);
+        setDeleteError(null);
+        
+        try {
+            await deleteProject(projectData.id, authToken);
+            
+            closeModal(); 
+            setIsDeleteConfirmOpen(false);
+            // 刪除成功後，延遲呼叫刷新函式，模擬頁面刷新後的資料更新
+            setTimeout(() => {
+                reloadProjects();
+            }, 100); 
+
+        } catch (error: any) {
+            console.error("刪除專案失敗:", error.message);
+            setDeleteError(`刪除失敗: ${error.message}`);
+            setIsDeleting(false);
+        }
+    }, [projectData, closeModal, reloadProjects, authToken]);
+
+    // 2. Conditional Return (檢查狀態)
     if (!isModalOpen || !projectData) return null;
 
+
     // 將日期格式化為更易讀的格式
-    const formatDate = (dateString) => {
+    const formatDate = (dateString: string | null | undefined): string => {
         if (!dateString) return '無日期資訊';
         try {
-            // 嘗試解析為 Date 物件
             const date = new Date(dateString);
-            // 檢查是否是有效的日期
-            if (isNaN(date)) return dateString; // 如果解析失敗，則返回原始字串
+            if (isNaN(date.getTime())) return dateString;
             
-            // 格式化為 YYYY-MM-DD HH:MM:SS
             return date.toLocaleString('zh-TW', {
                 year: 'numeric',
                 month: '2-digit',
@@ -278,37 +410,34 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
                 hour12: false
             });
         } catch (e) {
-            return dateString; // 解析錯誤
+            return dateString;
         }
     };
 
-    const renderTaiOrders = (taiOrders) => {
+    const renderTaiOrders = (taiOrders: TaiOrder[] | undefined) => {
         if (!taiOrders || taiOrders.length === 0) {
             return (
-                <p className="text-sm text-gray-400 italic">
+                <p className="text-sm text-gray-400">
                     此專案尚未設定 TAI 排序指標。點擊「進入專案」進行排序。
                 </p>
             );
         }
 
-        // 2. 檢查所有項目的 weight 是否都為 0
         const allWeightsAreZero = taiOrders.every(order => order.weight === 0);
 
         if (allWeightsAreZero) {
             return (
-                <p className="text-sm italic text-orange-600">
+                <p className="text-sm text-orange-600">
                     此專案不使用 TAI 排序
                 </p>
             );
         }
 
-        // 1. 根據 rank 欄位排序
+        // 排序後再顯示
         const sortedIndicators = [...taiOrders].sort((a, b) => a.rank - b.rank);
 
-        // 2. 提取 indicator 並用 " → " 連接
         const indicatorString = sortedIndicators
             .map(order => {
-                // 從英文翻譯成中文
                 const chineseIndicator = TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator; 
                 return chineseIndicator;
             })
@@ -325,145 +454,189 @@ const ViewProjectModal = ({ isModalOpen, closeModal, projectData, onConfirm, rou
 
     const hasDescription = projectData.description && projectData.description.trim() !== '';
 
-    // 根據有無內容，選擇不同的 class name
     const descriptionClassName = hasDescription
-        ? "text-base text-gray-700 whitespace-pre-wrap" // 有描述時的樣式
-        : "text-sm text-gray-400 italic";
+        ? "text-sm text-gray-700 whitespace-pre-wrap" 
+        : "text-sm text-gray-400";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-100/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-300">
-                <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center justify-center">
-                    專案詳細資訊 
-                </h2>
+        // 【應使用者要求】將 ProtectedLayout 和 AuthHeader 重新納入。
+        // *注意：一般 Modal 不會包含頁面佈局元件，這可能會造成樣式上的重複或錯誤。*
+        <> 
+            <ProtectedLayout>
+                <AuthHeader />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-300">
+                        <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center justify-center">
+                            專案詳細資訊 
+                        </h2>
 
-                <div className="space-y-4 border-t border-b border-blue-200 py-4">
-                    {/* 專案名稱 */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-500">專案名稱:</p>
-                        <p className="text-base font-bold text-gray-900">{projectData.name}</p>
-                    </div>
+                        <div className="space-y-4 border-t border-b border-blue-200 py-4">
+                            {/* 專案名稱 */}
+                            <div>
+                                <p className="text-md font-semibold text-gray-500">專案名稱:</p>
+                                <p className="text-base font-bold text-gray-900">{projectData.name}</p>
+                            </div>
 
-                    {/* 專案描述 */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-500">專案描述:</p>
-                        <p className={descriptionClassName}>
-                            {projectData.description || '此專案未填寫描述。'}
-                        </p>
-                    </div>
+                            {/* 專案描述 */}
+                            <div>
+                                <p className="text-md font-semibold text-gray-500">專案描述:</p>
+                                <p className={descriptionClassName}>
+                                    {projectData.description || '此專案未填寫描述'}
+                                </p>
+                            </div>
 
-                    {/* TAI 排序指標 */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-500">TAI 排序指標:</p>
-                        {renderTaiOrders(projectData.taiOrders)}
-                    </div>
+                            {/* TAI 排序指標 */}
+                            <div>
+                                <p className="text-md font-semibold text-gray-500">TAI 排序指標:</p>
+                                {renderTaiOrders(projectData.taiOrders)}
+                            </div>
 
-                    {/* 建立日期 */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-500">建立日期:</p>
-                        <p className="text-base text-gray-700">
-                            {formatDate(projectData.createdAt)}
-                        </p>
-                    </div>
-
-                    {/* 更新日期 */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-500">最後更新日期:</p>
-                        <p className="text-base text-gray-700">
-                            {formatDate(projectData.updatedAt)}
-                        </p>
+                            {/* 建立日期 */}
+                            <div>
+                                <p className="text-md font-semibold text-gray-500">建立日期:</p>
+                                <p className="text-base text-gray-700">
+                                    {formatDate(projectData.createdAt)}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {/* 刪除錯誤提示 */}
+                        {deleteError && (
+                            <div className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                <span className="block sm:inline">{deleteError}</span>
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-between space-x-3 mt-8">
+                            {/* 刪除按鈕 */}
+                            <button
+                                type="button"
+                                onClick={() => setIsDeleteConfirmOpen(true)}
+                                className="px-4 py-2 text-red-600 border border-red-400 bg-white rounded-lg hover:bg-red-50 transition duration-150"
+                                disabled={isDeleting}
+                            >
+                                刪除專案
+                            </button>
+                            
+                            {/* 右側按鈕群組 */}
+                            <div className="flex space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={closeModal}
+                                    className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150"
+                                    disabled={isDeleting}
+                                >
+                                    關閉
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onConfirm(projectData)}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 flex items-center"
+                                    disabled={isDeleting}
+                                >
+                                    進入專案
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </ProtectedLayout>
 
-                <div className="flex justify-end space-x-3 mt-8">
-                    <button
-                        type="button"
-                        onClick={closeModal}
-                        className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150"
-                    >
-                        關閉
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => onConfirm(projectData)} // 傳遞完整的 projectData
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 flex items-center"
-                    >
-                        進入專案
-                    </button>
-                </div>
-            </div>
-        </div>
+            <ConfirmDeleteModal
+                isModalOpen={isDeleteConfirmOpen}
+                closeModal={() => {
+                    setIsDeleteConfirmOpen(false);
+                    setDeleteError(null);
+                }}
+                projectName={projectData.name}
+                onConfirmDelete={handleDeleteProject}
+                isLoading={isDeleting}
+            />
+        </>
     );
 };
 
 
 // =================================================================
-// 5. 主要儀表板元件 (Main Dashboard Component) - 使用實際 API 函式
+// 7. 主要儀表板元件 (Main Dashboard Component) 
 // =================================================================
 
 const Home = () => {
-    const [projects, setProjects] = useState([]);
+    const [userId, setUserId] = useState<string | null>(null); 
+    const [authToken, setAuthToken] = useState<string | null>(null); 
+
+    const [projects, setProjects] = useState<ProjectData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [currentProject, setCurrentProject] = useState(null);
-    const userId = MOCK_USER_ID; 
+    const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
     const router = useRouter();
+
+    // 1. 在客戶端載入 userId 和 authToken
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const storedUserId = localStorage.getItem('userId');
+            const storedAuthToken = localStorage.getItem('authToken');
+            
+            setUserId(storedUserId);
+            setAuthToken(storedAuthToken);
+        }
+    }, []);
 
     // 專門用於獲取專案清單的函式 (GET API)
     const loadProjects = useCallback(async () => {
-        if (!userId || userId === 'fallback-user-id') return;
+        if (!userId || userId === 'fallback-user-id' || !authToken) {
+            return;
+        }
         
         setIsLoading(true);
         try {
-            const data = await fetchProjects(userId);
-            setProjects(data);
+            const data = await fetchProjects(userId, authToken);
+            const sortedData = (data as ProjectData[]).sort((a, b) => b.id - a.id);
+            setProjects(sortedData);
         } catch (error) {
             console.error("載入專案失敗:", error);
         } finally {
             setIsLoading(false);
         }
-    }, [userId]);
+    }, [userId, authToken]);
 
-    // 1. 初始化載入專案
+    // 2. 當 userId 或 authToken 改變時載入專案
     useEffect(() => {
-        if (userId && userId !== 'fallback-user-id') {
+        if (userId && authToken) {
             loadProjects();
-        } else {
+        } else if (userId !== null && authToken !== null) {
              setIsLoading(false);
-             console.warn("無法載入專案：localStorage 中未找到有效的 userId。");
         }
-    }, [loadProjects, userId]);
+    }, [loadProjects, userId, authToken]);
 
-    // 2. 新增專案處理函式 (POST API)
-    const handleAddProject = useCallback(async (name, description) => { 
+    // 3. 新增專案處理函式 (POST API)
+    const handleAddProject = useCallback(async (name: string, description: string) => { 
+        if (!userId || !authToken) {
+            throw new Error("認證資訊缺失，請重新登入。");
+        }
         try {
-            const newProject = await createProject(name, userId, description); 
-            await loadProjects();
+            await createProject(name, userId, description, authToken); 
+            await loadProjects(); 
         } catch (error) {
             console.error("handleAddProject 失敗:", error);
             throw error; 
         }
-    }, [userId, loadProjects]);
+    }, [userId, authToken, loadProjects]);
 
-    // 3. 專案卡片點擊處理
-    const handleProjectClick = (project) => {
-        // 儲存被點擊的專案資料
+    // 4. 專案卡片點擊處理
+    const handleProjectClick = (project: ProjectData) => {
         setCurrentProject(project); 
-        // 打開查看 Modal
         setIsViewModalOpen(true); 
     };
 
-    // 4. 確認進入專案頁面處理
-    const handleConfirmEnterProject = (project) => {
+    // 5. 確認進入專案頁面處理
+    const handleConfirmEnterProject = (project: ProjectData) => {
         const projectId = project.id;
-        // 儲存 ID 以供下一頁使用
-        localStorage.setItem('currentProjectId', projectId); 
-        // 關閉 Modal
+        localStorage.setItem('currentProjectId', projectId.toString()); 
         setIsViewModalOpen(false); 
         setCurrentProject(null);
-        // 跳轉頁面
         router.push('/tai_sort');
     };
 
@@ -480,7 +653,8 @@ const Home = () => {
         );
     }
     
-    if (!userId || userId === 'fallback-user-id') {
+    // 認證失敗/ID 缺失狀態顯示
+    if (!userId || !authToken) {
          return (
              <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
                  <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
@@ -495,35 +669,31 @@ const Home = () => {
     }
 
     return (
-        <ProtectedLayout>
+        <ProtectedLayout> 
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
             <AuthHeader />
             <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
                 我的專案儀表板
             </h1>
 
-            {/* 專案卡片網格佈局 */}
             <div className="grid gap-8 auto-rows-fr grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
 
-                {/* 1. 新增專案 (+) 框框 (永遠在左上角) */}
+                {/* 新增專案卡片 */}
                 <div
                     className="p-4 h-48 rounded-2xl border-4 border-dashed border-gray-300 hover:border-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between items-center text-gray-500 hover:text-blue-600 bg-white"
-                    // onClick={() => setIsModalOpen(true)}
                     onClick={() => setIsAddModalOpen(true)}
                 >
-                    {/* 中央 "+" Icon */}
                     <div className="flex-grow flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                     </div>
-                    {/* 底部文字 */}
                     <div className="text-center pt-2 border-t border-gray-200 w-full">
                         <p className="text-lg font-semibold">新增專案</p>
                     </div>
                 </div>
 
-                {/* 2. 專案清單卡片 */}
+                {/* 專案列表 */}
                 {projects.map((project, index) => (
                     <ProjectCard
                         key={project.id}
@@ -535,6 +705,8 @@ const Home = () => {
                 ))}
 
             </div>
+            
+            {/* 底部按鈕 */}
             <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40 p-4">
                 <button
                     onClick={() => router.push('/history')}
@@ -553,26 +725,29 @@ const Home = () => {
                     <span>檢視先前報告</span>
                 </button>
             </div>
+
             {/* 新增專案 Modal */}
             <AddProjectModal
                 isModalOpen={isAddModalOpen} 
-                closeModal={() => setIsAddModalOpen(false)} 
+                closeModal={() => setIsAddModalOpen(false)}
                 onAddProject={handleAddProject}
-             />
+                currentProjectCount={projects.length}
+            />
 
-            {/* 查看/編輯專案 Modal (新增) */}
+            {/* 查看/編輯專案 Modal */}
             <ViewProjectModal
                 isModalOpen={isViewModalOpen}
                 closeModal={() => {
                     setIsViewModalOpen(false);
-                    setCurrentProject(null); // 關閉時清空資料
+                    setCurrentProject(null);
                 }}
-                projectData={currentProject} // 傳遞當前專案資料
-                onConfirm={handleConfirmEnterProject} // 確認進入專案
-                router={router} // 傳遞 router 以便 Modal 中可以導航
+                projectData={currentProject}
+                onConfirm={handleConfirmEnterProject}
+                reloadProjects={loadProjects} 
+                authToken={authToken} // 傳遞 token
             />
         </div>
-    </ProtectedLayout>
+        </ProtectedLayout>
     );
 };
 
