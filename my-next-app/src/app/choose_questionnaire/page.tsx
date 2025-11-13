@@ -49,7 +49,6 @@ const fetchLatestQuestionnaires = async () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                // 假設這個 API 不需要 Authorization，如果需要，請加上
             },
         });
         const result = await response.json();
@@ -77,17 +76,15 @@ export default function ChooseQuestionnairePage() {
                 
                 const newMap = {};
                 
-                // 遍歷所有後端群組資料
+                // 截取最新版本問卷 ID
                 data.forEach((group: any) => {
-                    const groupId = group.id; // <--- 獲取 Group ID
-                    const latestVersion = group.versions?.[0]; // 假設 versions 陣列的第一個是最新/所需版本
+                    const groupId = group.id; 
+                    const latestVersion = group.versions?.[0]; 
                     
-                    // 1. 根據後端 Group ID，查找對應的前端 stageKey
                     const stageKey = STAGE_ID_MAP[groupId]; 
-                    
-                    // 2. 如果找到對應的 stageKey 且有 latestVersion，則建立映射
+
+                    // 找到對應階段並存入 map
                     if (stageKey && latestVersion) {
-                        // 儲存 stageKey (before/during/after) -> versionId
                         newMap[stageKey] = latestVersion.id;
                     }
                 });
@@ -120,11 +117,8 @@ export default function ChooseQuestionnairePage() {
         }
 
         console.log(`進入 ${stage} 階段，VersionID: ${versionId}`);
-        
-        // 將 versionId 存入 localStorage
         localStorage.setItem("QuestionnaireID", versionId);
-        
-        // 跳轉頁面
+
         router.push(`/model/${stage}`); 
     };
 
@@ -138,10 +132,10 @@ export default function ChooseQuestionnairePage() {
                 className={`${baseButtonClasses} ${stage.bg} ${stage.hoverBorder} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group'}`}
                 disabled={isDisabled}
             >
-                {/* 按鈕內容佈局：左邊圖標，右邊文字 */}
+                {/* 按鈕內容佈局 */}
                 <div className="flex items-center space-x-5">
                     
-                    {/* 圖標區 - 使用個性化顏色 */}
+                    {/* 圖標區 */}
                     <div className={`p-3 rounded-xl ${stage.iconBg} ${stage.accent}`}>
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stage.iconPath}></path>
@@ -161,7 +155,7 @@ export default function ChooseQuestionnairePage() {
                         </p>
                     </div>
                     
-                    {/* 右側箭頭 (視覺提示) - 使用個性化顏色 */}
+                    {/* 右側箭頭 */}
                     <div className="ml-auto flex items-center">
                          <svg className={`w-5 h-5 ${stage.accent} transition duration-300 transform group-hover:translate-x-1`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>

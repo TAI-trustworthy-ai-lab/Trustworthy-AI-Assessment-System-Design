@@ -32,7 +32,8 @@ const CATEGORY_MAP: Record<string, string> = {
 interface Option {
     id: number;
     text: string;
-    score: number;
+    value: number;
+    order: number;
 }
 
 interface Question {
@@ -118,8 +119,8 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
 
 
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    // 假設選項從 question.options 中獲取，並且 options 包含了 id 和 score
-    const options = question.options || [{ id: 1, text: '是', score: 100 }, { id: 2, text: '否', score: 0 }];
+    const options = question.options || [];
+    if (options.length === 0) return <p className="text-red-500">選項資料缺失。</p>; // 處理選項缺失的情況
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
@@ -127,7 +128,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
             {options.map(opt => (
                 <button
                     key={opt.id}
-                    onClick={() => onAnswer({ optionIds: [opt.id], score: opt.score })}
+                    onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
                     className={`py-2 px-6 rounded-lg font-medium transition duration-150 border
                         ${selectedOptionId === opt.id
                             ? 'bg-purple-700 text-white shadow-md border-purple-700'
@@ -417,8 +418,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             return;
         }
 
-
-        // ⭐️ 構建新的 API 答案 payload 結構
         const answersPayload = Object.entries(answers).reduce<{
             questionId: number;
             optionId: number | null;
@@ -432,7 +431,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
-                // 確保 scaleValue 為數字；如果不存在，回傳 null 作為 value（與其他類型保持一致）
                 const scaleValue = typeof answerValue.score === 'number' ? answerValue.score : null;
 
                 acc.push({
@@ -443,14 +441,12 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 });
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
                 const optionId = answerValue.optionIds[0];
-
-                // 根據您的要求計算分數
-                const choiceValue = (optionId === 2) ? 0 : 100; // 這是前端計算的分數
-
+                const selectedOption = question.options?.find(opt => opt.id === optionId);
+                const valueToSubmit = selectedOption?.value ?? null;
                 acc.push({
                     questionId: questionId,
-                    optionId: optionId, // ⭐️ 確保這裡傳遞的是選項 ID (數字)
-                    value: choiceValue, // 傳遞計算好的分數
+                    optionId: optionId,
+                    value: valueToSubmit, 
                     textValue: null,
                 });
 
@@ -484,7 +480,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         console.log('--- 準備提交的 finalPayload ---');
         console.log(finalPayload);
         console.log('---------------------------------');
-
         try {
             const response = await fetch(`${API_BASE_URL}/response`, {
                 method: 'POST',
@@ -525,7 +520,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             setIsSubmitting(false);
         }
     };
-
+    
     // --- 渲染邏輯 (UI 部分) ---
 
     // Loading 和 Error 狀態渲染
@@ -561,13 +556,13 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             <main className="pt-8 flex flex-col items-center min-h-[calc(100vh)] px-4">
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
                     {/* 問卷題目 titleA */}
-                    <h1 className="text-3xl font-extrabold text-gray-900 text-center">
+                    <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
                         {questionnaire.title}
                     </h1>
 
                     {/* 问卷描述 description */}
                     {questionnaire.description && (
-                        <p className="text-center text-gray-600 mb-8 italic">{questionnaire.description}</p>
+                        <p className="text-left text-gray-500 mb-8">{questionnaire.description}</p>
                     )}
 
                     {/* 进度条 (Progress Bar) */}
