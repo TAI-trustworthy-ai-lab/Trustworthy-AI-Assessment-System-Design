@@ -92,26 +92,34 @@ interface QuestionRendererProps {
 
 // 刻度題 (Likert Scale 1-5)
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    const scale = [1, 2, 3, 4, 5];
-    const selectedScore = currentAnswer.score;
+    const options = question.options || [];
+    if (options.length === 0) return <p className="text-red-500">選項資料缺失。</p>; 
+    
+    const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
         <div className="flex justify-center space-x-2 sm:space-x-4">
-            {scale.map(score => (
-                <button
-                    key={score}
-                    onClick={() => onAnswer({ score })}
-                    className={`
-                        w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200
-                        ${selectedScore === score 
-                            ? 'bg-purple-700 text-white shadow-lg ring-4 ring-purple-300'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-purple-100'
+            {options.map((opt) => {
+                const displayScore = opt.order; // 顯示 1, 2, 3, 4, 5
+                
+                return (
+                    <button
+                        key={opt.id}
+                        onClick={() => 
+                            onAnswer({ optionIds: [opt.id], score: opt.value }) 
                         }
-                    `}
-                >
-                    {score}
-                </button>
-            ))}
+                        className={`
+                            w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200
+                            ${selectedOptionId === opt.id 
+                                ? 'bg-purple-700 text-white shadow-lg ring-4 ring-purple-300'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-purple-100'
+                            }
+                        `}
+                    >
+                        {displayScore}
+                    </button>
+                );
+            })}
         </div>
     );
 };
@@ -431,12 +439,12 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
-                const scaleValue = typeof answerValue.score === 'number' ? answerValue.score : null;
-
+                const optionId = answerValue.optionIds?.[0] ?? null;
+                const valueToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
                 acc.push({
                     questionId: questionId,
-                    optionId: null,
-                    value: scaleValue !== null ? scaleValue * 20 : null,
+                    optionId: optionId,
+                    value: valueToSubmit, 
                     textValue: null,
                 });
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
