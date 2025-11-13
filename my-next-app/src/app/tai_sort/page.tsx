@@ -300,17 +300,15 @@ export default function TAISorter() {
             };
         });
 
-        let confirmationMessage = "請注意：設定完成後將無法再次修改！\n\n";
+        let confirmationMessage = "請注意：若點擊「確定」將無法再次修改！\n\n";
 
         if (enableSort) {
             confirmationMessage += 
                 "目前 TAI 指標優先順序：\n" +
-                indicators.join(" → ") + 
-                "\n\n點擊「確定」送出並鎖定排序。";
+                indicators.join(" → ")
         } else {
             confirmationMessage += 
-                "您選擇不使用 TAI 指標排序。\n" + 
-                "點擊「確定」送出設定並鎖定。";
+                "您選擇不使用 TAI 指標排序。\n"
         }
 
         const isConfirmed = confirm(confirmationMessage);
