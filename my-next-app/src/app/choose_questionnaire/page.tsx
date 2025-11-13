@@ -7,10 +7,10 @@ import ProtectedLayout from '@/components/ProtectedLayout';
 
 const QUESTIONNAIRE_API_URL = `http://localhost:3001/api/questionnaire/group/latest`;
 
-const STAGE_ID_MAP: { [key: number]: 'before' | 'during' | 'after' } = {
-    1: 'before', 
-    2: 'during',
-    3: 'after',
+const STAGE_NAME_MAP: { [key: string]: 'before' | 'during' | 'after' } = {
+    "建模前": 'before', 
+    "建模中": 'during',
+    "建模后": 'after', 
 };
 
 const stages = {
@@ -66,7 +66,7 @@ const fetchLatestQuestionnaires = async () => {
 
 export default function ChooseQuestionnairePage() {
     const router = useRouter();
-    const [questionnaireMap, setQuestionnaireMap] = useState({}); // 用來儲存 {stageKey: versionId}
+    const [questionnaireMap, setQuestionnaireMap] = useState<{[key: string]: number | undefined}>({}); // 儲存 {stageKey: versionId}
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -74,18 +74,20 @@ export default function ChooseQuestionnairePage() {
             try {
                 const data = await fetchLatestQuestionnaires();
                 
-                const newMap = {};
+                const newMap: {[key: string]: number | undefined} = {};
                 
-                // 截取最新版本問卷 ID
+                // 迭代後端資料，並使用 name 進行映射
                 data.forEach((group: any) => {
-                    const groupId = group.id; 
+                    const groupName = group.name; // 使用 name
                     const latestVersion = group.versions?.[0]; 
                     
-                    const stageKey = STAGE_ID_MAP[groupId]; 
+                    const stageKey = STAGE_NAME_MAP[groupName]; // 使用 STAGE_NAME_MAP 進行映射
 
                     // 找到對應階段並存入 map
                     if (stageKey && latestVersion) {
                         newMap[stageKey] = latestVersion.id;
+                    } else if (groupName && !stageKey) {
+                        console.warn(`後端 Group Name: "${groupName}" 未在 STAGE_NAME_MAP 中定義。`);
                     }
                 });
                 
@@ -108,7 +110,8 @@ export default function ChooseQuestionnairePage() {
 
     // 模擬三個階段的點擊行為
     const handleStageClick = (stage: "before" | "during" | "after") => {
-        const versionId = questionnaireMap[stage];
+        // TypeScript 檢查: 確保 versionId 是 number 或 undefined
+        const versionId = questionnaireMap[stage]; 
         
         if (!versionId) {
             alert(`錯誤：找不到 ${stages[stage].title} 階段對應的最新問卷版本。`);
@@ -117,14 +120,16 @@ export default function ChooseQuestionnairePage() {
         }
 
         console.log(`進入 ${stage} 階段，VersionID: ${versionId}`);
-        localStorage.setItem("QuestionnaireID", versionId);
+        // 注意: versionId 是 number，localStorage 存入的是 string
+        localStorage.setItem("QuestionnaireID", String(versionId)); 
 
         router.push(`/model/${stage}`); 
     };
 
     const StageButton = ({ stageKey }: { stageKey: keyof typeof stages }) => {
         const stage = stages[stageKey];
-        const isDisabled = isLoading || !questionnaireMap[stageKey];
+        // 檢查 versionId 是否存在
+        const isDisabled = isLoading || !questionnaireMap[stageKey]; 
         
         return (
             <button
@@ -132,7 +137,6 @@ export default function ChooseQuestionnairePage() {
                 className={`${baseButtonClasses} ${stage.bg} ${stage.hoverBorder} ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group'}`}
                 disabled={isDisabled}
             >
-                {/* 按鈕內容佈局 */}
                 <div className="flex items-center space-x-5">
                     
                     {/* 圖標區 */}
@@ -147,7 +151,7 @@ export default function ChooseQuestionnairePage() {
                         {/* 標題 */}
                         <h2 className="text-center text-2xl font-bold text-gray-800">
                             {stage.title}
-                            {isDisabled && !isLoading && <span className="ml-2 text-sm text-red-500 font-normal">(問卷缺失)</span>}
+                            {isDisabled && !isLoading && <span className="ml-2 text-sm text-red-500 font-normal">(問卷缺失)</span>} 
                         </h2>
                         {/* 描述 */}
                         <p className="text-center text-gray-500 text-md mt-1">
@@ -189,7 +193,7 @@ export default function ChooseQuestionnairePage() {
             <main className="pt-30 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4">
                 <div className="max-w-xl text-center mb-10">
                     <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
-                    選擇建模階段
+                        選擇建模階段
                     </h1>
                     <p className="text-xl text-gray-600">
                         請選擇您目前進行到的階段，以開始填寫相應的量化評估問卷。
