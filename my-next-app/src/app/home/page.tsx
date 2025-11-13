@@ -26,7 +26,7 @@ interface TaiOrder {
     weight: number;
     rank: number;
 }
-interface ProjectData {
+export interface ProjectData {
     id: number;
     name: string;
     description: string;
