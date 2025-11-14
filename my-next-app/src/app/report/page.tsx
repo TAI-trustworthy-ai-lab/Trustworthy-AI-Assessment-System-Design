@@ -210,8 +210,7 @@ export default function ReportPage() {
         minute: '2-digit',
     });
 
-    // --- 報告成功載入後的渲染 ---
-    // ⭐️ 移除 ProtectedLayout 和 AuthHeader 
+    // --- 報告成功載入後的渲染 --- 
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
             {/* AuthHeader 由於無法使用已被移除 */}
