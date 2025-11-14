@@ -641,7 +641,7 @@ const Home = () => {
     };
 
     // 載入中狀態顯示
-    if (isLoading) {
+    if (isLoading && userId && authToken) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -655,17 +655,17 @@ const Home = () => {
     
     // 認證失敗/ID 缺失狀態顯示
     if (!userId || !authToken) {
-         return (
-             <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-                 <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-                     <h1 className="text-2xl font-bold mb-4 text-red-700">認證失敗或用戶 ID 缺失</h1>
-                     <p className="text-red-600">
-                         無法從瀏覽器的 Local Storage 獲取有效的 `userId` 或 `authToken`。<br />
-                         請確保您已登入且資料已正確儲存。
-                     </p>
-                 </div>
-             </div>
-         );
+        return (
+            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
+                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
+                    <h1 className="text-2xl font-bold mb-4 text-red-700">認證失敗或用戶 ID 缺失</h1>
+                    <p className="text-red-600">
+                        無法從瀏覽器的 Local Storage 獲取有效的 `userId` 或 `authToken`。<br />
+                        請確保您已登入且資料已正確儲存。
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     return (
