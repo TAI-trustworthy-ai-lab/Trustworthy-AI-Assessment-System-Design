@@ -270,7 +270,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         
         // 2. 將對象轉換為陣列，應用映射標題，並對每個頁面的問題按 order 排序
         return Object.values(grouped)
-            // ⭐️ 核心變動：根據 CATEGORY_MAP 的鍵順序來排序頁面
             .sort((a, b) => {
                 const keys = Object.keys(CATEGORY_MAP); // 獲取正確的 category 順序
                 const indexA = keys.indexOf(a.category.toUpperCase());
@@ -279,12 +278,10 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 if (indexA !== -1 && indexB !== -1) {
                     return indexA - indexB;
                 }
-                // 如果不在 CATEGORY_MAP 裡，則回退到按 order 排序 (但這部分比較難實現，通常建議所有 category 都在 map 中)
-                // 這裡簡單回退到 0 (不排序)，但最好確保所有 category 都在 map 中
                 return 0; 
             })
             .map(page => ({
-                pageTitle: getPageTitle(page.pageTitle),    
+                pageTitle: getPageTitle(page.pageTitle), 
                 questions: page.questions.sort((a, b) => a.order - b.order) // 保持頁面內的問題按 order 排序
             }));
     }, [questionnaire]);
@@ -515,6 +512,10 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             });
 
             if (response.ok) {
+                const data = await response.json();
+                const responseId = data.data.id;
+                localStorage.setItem('responseId', responseId.toString());
+
                 alert("問卷提交成功！");
                 router.push('/report');    
             } else {
