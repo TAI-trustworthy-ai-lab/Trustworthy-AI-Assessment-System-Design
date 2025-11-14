@@ -9,6 +9,7 @@ const USER_ID_KEY = 'userId';
 const USER_ROLE_KEY = 'userRole';
 const QUESTIONNAIRE_ID_KEY = 'QuestionnaireID';
 const CURRENT_PROJECT_ID_KEY = 'currentProjectId';
+const RESPONSE_ID_KEY = 'responseId';
 
 // 假設您的後端基礎 URL 和登出 API 端點
 const BASE_URL = 'http://localhost:3001/api/user'; 
@@ -56,6 +57,7 @@ export const useAuth = () => {
                 localStorage.removeItem(USER_ROLE_KEY);
                 localStorage.removeItem(QUESTIONNAIRE_ID_KEY);
                 localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
+                localStorage.removeItem(RESPONSE_ID_KEY);
             }
 
             // 4. 跳轉到登入頁面 (假設登入頁面是 '/')
