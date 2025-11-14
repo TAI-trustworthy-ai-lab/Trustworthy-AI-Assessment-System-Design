@@ -215,7 +215,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm"> 
             {/* Modal 內容框 */}
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-300">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 sm:mx-0 animate-in fade-in zoom-in duration-300">
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
                 
                 {/* 提示訊息優化區塊 */}
@@ -465,7 +465,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({ isModalOpen, closeM
             <ProtectedLayout>
                 <AuthHeader />
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in fade-in zoom-in duration-300">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 mx-4 sm:mx-0 animate-in fade-in zoom-in duration-300">
                         <h2 className="text-3xl font-bold mb-6 text-gray-800 flex items-center justify-center">
                             專案詳細資訊 
                         </h2>
@@ -655,18 +655,18 @@ const Home = () => {
     
     // 認證失敗/ID 缺失狀態顯示
     if (!userId || !authToken) {
-        return (
-            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-                    <h1 className="text-2xl font-bold mb-4 text-red-700">認證失敗或用戶 ID 缺失</h1>
-                    <p className="text-red-600">
-                        無法從瀏覽器的 Local Storage 獲取有效的 `userId` 或 `authToken`。<br />
-                        請確保您已登入且資料已正確儲存。
-                    </p>
-                </div>
-            </div>
-        );
-    }
+     return (
+        <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
+             <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
+                 <h1 className="text-2xl font-bold mb-4 text-red-700">認證失敗或用戶 ID 缺失</h1>
+                 <p className="text-red-600">
+                     無法從瀏覽器的 Local Storage 獲取有效的 `userId` 或 `authToken`。<br />
+                     請確保您已登入且資料已正確儲存。
+                 </p>
+             </div>
+        </div>
+     );
+}
 
     return (
         <ProtectedLayout> 
@@ -676,7 +676,7 @@ const Home = () => {
                 我的專案儀表板
             </h1>
 
-            <div className="grid gap-8 auto-rows-fr grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="grid gap-6 sm:gap-8 auto-rows-fr grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 max-w-7xl mx-auto">
 
                 {/* 新增專案卡片 */}
                 <div
