@@ -87,7 +87,7 @@ export default function ChooseQuestionnairePage() {
                     if (stageKey && latestVersion) {
                         newMap[stageKey] = latestVersion.id;
                     } else if (groupName && !stageKey) {
-                        console.warn(`後端 Group Name: "${groupName}" 未在 STAGE_NAME_MAP 中定義。`);
+                        console.warn(`Group Name: "${groupName}" 未在 STAGE_NAME_MAP 中定義。`);
                     }
                 });
                 
@@ -119,8 +119,7 @@ export default function ChooseQuestionnairePage() {
             return;
         }
 
-        console.log(`進入 ${stage} 階段，VersionID: ${versionId}`);
-        // 注意: versionId 是 number，localStorage 存入的是 string
+        // console.log(`進入 ${stage} 階段，VersionID: ${versionId}`); // ***** 除錯用 *****
         localStorage.setItem("QuestionnaireID", String(versionId)); 
 
         router.push(`/model/${stage}`); 

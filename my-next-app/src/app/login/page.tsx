@@ -95,7 +95,6 @@ export default function LoginPage() {
             }
 
             const data = await response.json();
-            console.log("Registration successful! Data:", data);
             setIsRegistering(false);
             setSuccess(t('loginPage.register.success'));
             setName("");
