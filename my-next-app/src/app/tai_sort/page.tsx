@@ -53,7 +53,6 @@ export default function TAISorter() {
             const projectId = localStorage.getItem('currentProjectId');
 
             if (!projectId) {
-                console.warn("未找到專案 ID，允許用戶操作。");
                 setIsLoading(false);
                 return;
             }
@@ -66,19 +65,14 @@ export default function TAISorter() {
                     method: 'GET',
                     headers: { 
                         'Content-Type': 'application/json',
-                        // 請在這裡加入您的認證 Header，例如：
-                        // 'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                     },
                 });
 
-                // 後端回傳錯誤處理 (Backend error handling)
                 if (!response.ok) {
-                    // ... 錯誤處理邏輯 (保持不變) ...
                     console.error(`檢查 TAI 狀態失敗，狀態碼: ${response.status}`);
                     setIsLoading(false); 
                     return; 
                 }
-
                 let responseBody: any = {};
                 
                 // 成功的回應，嘗試解析 body
@@ -90,19 +84,14 @@ export default function TAISorter() {
                     return;
                 }
 
-                // ⚠️ 修正: 從 responseBody.data 中取出陣列，並確保它始終是陣列
-                // 如果 responseBody.data 不存在或為 falsy 值，則使用空陣列 []
                 const taiSortData = responseBody.data || [];
 
                 // 檢查 taiSortData 是否為一個陣列，並且長度大於 0
                 if (Array.isArray(taiSortData) && taiSortData.length > 0) {
-                    console.log("TAI 排序已完成，跳轉至問卷選擇頁。", taiSortData);
                     router.push('/choose_questionnaire'); 
                 } else {
-                    console.log("TAI 排序未完成，允許用戶進行排序。", responseBody);
                     setIsLoading(false);
                 }
-
             } catch (error) {
                 console.error("檢查 TAI 排序狀態時發生網路或解析錯誤:", error);
                 setIsLoading(false); 
@@ -288,11 +277,9 @@ export default function TAISorter() {
             return;
         }
 
+        // Assume indicators won't be outside the TAI_INDICATOR_MAP keys
         const payload = indicators.map((indicatorZh, index) => {
             const indicatorEn = TAI_INDICATOR_MAP[indicatorZh];
-            if (!indicatorEn) {
-                console.error(`unknown TAI: ${indicatorZh}`);
-            }
             return {
                 indicator: indicatorEn, 
                 rank: index + 1, 
@@ -312,10 +299,6 @@ export default function TAISorter() {
         }
 
         const isConfirmed = confirm(confirmationMessage);
-        if (!isConfirmed) {
-            console.log("使用者取消了 TAI 排序的送出。");
-            return; 
-        }
 
         const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
         
@@ -330,15 +313,12 @@ export default function TAISorter() {
             });
 
             if (response.ok) {
-                console.log("TAI 指標優先順序已成功儲存！");
                 router.push("/choose_questionnaire");
             } else {
                 const errorData = await response.json();
-                console.error("儲存 TAI 指標優先順序失敗:", response.status, errorData);
                 alert(`儲存失敗 (${response.status})：${errorData.message || '請檢查後端日誌。'}`);
             }
         } catch (error) {
-            console.error("呼叫 API 時發生錯誤:", error);
             alert("網路錯誤或呼叫 API 失敗。");
         }
     };
