@@ -10,7 +10,7 @@ const QUESTIONNAIRE_API_URL = `http://localhost:3001/api/questionnaire/group/lat
 const STAGE_NAME_MAP: { [key: string]: 'before' | 'during' | 'after' } = {
     "建模前": 'before', 
     "建模中": 'during',
-    "建模后": 'after', 
+    "建模後": 'after', 
 };
 
 const stages = {
