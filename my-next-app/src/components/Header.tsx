@@ -28,24 +28,31 @@ export default function Header({ children, titleHref = '/' }: HeaderProps) {
             <div className='
           flex justify-between items-center
           h-full 
-          px-6
-      '>
+          px-4 sm:px-6 
+          '>
                 <Link href={titleHref} className='
-          text-2xl font-bold text-gray-800 hover:text-blue-600 transition
-        '>
+          text-xl sm:text-2xl font-bold text-gray-800 hover:text-blue-600 transition
+          '>
                     {t('header.title')}
                 </Link>
 
                 {/* 右側：客製化的內容 */}
-                <div className='flex space-x-5 items-center'>
+                <div className='
+                flex space-x-2 sm:space-x-5 items-center
+                flex-shrink-0 
+                '>
                     {/* 在這裏加上語言切換按鈕 */}
                     <select
                         value={i18nInstance.language}
                         onChange={changeLanguage}
-                        className='border rounded px-2 py-1 bg-white text-gray-800'
+                        className='
+                            border border-gray-300 rounded 
+                            px-1 sm:px-2 py-0.5 sm:py-1 text-sm sm:text-base 
+                            bg-blue-50 text-gray-700 /* <--- 修正點：使用淺藍色 bg-blue-50 */
+                        '
                     >
-                        <option value='en'>English</option>
-                        <option value='zh'>中文</option>
+                        <option value=''>EN</option>
+                        <option value='zh'>中</option>
                     </select>
                     {children}
                 </div>
