@@ -100,7 +100,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
     return (
         <div className="flex justify-center space-x-2 sm:space-x-4">
             {options.map((opt) => {
-                const displayScore = opt.order; // 顯示 1, 2, 3, 4, 5
+                const displayScore = opt.order; 
                 
                 return (
                     <button
@@ -111,8 +111,8 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
                         className={`
                             w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200
                             ${selectedOptionId === opt.id 
-                                ? 'bg-purple-700 text-white shadow-lg ring-4 ring-purple-300'
-                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-purple-100'
+                                ? 'bg-indigo-500 text-white shadow-lg ring-3 ring-indigo-300'
+                                : 'bg-white text-gray-700 border border-gray-300 hover:bg-indigo-100'
                             }
                         `}
                     >
@@ -139,8 +139,8 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
                     onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
                     className={`py-2 px-6 rounded-lg font-medium transition duration-150 border
                         ${selectedOptionId === opt.id
-                            ? 'bg-purple-700 text-white shadow-md border-purple-700'
-                            : 'bg-white text-gray-800 hover:bg-purple-50'
+                            ? 'bg-indigo-500 text-white shadow-md border-indigo-700 ring-3 ring-indigo-300'
+                            : 'bg-white text-gray-800 hover:bg-indigo-50'
                         }`}
                 >
                     {opt.text}
@@ -167,7 +167,11 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
         // 可以根據需求計算總分數，這裡簡單地把所有選中選項的分數加起來
         const newScore = options
             .filter(opt => newSelectedOptionIds.includes(opt.id))
-            .reduce((sum, opt) => sum + opt.score, 0);
+            .reduce((sum, opt) => {
+                // 將 opt.value 轉換為數字，如果轉換失敗則使用 0
+                const optionValue = Number(opt.value) || 0; 
+                return sum + optionValue;
+            }, 0); // 確保起始值是數字 0
 
         onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
     };
@@ -181,8 +185,8 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
                     className={`
                         py-2 px-4 rounded-lg font-medium transition duration-150 border
                         ${selectedOptionIds.includes(opt.id)
-                            ? 'bg-blue-600 text-white shadow-md border-blue-600' // 選中時的樣式
-                            : 'bg-white text-gray-800 hover:bg-blue-50 border-gray-300' // 未選中時的樣式
+                            ? 'bg-indigo-500 text-white shadow-md border-indigo-600' 
+                            : 'bg-white text-gray-800 hover:bg-indigo-50 border-gray-300' 
                         }
                     `}
                 >
@@ -203,7 +207,7 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
             value={textValue}
             onChange={(e) => onAnswer({ textValue: e.target.value })}
             placeholder="請在此輸入您的回答..."
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 resize-none text-gray-800"
+            className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700"
         />
     );
 };
@@ -298,7 +302,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         }
 
         setLoadingStatus('loading');
-        
+      
         try {
             const response = await fetch(`${API_BASE_URL}/questionnaire/${questionnaireId}`, {
                 method: "GET",
@@ -428,7 +432,8 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
         const answersPayload = Object.entries(answers).reduce<{
             questionId: number;
-            optionId: number | null;
+            optionId: number | null; // 給 SINGLE_CHOICE/SCALE 用
+            optionIds: number[] | null; // 給 MULTIPLE_CHOICE 用
             value: number | null;
             textValue: string | null;
         }[]>((acc, [idString, answerValue]) => {
@@ -436,6 +441,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             const question = questionnaire.questions.find(q => q.id === questionId);
 
             if (!question) return acc; // 忽略找不到的問題
+            const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
@@ -444,7 +450,8 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    value: valueToSubmit, 
+                    optionIds: null, // SCALE 不用這個
+                    value: scoreToSubmit, 
                     textValue: null,
                 });
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
@@ -454,19 +461,28 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    value: valueToSubmit, 
+                    optionIds: null, // SINGLE_CHOICE 不用這個
+                    value: scoreToSubmit, 
                     textValue: null,
                 });
 
+            } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
+                acc.push({
+                    questionId: questionId,
+                    optionId: null, // MULTIPLE_CHOICE 不用這個
+                    optionIds: answerValue.optionIds, // 傳遞選中的 ID 陣列
+                    value: scoreToSubmit, // 傳遞計算出的總分數
+                    textValue: null,
+                });
             } else if (question.type === 'TEXT') {
                 acc.push({
                     questionId: questionId,
                     optionId: null,
+                    optionIds: null,
                     value: null,
                     textValue: answerValue.textValue ?? null, // 文字回答或 null
                 });
             }
-            // 忽略其他類型或未完成的答案
             return acc;
         }, []);
         
@@ -631,7 +647,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                             <button
                                 onClick={handleNext}
                                 disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
-                                className="py-2 px-6 bg-purple-700 text-white font-bold rounded-lg transition duration-150 hover:bg-purple-500 disabled:opacity-50"
+                                className="py-2 px-6 bg-violet-600 text-white font-bold rounded-lg transition duration-150 hover:bg-violet-500 disabled:opacity-50"
                             >
                                 下一步
                             </button>
