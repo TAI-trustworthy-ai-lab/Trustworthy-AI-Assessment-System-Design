@@ -159,9 +159,9 @@ export default function HistoryPage() {
         </h1>
         <div className="mt-1">
           <div className="
-            w-full grid grid-cols-[3fr_1fr_3fr_2fr]
-            mb-2
-            py-2 px-2
+            w-full min-w-150
+            grid grid-cols-[1fr_55px_1fr_250px] gap-2
+            mb-2 py-2 px-2
             bg-gray-100
           ">
             <div className="size-fit text-gray-600">專案名稱</div>
@@ -181,21 +181,19 @@ export function responseItem(meta: ResponseMeta){
   return (
     <div key={meta.id}
       className="
-      w-full grid grid-cols-[3fr_1fr_3fr_2fr]
+      w-full min-w-150
+      grid grid-cols-[1fr_55px_1fr_250px] gap-2
       py-2 px-2
       hover:bg-blue-50 cursor-pointer rounded-lg transition duration-150
     ">
       {/* project name */}
-      <div className="size-fit text-blue-600">
-        <span className="mr-2">📄</span>
-        {meta.project.name}
-      </div>
+      <div className="truncate text-blue-600">{meta.project.name}</div>
       
       {/* response ver */}
       <div className="size-fit text-gray-600">{meta.version.id}</div>
       
       {/* response title */}
-      <div className="size-fit text-gray-600">{meta.version.title}</div>
+      <div className="truncate text-gray-600">{meta.version.title}</div>
       
       {/* response date */}
       <div className="size-fit text-gray-600">{meta.submittedAt}</div>
