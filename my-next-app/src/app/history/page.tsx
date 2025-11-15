@@ -316,6 +316,7 @@ export default function HistoryPage() {
             {responseList.map((data) => {
               const item = <ResponseItem 
                 meta={data}
+                selected={data===curResponse}
                 setCurResponse={()=>setCurResponse(data)}
                 showMenu={(e)=>{
                   handleContextMenu(e)
@@ -345,25 +346,26 @@ export default function HistoryPage() {
   );
 }
 
-export function ResponseItem({meta, setCurResponse, showMenu}: {meta:ResponseMeta, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
+export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:ResponseMeta, selected:boolean, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
   
   const myRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
-      className="
+      className={`
       w-full h-[50]
       grid grid-cols-[1fr_1.5fr_20px] gap-2 items-center
       py-2 px-2
-      hover:bg-gray-100 active:bg-gray-200 cursor-pointer rounded-lg
+      ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
+      cursor-pointer rounded-lg
 
       sm:grid-cols-[1fr_1.5fr_250px_35px]
 
       md:min-w-150
       md:grid-cols-[1.5fr_60px_2fr_250px_35px]
-    ">
+    `}>
       {/* project name */}
-      <div className="truncate h-fit text-blue-600">{meta.project.name}</div>
+      <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
       
       {/* response ver */}
       <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
@@ -376,10 +378,10 @@ export function ResponseItem({meta, setCurResponse, showMenu}: {meta:ResponseMet
 
       {/* ... i copy the icon from google drive */}
       <div ref={myRef}
-        className="
-        flex justify-center items-center
-        size-[35]  rounded-full
-      hover:bg-gray-200 active:bg-gray-300"
+        className={`
+          flex justify-center items-center
+          size-[35]  rounded-full
+          ${selected ? "hover:bg-blue-200 active:bg-blue-300" : "hover:bg-gray-200 active:bg-gray-300"}`}
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
@@ -409,10 +411,10 @@ export function ResponseWindow({state}: {state: {isLoading:boolean, curResponse:
   );
 
   const data = state.curResponse
-  //console.log(data)
+  console.log(data)
   return (
     <div className="flex items-center justify-center w-full h-full">
-      {data.submittedAt}
+      這裡會放 response
     </div>
   )
 }
