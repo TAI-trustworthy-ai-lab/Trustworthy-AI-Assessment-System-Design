@@ -1,12 +1,22 @@
 "use client";
 
+import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
-// ----------------------------------------------------
-// 模擬數據結構 (基於後端 Prisma Report Schema)
-// ----------------------------------------------------
+const useRouter = () => {
+    return {
+        push: (url: string) => {
+            if (typeof window !== 'undefined') {
+                window.location.href = url;
+            }
+        },
+    };
+};
 
-// 使用 QuestionnaireContent.jsx 中的 CATEGORY_MAP 確保一致性
+
+// ----------------------------------------------------
+// 定义指標解釋映射表
+// ----------------------------------------------------
 const CATEGORY_MAP: Record<string, string> = {
     "ACCURACY": "一、準確性（Accuracy）",
     "RELIABILITY": "二、可靠性（Reliability）",
@@ -21,36 +31,25 @@ const CATEGORY_MAP: Record<string, string> = {
     "SECURITY": "十一、資訊安全性（Security）",
 };
 
-
+// ----------------------------------------------------
+// 後端回傳資料結構定義
+// ----------------------------------------------------
 interface ReportData {
     id: number;
     responseId: number;
-    overallScore: number; // 總體分數 (取代 score)
-    generatedAt: string; // 報告生成時間
-    analysisText: string | null; // LLM 生成的分析文字 (取代 summary)
-    radarData: Record<string, number>; // 各項 TAI 的分數 (取代 categoryResults)
-    taiWeightSnapshot: Record<string, number> | null; 
-    llmMeta: any | null; 
+    overallScore: number;
+    generatedAt: string; 
+    analysisText: string | null; 
+    radarData: Record<string, number>; 
+    taiWeightSnapshot: Record<string, number> | null; // 應該沒有使用
+    llmMeta: any | null; //應該沒有使用
     
-    // images: ReportImage[]; // 這裡暫時省略 images
+    // images: ReportImage[]; // ********************************* 之後會新增這個！
 }
 
 // ----------------------------------------------------
-// 輔助函數
+// 分數轉換評級函數
 // ----------------------------------------------------
-
-// 模擬 useRouter 鉤子 (保留此版本以維持功能)
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
-};
-
-// 根據分數計算評級 (UI 邏輯)
 const getGrade = (score: number): 'A+' | 'A' | 'B' | 'C' | 'D' => {
     if (score >= 95) return 'A+';
     if (score >= 85) return 'A';
@@ -64,21 +63,20 @@ const getScoreColor = (score: number) => {
     if (score >= 80) return 'bg-lime-400';
     if (score >= 70) return 'bg-yellow-400';
     if (score >= 60) return 'bg-orange-300';
-    return 'bg-rose-400';
+    return 'bg-red-400';
 };
 
 
 const API_BASE_URL = "http://localhost:3001/api";
 
 // ----------------------------------------------------
-// 核心 API 呼叫函數: 獲取已生成的報告 (GET)
+// 後端 API 呼叫
 // ----------------------------------------------------
+// 1. GET 報告 - responseId from local storage
 const fetchReport = async (responseId: number, authToken: string): Promise<ReportData> => {
-    // 假設後端有一個 GET API 可以透過 responseId 獲取已生成的報告
     const url = `${API_BASE_URL}/report/response/${responseId}`; 
-    
     const response = await fetch(url, {
-        method: 'GET', // ⭐️ 變更為 GET
+        method: 'GET', 
         headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
@@ -87,8 +85,8 @@ const fetchReport = async (responseId: number, authToken: string): Promise<Repor
 
     const result = await response.json();
 
+    // 錯誤處理：應該不會使用到（不應該有錯誤發生！）
     if (!response.ok) {
-        // 錯誤處理強化：避免 [object Object] 錯誤
         let errorMessage = `HTTP 錯誤! 狀態碼: ${response.status}`;
         const errorDetail = result.error || result.message;
 
@@ -108,14 +106,11 @@ const fetchReport = async (responseId: number, authToken: string): Promise<Repor
     return result.data as ReportData; 
 };
 
-// ----------------------------------------------------
-// ⭐️ 獨立資料獲取函數 (錯誤處理強化)
-// ----------------------------------------------------
-
+// 2. GET 專案名稱 - currentProjectId from local storage
 const fetchProjectTitle = async (projectId: string, authToken: string): Promise<string | null> => {
+    // 假設不應該得不到專案名稱
     const url = `${API_BASE_URL}/project/${projectId}`;
-    try {
-        const response = await fetch(url, {
+    const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -124,95 +119,38 @@ const fetchProjectTitle = async (projectId: string, authToken: string): Promise<
         });
 
         const result = await response.json();
-        if (!response.ok) {
-            let errorMessage = `HTTP Error: ${response.status}`;
-            const errorDetail = result.error || result.message;
-            if (errorDetail) {
-                 if (typeof errorDetail === 'string') {
-                    errorMessage = errorDetail;
-                } else if (typeof errorDetail === 'object') {
-                    errorMessage = JSON.stringify(errorDetail);
-                }
-            } else {
-                errorMessage = `${errorMessage}: ${JSON.stringify(result)}`;
-            }
-            throw new Error(`獲取專案資料失敗: ${errorMessage}`);
-        }
         return result.data.name as string; 
-
-    } catch (error) {
-        console.error("API 呼叫 (Project) 失敗:", error);
-        return null;
-    }
 };
 
+// 3. GET 問卷標題 - questionnaireId from local storage
 const fetchVersionTitle = async (questionnaireId: string, authToken: string): Promise<string | null> => {
+    // 假設不應該得不到問卷標題
     const url = `${API_BASE_URL}/questionnaire/${questionnaireId}`;
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-            },
-        });
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
 
-        const result = await response.json();
-        if (!response.ok) {
-            let errorMessage = `HTTP Error: ${response.status}`;
-            const errorDetail = result.error || result.message;
-            if (errorDetail) {
-                 if (typeof errorDetail === 'string') {
-                    errorMessage = errorDetail;
-                } else if (typeof errorDetail === 'object') {
-                    errorMessage = JSON.stringify(errorDetail);
-                }
-            } else {
-                errorMessage = `${errorMessage}: ${JSON.stringify(result)}`;
-            }
-            throw new Error(`獲取問卷版本失敗: ${errorMessage}`);
-        }
-        return result.data.title as string; 
-
-    } catch (error) {
-        console.error("API 呼叫 (Version) 失敗:", error);
-        return null;
-    }
+    const result = await response.json();
+    return result.data.title as string; 
 };
 
+// 4. GET 使用者名稱 - userId from local storage
 const fetchUserName = async (userId: string, authToken: string): Promise<string | null> => {
+    // 假設不應該得不到使用者名稱
     const url = `${API_BASE_URL}/user/${userId}`;
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        const result = await response.json();
-        if (!response.ok) {
-            let errorMessage = `HTTP Error: ${response.status}`;
-            const errorDetail = result.error || result.message;
-            if (errorDetail) {
-                if (typeof errorDetail === 'string') {
-                    errorMessage = errorDetail;
-                } else if (typeof errorDetail === 'object') {
-                    errorMessage = JSON.stringify(errorDetail);
-                }
-            } else {
-                errorMessage = `${errorMessage}: ${JSON.stringify(result)}`;
-            }
-            throw new Error(`獲取使用者名稱失敗: ${errorMessage}`);
-        }
-        // 假設 User API 返回的 data 物件中包含 name 屬性
-        return result.data.name || '使用者名稱缺失'; 
-
-    } catch (error) {
-        console.error("API 呼叫 (User) 失敗:", error);
-        return null;
-    }
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+        },
+    });
+    const result = await response.json();
+    return result.data.name || '使用者名稱缺失'; 
 };
 
 
@@ -224,7 +162,6 @@ export default function ReportPage() {
     const [report, setReport] = useState<ReportData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'generating' | 'success' | 'error'>('generating');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    
     const [versionTitle, setVersionTitle] = useState<string | null>(null);
     const [projectName, setProjectName] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
@@ -237,7 +174,6 @@ export default function ReportPage() {
         const projId = localStorage.getItem('currentProjectId');
         const qId = localStorage.getItem('QuestionnaireID');
         const uId = localStorage.getItem('userId');
-
         const id = idString ? parseInt(idString, 10) : null;
         
         return { 
@@ -263,10 +199,8 @@ export default function ReportPage() {
 
         setLoadingStatus('generating'); 
         try {
-            // 1. 呼叫 GET API 獲取已存在的報告 (Report)
+            // 取後端資料
             const reportDataPromise = fetchReport(responseId, authToken); 
-            
-            // 2. 並行獲取輔助資料
             const projectTitlePromise = fetchProjectTitle(currentProjectId, authToken);
             const versionTitlePromise = fetchVersionTitle(questionnaireId, authToken);
             const userNamePromise = fetchUserName(userId, authToken);
@@ -283,14 +217,10 @@ export default function ReportPage() {
             setProjectName(projName);
             setVersionTitle(verTitle);
             setUserName(uName);
-            setLoadingStatus('success');
-
-            // 報告成功載入後，清除 responseId
-            localStorage.removeItem('last_submitted_response_id'); 
+            setLoadingStatus('success');; 
             
         } catch (error) {
             const message = error instanceof Error ? error.message : "獲取報告時發生錯誤。";
-            // 由於現在是 GET，如果失敗，表示報告可能尚未生成或不存在。
             setErrorMessage(`報告載入失敗，請確保報告已在問卷頁面生成: ${message}`);
             setLoadingStatus('error');
             console.error("Failed to fetch report:", error);
@@ -345,7 +275,8 @@ export default function ReportPage() {
     // --- 報告成功載入後的渲染 --- 
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
-            <main className="max-w-4xl mx-auto pt-8"> 
+            <AuthHeader />
+            <main className="max-w-4xl mx-auto pt-8 mt-7"> 
                 <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl">
                     <header className="border-b pb-4 mb-6">
                         <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-2">
@@ -369,7 +300,7 @@ export default function ReportPage() {
                         <div className="flex justify-center items-center space-x-8">
                             <div>
                                 {/* ⭐️ 使用 overallScore */}
-                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(1)}</p> 
+                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p> 
                                 <p className="text-lg font-medium text-gray-500">總體分數 (滿分 100)</p>
                             </div>
                             <div className="text-center">
