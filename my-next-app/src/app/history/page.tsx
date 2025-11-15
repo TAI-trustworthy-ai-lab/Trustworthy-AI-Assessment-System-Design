@@ -86,7 +86,7 @@ export default function HistoryPage() {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   const router = useRouter();
-  const menuSize = {x:200, y:200}
+  const menuSize = {x:200, y:270}
 
   // get userId authToken from localStorage
   useEffect(() => {
@@ -211,7 +211,7 @@ export default function HistoryPage() {
       {/* response window */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center"
+          className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
           onClick={()=>setIsOpen(false)}
         >
           <div className="
@@ -248,16 +248,17 @@ export default function HistoryPage() {
           style={{
             top: menuPosition.y,
             left: menuPosition.x,
+            width: `${menuSize.x}px`,
+            height: `${menuSize.y}px`
           }}
           className={`
-            absolute z-40
-            flex flex-col justify-between
-            w-[${menuSize.y}] h-[${menuSize.y}]
+            absolute z-40 select-none
+            flex flex-col justify-evenly
             text-gray-600 bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
           onClick={(e) => e.stopPropagation()}
         >
           <div
-            className="flex items-center h-full px-4 py-2 rounded-t-md text-gray-600 hover:bg-gray-100 cursor-pointer"
+            className="flex items-center h-full px-4 py-2 rounded-t text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
               if(curResponse){
                 setIsOpen(true)
@@ -267,13 +268,16 @@ export default function HistoryPage() {
           >
             開啟
           </div>
-          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer">
+          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
             下載
           </div>
-          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer">
+          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
             編輯
           </div>
-          <div className="flex items-center h-full px-4 py-2 rounded-b-md text-red-600 hover:bg-red-100 cursor-pointer">
+          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
+            詳細資訊
+          </div>
+          <div className="flex items-center h-full px-4 py-2 rounded-b text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200">
             刪除
           </div>
         </div>
@@ -355,6 +359,7 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
       className={`
       w-full h-[50]
       grid grid-cols-[1fr_1.5fr_20px] gap-2 items-center
+      select-none
       py-2 px-2
       ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
       cursor-pointer rounded-lg
