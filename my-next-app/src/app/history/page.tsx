@@ -11,19 +11,49 @@ const BASE_URL = "http://localhost:3001/api";
 
 export interface AnswerData{
   id: number,
+  responseId: number,
+  questionId: number,
+  optionId: number,
+  value?: number,
+  textValue?: string,
+  createdAt: string,
   question: {
-    "id": number,
-    "text": string,
-    "type": string,
-    "category": string
+    id: number,
+    text: string,
+    category: string,
+    type: string
   },
-  value: 4,
-  option: null,
-  textValue: null
+  option: {
+    id: number,
+    text?: string,
+    value?: number
+  }
+}
+
+export interface ResponseMeta{
+  id: number,
+  userId: number,
+  projectId: number,
+  versionId: number,
+  submittedAt: string,
+  label?: string,
+  project: {
+    id: number,
+    name: string
+  },
+  version: {
+    id: number,
+    title: string
+  }
 }
 
 export interface ResponseData{
   id: number,
+  userId: number,
+  projectId: number,
+  versionId: number,
+  submittedAt: string,
+  label?: string,
   user: {
     id: number,
     name: string,
@@ -32,7 +62,6 @@ export interface ResponseData{
   project: {
     id: number,
     name: string
-    //submittedAt: string
   },
   version: {
     id: number,
@@ -45,7 +74,7 @@ export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null); 
   const [authToken, setAuthToken] = useState<string | null>(null); 
 
-  const [responses, setResponse] = useState<ResponseData[]>([]);
+  const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const router = useRouter();
@@ -62,9 +91,9 @@ export default function HistoryPage() {
   }, []);
 
   useEffect(() => {
-    console.log("responses 更新：", responses);
+    console.log("responseList 更新：", responseList);
     // do something
-  }, [responses]);
+  }, [responseList]);
 
   // 專門用於獲取專案清單的函式 (GET API)
   const loadResponses = useCallback(async () => {
@@ -73,9 +102,9 @@ export default function HistoryPage() {
     }
     setIsLoading(true);
     try {
-      const data = await fetchResponses(userId, authToken);
+      const data = await fetchResponseList(userId, authToken);
       //const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
-      setResponse(data);
+      setResponseList(data);
     } catch (error) {
       console.error("載入專案失敗:", error);
     } finally {
@@ -123,31 +152,64 @@ export default function HistoryPage() {
 
   return (
     <ProtectedLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="p-8 bg-gray-50 min-h-screen font-sans">
         <AuthHeader />
-        
-        {/* 主要內容區塊，使用 pt-24 確保不被固定 Header 遮擋 */}
-        <main className="pt-24 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4">
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-12">
-              歷史紀錄頁面
-          </h1>
-          
-        </main>
+        <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
+            歷史紀錄
+        </h1>
+        <div className="mt-1">
+          {responseList.map((data) => responseItem(data))}
+        </div>
       </div>
     </ProtectedLayout>
   );
 }
 
-async function fetchResponses(userId: string, authToken: string): Promise<ResponseData[]>{
+export function responseItem(meta: ResponseMeta){
+  return (
+    <div key={meta.id}
+      className="
+      w-full grid grid-cols-4
+      py-2 px-
+      hover:bg-blue-50 cursor-pointer rounded-lg transition duration-150
+    ">
+      {/* project name */}
+      <div className="size-fit text-blue-600">
+        <span className="mr-2">📄</span>
+        {meta.project.name}
+      </div>
+      
+      {/* 檔案類型 (1fr) */}
+      <div className="size-fit text-gray-600">{meta.version.id}</div>
+      
+      {/* 擁有者 (2fr) */}
+      <div className="size-fit text-gray-600">{meta.version.title}</div>
+      
+      {/* 日期 (2fr) */}
+      <div className="size-fit text-gray-600">{meta.submittedAt}</div>
+    </div>
+  )
+}
+
+export function fetchResponse(userId: string, authToken: string, id: number){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return null;
+  }
+  const url = `${BASE_URL}/response/id/${id}`;
+  return fetchWithRetry<ResponseData>(url, { method: 'GET' }, authToken);
+};
+
+export async function fetchResponseList(userId: string, authToken: string): Promise<ResponseMeta[]>{
   if (!userId || userId === 'fallback-user-id') {
     console.warn('用戶 ID 無效，無法獲取回覆。');
     return [];
   }
   const url = `${BASE_URL}/response/user/${userId}`;
-  return fetchWithRetry<ResponseData[]>(url, { method: 'GET' }, authToken);
+  return fetchWithRetry<ResponseMeta[]>(url, { method: 'GET' }, authToken);
 };
 
-async function fetchProjects(userId: string, authToken: string): Promise<ProjectData[]>{
+export async function fetchProjects(userId: string, authToken: string): Promise<ProjectData[]>{
   if (!userId || userId === 'fallback-user-id') {
     console.warn('用戶 ID 無效，無法獲取專案。');
     return [];
@@ -156,7 +218,7 @@ async function fetchProjects(userId: string, authToken: string): Promise<Project
   return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
 };
 
-async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T>{
+export async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T>{
   if (!authToken || authToken === 'fallback-auth-token') {
     throw new Error('認證失敗：未提供有效的 authToken。');
   }
