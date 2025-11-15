@@ -40,9 +40,23 @@ export const useAuth = () => {
                 });
                 
                 if (!response.ok) {
-                    // 即使 API 呼叫失敗，我們仍要移除前端 Token 並登出
-                    const errorData = await response.json().catch(() => ({ message: 'Failed to parse error body' }));
-                    console.error("登出 API 呼叫失敗 (HTTP 錯誤):", response.status, errorData);
+                    let errorDetails: any = { message: '無法解析錯誤細節' };
+                    try {
+                        const contentType = response.headers.get('content-type');
+                        if (contentType && contentType.includes('application/json')) {
+                             errorDetails = await response.json();
+                        } else {
+                            // 如果不是 JSON，嘗試讀取文本
+                            const errorText = await response.text();
+                            errorDetails = { message: errorText.substring(0, 100) };
+                        }
+                    } catch (e) {
+                         // 保持 errorDetails 為預設值
+                    }
+                    console.error(
+                        `登出 API 呼叫失敗 (HTTP 錯誤 ${response.status})`, 
+                        errorDetails
+                    );
                 } else {
                     console.log("後端登出成功");
                 }
