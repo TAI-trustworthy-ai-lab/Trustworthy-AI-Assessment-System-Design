@@ -75,7 +75,10 @@ export default function HistoryPage() {
   const [authToken, setAuthToken] = useState<string | null>(null); 
 
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
+  const [fetchList, setFetchList] = useState<Record<number, ResponseData>>({});
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const router = useRouter();
 
@@ -90,10 +93,12 @@ export default function HistoryPage() {
     }
   }, []);
 
+  /*
   useEffect(() => {
-    console.log("responseList 更新：", responseList);
+    console.log("fetchList 更新：", fetchList);
     // do something
-  }, [responseList]);
+  }, [fetchList]);
+  */
 
   // 專門用於獲取專案清單的函式 (GET API)
   const loadResponses = useCallback(async () => {
@@ -106,11 +111,33 @@ export default function HistoryPage() {
       //const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
       setResponseList(data);
     } catch (error) {
-      console.error("載入專案失敗:", error);
+      console.error("載入回應列表失敗:", error);
     } finally {
       setIsLoading(false);
     }
   }, [userId, authToken]);
+
+  const getResponse = async (id: number) => {
+    if(!fetchList[id]){
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
+      try {
+        const data = await fetchResponse(userId, authToken, id);
+        if(data === null) throw "fail to get response"
+        else{
+          setFetchList(prev => ({
+            ...prev,
+            [id]: data
+          }))
+        };
+        console.log("回應:", data);
+      } catch (error) {
+        console.error("載入回應列失敗:", error);
+      }
+      return;
+    }
+  }
 
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
@@ -169,8 +196,19 @@ export default function HistoryPage() {
             <div className="size-fit text-gray-600">問卷名稱</div>
             <div className="size-fit text-gray-600">填寫日期</div>
           </div>
+
           {/* sorting type? */}
-          {responseList.map((data) => responseItem(data))}
+          {responseList.map((data) => {
+            const item = responseItem(data);
+            return (
+              <div 
+                key={data.id}
+                onClick={()=>getResponse(data.id)}
+              >
+                {item}
+              </div>
+            )
+          })}
         </div>
       </div>
     </ProtectedLayout>
@@ -179,12 +217,12 @@ export default function HistoryPage() {
 
 export function responseItem(meta: ResponseMeta){
   return (
-    <div key={meta.id}
+    <div
       className="
       w-full min-w-150
       grid grid-cols-[1fr_55px_1fr_250px] gap-2
       py-2 px-2
-      hover:bg-blue-50 cursor-pointer rounded-lg transition duration-150
+      hover:bg-blue-50 active:bg-blue-100 cursor-pointer rounded-lg
     ">
       {/* project name */}
       <div className="truncate text-blue-600">{meta.project.name}</div>
@@ -199,6 +237,10 @@ export function responseItem(meta: ResponseMeta){
       <div className="size-fit text-gray-600">{meta.submittedAt}</div>
     </div>
   )
+}
+
+export function responseWindow(data: ResponseData){
+
 }
 
 export function fetchResponse(userId: string, authToken: string, id: number){
