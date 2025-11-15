@@ -158,6 +158,18 @@ export default function HistoryPage() {
             歷史紀錄
         </h1>
         <div className="mt-1">
+          <div className="
+            w-full grid grid-cols-[3fr_1fr_3fr_2fr]
+            mb-2
+            py-2 px-2
+            bg-gray-100
+          ">
+            <div className="size-fit text-gray-600">專案名稱</div>
+            <div className="size-fit text-gray-600">版本</div>
+            <div className="size-fit text-gray-600">問卷名稱</div>
+            <div className="size-fit text-gray-600">填寫日期</div>
+          </div>
+          {/* sorting type? */}
           {responseList.map((data) => responseItem(data))}
         </div>
       </div>
@@ -169,8 +181,8 @@ export function responseItem(meta: ResponseMeta){
   return (
     <div key={meta.id}
       className="
-      w-full grid grid-cols-4
-      py-2 px-
+      w-full grid grid-cols-[3fr_1fr_3fr_2fr]
+      py-2 px-2
       hover:bg-blue-50 cursor-pointer rounded-lg transition duration-150
     ">
       {/* project name */}
@@ -179,13 +191,13 @@ export function responseItem(meta: ResponseMeta){
         {meta.project.name}
       </div>
       
-      {/* 檔案類型 (1fr) */}
+      {/* response ver */}
       <div className="size-fit text-gray-600">{meta.version.id}</div>
       
-      {/* 擁有者 (2fr) */}
+      {/* response title */}
       <div className="size-fit text-gray-600">{meta.version.title}</div>
       
-      {/* 日期 (2fr) */}
+      {/* response date */}
       <div className="size-fit text-gray-600">{meta.submittedAt}</div>
     </div>
   )
