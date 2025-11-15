@@ -9,95 +9,78 @@ import {ProjectData} from '@/app/home/page'
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api";
 
+export interface AnswerData{
+  questionId: number,
+  optionId: number,
+  value: number,
+  textValue: string
+}
+
+export interface ResponseData{
+  userId: number,
+  projectId: number,
+  versionId: number,
+  answers?: AnswerData[]
+}
+
 export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null); 
   const [authToken, setAuthToken] = useState<string | null>(null); 
 
-  const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [responses, setResponse] = useState<ResponseData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false); 
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
-  
   const router = useRouter();
 
   useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedUserId = localStorage.getItem('userId');
-            const storedAuthToken = localStorage.getItem('authToken');
-            
-            setUserId(storedUserId);
-            setAuthToken(storedAuthToken);
-        }
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      const storedAuthToken = localStorage.getItem('authToken');
+      
+      setUserId(storedUserId);
+      setAuthToken(storedAuthToken);
+    }
   }, []);
 
   // 專門用於獲取專案清單的函式 (GET API)
-  const loadProjects = useCallback(async () => {
-      if (!userId || userId === 'fallback-user-id' || !authToken) {
-          return;
-      }
-      
-      setIsLoading(true);
-      try {
-          const data = await fetchProjects(userId, authToken);
-          const sortedData = (data as ProjectData[]).sort((a, b) => b.id - a.id);
-          setProjects(sortedData);
-      } catch (error) {
-          console.error("載入專案失敗:", error);
-      } finally {
-          setIsLoading(false);
-      }
+  const loadResponses = useCallback(async () => {
+    if (!userId || userId === 'fallback-user-id' || !authToken) {
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const data = await fetchResponses(userId, authToken);
+      const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
+      setResponse(sortedData);
+      console.error(responses);
+    } catch (error) {
+      console.error("載入專案失敗:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [userId, authToken]);
 
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
-      if (userId && authToken) {
-          loadProjects();
-      } else if (userId !== null && authToken !== null) {
-            setIsLoading(false);
-      }
-  }, [loadProjects, userId, authToken]);
- 
-  // 3. 新增專案處理函式 (POST API)
-  const handleAddProject = useCallback(async (name: string, description: string) => { 
-    if (!userId || !authToken) {
-        throw new Error("認證資訊缺失，請重新登入。");
+    if (userId && authToken) {
+      console.debug("loadResponses()")
+      loadResponses()
+    } else if (userId !== null && authToken !== null) {
+      setIsLoading(false)
     }
-    try {
-        //await createProject(name, userId, description, authToken); 
-        await loadProjects(); 
-    } catch (error) {
-        console.error("handleAddProject 失敗:", error);
-        throw error; 
-    }
-  }, [userId, authToken, loadProjects]);
-
-  // 4. 專案卡片點擊處理
-  const handleProjectClick = (project: ProjectData) => {
-    setCurrentProject(project); 
-    setIsViewModalOpen(true); 
-  };
-
-  // 5. 確認進入專案頁面處理
-  const handleConfirmEnterProject = (project: ProjectData) => {
-    const projectId = project.id;
-    localStorage.setItem('currentProjectId', projectId.toString()); 
-    setIsViewModalOpen(false); 
-    setCurrentProject(null);
-    router.push('/tai_sort');
-  };
+  }, [loadResponses, userId, authToken])
 
   // 載入中狀態顯示
   if (isLoading) {
     return (
-        <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            載入專案列表...
-        </div>
+      <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
+        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        載入專案列表...
+      </div>
     );
   }
   
@@ -133,41 +116,50 @@ export default function HistoryPage() {
   );
 }
 
+async function fetchResponses(userId: string, authToken: string): Promise<ResponseData[]>{
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return [];
+  }
+  const url = `${BASE_URL}/response/user/${userId}`;
+  return fetchWithRetry<ResponseData[]>(url, { method: 'GET' }, authToken);
+};
+
 async function fetchProjects(userId: string, authToken: string): Promise<ProjectData[]>{
-    if (!userId || userId === 'fallback-user-id') {
-        console.warn('用戶 ID 無效，無法獲取專案。');
-        return [];
-    }
-    const url = `${BASE_URL}/project/user/${userId}`;
-    return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取專案。');
+    return [];
+  }
+  const url = `${BASE_URL}/project/user/${userId}`;
+  return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
 };
 
 async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T>{
-    if (!authToken || authToken === 'fallback-auth-token') {
-         throw new Error('認證失敗：未提供有效的 authToken。');
+  if (!authToken || authToken === 'fallback-auth-token') {
+    throw new Error('認證失敗：未提供有效的 authToken。');
+  }
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    const result: { data?: T, error?: string, message?: string } = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
-
-        const result: { data?: T, error?: string, message?: string } = await response.json();
-
-        if (!response.ok) {
-            const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-            throw new Error(errorMessage);
-        }
-
-        // 確保回傳的是 data 欄位
-        return result.data as T; 
-    } catch (error: any) {
-        console.error(`API 請求最終失敗 (${url}):`, error.message);
-        throw error; 
-    }
+    // 確保回傳的是 data 欄位
+    return result.data as T; 
+  } catch (error: any) {
+    console.error(`API 請求最終失敗 (${url}):`, error.message);
+    throw error; 
+  }
 }
