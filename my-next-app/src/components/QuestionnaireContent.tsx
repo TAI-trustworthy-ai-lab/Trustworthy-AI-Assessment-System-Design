@@ -76,6 +76,21 @@ type AnswerValue = {
 type Answers = Record<number, AnswerValue>; 
 
 // ----------------------------------------------------
+// Loading UI
+// ----------------------------------------------------
+const SubmissionLoadingIndicator: React.FC = () => (
+    <div className="flex items-center justify-center space-x-2">
+        <span className="font-bold">提交中</span>
+        {/* Animated Dots using Tailwind's built-in animate-pulse */}
+        <div className="flex items-end h-4 pb-0.5">
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        </div>
+    </div>
+);
+
+// ----------------------------------------------------
 // 錯誤提示組件
 // ----------------------------------------------------
 const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
@@ -219,7 +234,8 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
             value={textValue}
             onChange={(e) => onAnswer({ textValue: e.target.value })}
             placeholder="請在此輸入您的回答..."
-            className="w-full p-3 border border-indigo-300 rounded-lg resize-none text-gray-700"
+            className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700 
+                       focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
         />
     );
 };
@@ -533,27 +549,27 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     };
     
     
-    // 10. 成功提交後的 Modal 組件 // ********************************** 改過design
+    // 10. 成功提交後的 Modal 組件
     const SuccessModal = () => (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-gray-700/40 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm text-center">
                 <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">問卷提交成功！</h3>
+                <h3 className="text-xl font-bold text-gray-900mb-2">問卷提交成功！</h3>
                 <p className="text-gray-600 mb-6">評估報告已生成。</p>
                 <div className="flex justify-center space-x-4">
                     <button
-                        onClick={() => router.push('/report')}
-                        className="py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
-                    >
-                        查看報告結果
-                    </button>
-                    <button
                         onClick={() => router.push('/home')}
-                        className="py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-150"
+                        className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-150"
                     >
                         返回主頁
+                    </button>
+                    <button
+                        onClick={() => router.push('/report')}
+                        className="py-2 px-4 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-800 transition duration-150"
+                    >
+                        查看報告結果
                     </button>
                 </div>
             </div>
@@ -675,9 +691,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !isCurrentPageComplete}
-                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50"
+                                // 增加 min-width 以確保動畫有足夠空間
+                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
                             >
-                                {isSubmitting ? '提交中...' : '完成並提交'}
+                                {isSubmitting ? <SubmissionLoadingIndicator /> : '完成並提交'}
                             </button>
                         )}
                     </div>

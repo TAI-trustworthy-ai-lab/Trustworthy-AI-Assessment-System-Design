@@ -212,15 +212,19 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
     if (!isModalOpen) return null;
 
+    const isLimitReached = currentProjectCount >= MAX_PROJECTS;
+    const limitTextColor = isLimitReached ? 'text-red-600' : 'text-indigo-600';
+    const limitBorderColor = isLimitReached ? 'border-red-400' : 'border-indigo-400';
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm"> 
             {/* Modal 內容框 */}
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 sm:mx-0 animate-in fade-in zoom-in duration-300">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
+                <h2 className="text-center text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
                 
                 {/* 提示訊息優化區塊 */}
                 <div className="mb-6 space-y-2">
-                    <p className="text-sm text-indigo-600 border-l-4 border-indigo-400 pl-2">
+                    <p className={`text-sm ${limitTextColor} border-l-4 ${limitBorderColor} pl-2`}>
                         <b>系統限制：</b> 最多可新增 <b>{MAX_PROJECTS}</b> 個專案 (當前: <b>{currentProjectCount}</b> 個)
                     </p>
                     <p className="text-sm text-amber-600 border-l-4 border-amber-400 pl-2">
@@ -311,8 +315,8 @@ const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({ isModalOpen, cl
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in duration-300 border-t-4 border-red-500">
                 <h2 className="text-xl font-bold mb-4 text-red-700">確認刪除專案</h2>
                 <p className="text-gray-700 mb-6">
-                    您確定要永久刪除專案「<b>{projectName}</b>」嗎？
-                    此操作無法復原。
+                    確定永久刪除「{projectName}」嗎？<br />
+                    刪除將同時<b>移除所有相關的評估報告</b>，此操作無法復原。
                 </p>
 
                 <div className="flex justify-end space-x-3">
