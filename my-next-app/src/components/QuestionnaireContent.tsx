@@ -76,6 +76,21 @@ type AnswerValue = {
 type Answers = Record<number, AnswerValue>; 
 
 // ----------------------------------------------------
+// Loading UI
+// ----------------------------------------------------
+const SubmissionLoadingIndicator: React.FC = () => (
+    <div className="flex items-center justify-center space-x-2">
+        <span className="font-bold">提交中</span>
+        {/* Animated Dots using Tailwind's built-in animate-pulse */}
+        <div className="flex items-end h-4 pb-0.5">
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        </div>
+    </div>
+);
+
+// ----------------------------------------------------
 // 錯誤提示組件
 // ----------------------------------------------------
 const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
@@ -219,7 +234,8 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
             value={textValue}
             onChange={(e) => onAnswer({ textValue: e.target.value })}
             placeholder="請在此輸入您的回答..."
-            className="w-full p-3 border border-indigo-300 rounded-lg resize-none text-gray-700"
+            className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700 
+                       focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
         />
     );
 };
@@ -675,9 +691,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !isCurrentPageComplete}
-                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50"
+                                // 增加 min-width 以確保動畫有足夠空間
+                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
                             >
-                                {isSubmitting ? '提交中...' : '完成並提交'}
+                                {isSubmitting ? <SubmissionLoadingIndicator /> : '完成並提交'}
                             </button>
                         )}
                     </div>
