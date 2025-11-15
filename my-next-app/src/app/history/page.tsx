@@ -76,6 +76,7 @@ export default function HistoryPage() {
 
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [fetchList, setFetchList] = useState<Record<number, ResponseData>>({});
+  const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null); 
   const [responseState, setResponseState] = useState<{isLoading:boolean, curResponse:ResponseData | null}>({isLoading:true, curResponse:null});
 
   const [isLoading, setIsLoading] = useState(true);
@@ -117,8 +118,8 @@ export default function HistoryPage() {
 
   // get single response from response id (GET API)
   const getResponse = async (id: number) => {
+    setResponseState({isLoading:true, curResponse:null})
     if(!fetchList[id]){
-      setResponseState({isLoading:true, curResponse:null})
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -136,9 +137,10 @@ export default function HistoryPage() {
         setResponseState({isLoading:false, curResponse:null})
         console.error("載入回應失敗:", error);
       }
-      return;
     }
-    setResponseState({isLoading:false, curResponse:fetchList[id]})
+    else{
+      setResponseState({isLoading:false, curResponse:fetchList[id]})
+    }
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -254,11 +256,25 @@ export default function HistoryPage() {
             text-gray-600 bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="h-full px-4 py-2 rounded-t-md hover:bg-gray-100 cursor-pointer">
-            選項 1
+          <div
+            className="flex items-center h-full px-4 py-2 rounded-t-md text-gray-600 hover:bg-gray-100 cursor-pointer"
+            onClick={()=>{
+              if(curResponse){
+                setIsOpen(true)
+                setShowMenu(false)
+                getResponse(curResponse.id)
+            }}}
+          >
+            開啟
           </div>
-          <div className="h-full px-4 py-2 rounded-b-md hover:bg-gray-100 cursor-pointer">
-            選項 2
+          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer">
+            下載
+          </div>
+          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer">
+            編輯
+          </div>
+          <div className="flex items-center h-full px-4 py-2 rounded-b-md text-red-600 hover:bg-red-100 cursor-pointer">
+            刪除
           </div>
         </div>
       )}
@@ -300,18 +316,21 @@ export default function HistoryPage() {
             {responseList.map((data) => {
               const item = <ResponseItem 
                 meta={data}
+                setCurResponse={()=>setCurResponse(data)}
                 showMenu={(e)=>{
                   handleContextMenu(e)
               }}/>
               return (
                 <div 
                   key={data.id}
+                  onClick={()=>setCurResponse(data)}
                   onDoubleClick={()=>{
                     setIsOpen(true)
                     getResponse(data.id)
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault()
+                    setCurResponse(data)
                     handleContextMenu(e)
                   }}
                 >
@@ -326,7 +345,7 @@ export default function HistoryPage() {
   );
 }
 
-export function ResponseItem({meta, showMenu, setMyRef}: {meta:ResponseMeta, showMenu: (e:React.MouseEvent) => void, setMyRef: (ref:React.RefObject<HTMLDivElement>) => void}){
+export function ResponseItem({meta, setCurResponse, showMenu}: {meta:ResponseMeta, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
   
   const myRef = useRef<HTMLDivElement>(null);
 
@@ -368,6 +387,7 @@ export function ResponseItem({meta, showMenu, setMyRef}: {meta:ResponseMeta, sho
             e.clientX = myRef.current.getBoundingClientRect().left
             e.clientY = myRef.current.getBoundingClientRect().bottom
           }
+          setCurResponse()
           showMenu(e)
         }}
         onContextMenu={(e) => {
@@ -389,7 +409,7 @@ export function ResponseWindow({state}: {state: {isLoading:boolean, curResponse:
   );
 
   const data = state.curResponse
-  console.log(data)
+  //console.log(data)
   return (
     <div className="flex items-center justify-center w-full h-full">
       {data.submittedAt}
