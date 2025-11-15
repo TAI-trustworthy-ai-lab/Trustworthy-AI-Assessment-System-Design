@@ -76,8 +76,10 @@ export default function HistoryPage() {
 
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [fetchList, setFetchList] = useState<Record<number, ResponseData>>({});
+  const [curResponse, setCurResponse] = useState<ResponseData | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isResponseLoading, setIsResponseLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
 
   const router = useRouter();
@@ -119,6 +121,8 @@ export default function HistoryPage() {
 
   const getResponse = async (id: number) => {
     if(!fetchList[id]){
+      setIsResponseLoading(true)
+      setCurResponse(null)
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -131,12 +135,15 @@ export default function HistoryPage() {
             [id]: data
           }))
         };
-        console.log("回應:", data);
+        setIsResponseLoading(false)
+        setCurResponse(data)
       } catch (error) {
         console.error("載入回應列失敗:", error);
       }
       return;
     }
+    setIsResponseLoading(false)
+    setCurResponse(fetchList[id])
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -150,17 +157,7 @@ export default function HistoryPage() {
   }, [userId, authToken])
 
   // 載入中狀態顯示
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
-        <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        載入專案列表...
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingWindow message="載入回應中..." />;
   
   // 認證失敗/ID 缺失狀態顯示
   if (!userId || !authToken) {
@@ -179,6 +176,24 @@ export default function HistoryPage() {
 
   return (
     <ProtectedLayout>
+      
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center"
+          onClick={()=>setIsOpen(false)}
+        >
+          <div className="bg-white p-6 rounded-xl shadow-lg w-72">
+            <ResponseWindow isloading={isResponseLoading} data={curResponse} />
+            <button
+              className="px-4 py-2 bg-gray-500 text-white rounded"
+              onClick={() => setIsOpen(false)}
+            >
+              關閉
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-8 bg-gray-50 min-h-screen font-sans">
         <AuthHeader />
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
@@ -190,7 +205,7 @@ export default function HistoryPage() {
         ">
           <div className="
             w-full
-            md:max-w-200
+            md:max-w-250
           ">
             <div className="
               w-full
@@ -198,13 +213,15 @@ export default function HistoryPage() {
               mb-2 py-2 px-2
               bg-gray-100 rounded-t-lg
 
+              sm:grid-cols-[1fr_1.5fr_250px]
+
               md:min-w-150
-              md:grid-cols-[1fr_60px_1.5fr_250px]
+              md:grid-cols-[1.5fr_60px_2fr_250px]
             ">
               <div className="size-fit text-gray-600">專案名稱</div>
               <div className="hidden size-fit text-gray-600 md:flex">版本</div>
               <div className="size-fit text-gray-600">問卷名稱</div>
-              <div className="hidden size-fit text-gray-600 md:flex">填寫日期</div>
+              <div className="hidden size-fit text-gray-600 sm:flex md:flex">填寫日期</div>
             </div>
 
             {/* sorting type? */}
@@ -213,7 +230,10 @@ export default function HistoryPage() {
               return (
                 <div 
                   key={data.id}
-                  onClick={()=>getResponse(data.id)}
+                  onClick={()=>{
+                    setIsOpen(true)
+                    getResponse(data.id)
+                  }}
                 >
                   {item}
                 </div>
@@ -235,8 +255,10 @@ export function responseItem(meta: ResponseMeta){
       py-2 px-2
       hover:bg-blue-50 active:bg-blue-100 cursor-pointer rounded-lg
 
+      sm:grid-cols-[1fr_1.5fr_250px]
+
       md:min-w-150
-      md:grid-cols-[1fr_60px_1.5fr_250px]
+      md:grid-cols-[1.5fr_60px_2fr_250px]
     ">
       {/* project name */}
       <div className="truncate text-blue-600 ">{meta.project.name}</div>
@@ -248,13 +270,37 @@ export function responseItem(meta: ResponseMeta){
       <div className="truncate text-gray-600">{meta.version.title}</div>
       
       {/* response date */}
-      <div className="hidden size-fit text-gray-600 md:flex">{meta.submittedAt}</div>
+      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{meta.submittedAt}</div>
     </div>
   )
 }
 
-export function responseWindow(data: ResponseData){
+export function ResponseWindow({isloading = false, data = null}: {isloading:boolean, data: ResponseData | null}){
+  if (isloading) return <LoadingWindow message="載入中..." />;
+  if (!data) return (
+    <div>
+      <h2 className="text-lg font-semibold mb-4">獲取回應失敗</h2>
+    </div>
+  );
 
+  return (
+    <div>
+      <h2 className="text-lg font-semibold mb-4">小視窗</h2>
+      {data.submittedAt}
+    </div>
+  )
+}
+
+export function LoadingWindow({message}: {message: string}){
+  return (
+    <div className="flex items-center justify-center h-full bg-gray-50 text-gray-600">
+      <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      {message}
+    </div>
+  );
 }
 
 export function fetchResponse(userId: string, authToken: string, id: number){
