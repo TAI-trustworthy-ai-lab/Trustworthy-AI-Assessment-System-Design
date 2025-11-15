@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+
 const useRouter = () => {
     return {
         push: (url: string) => {
@@ -13,7 +14,7 @@ const useRouter = () => {
 
 
 // ----------------------------------------------------
-// 定义数据类型和常量
+// 定义指標解釋映射表
 // ----------------------------------------------------
 const CATEGORY_MAP: Record<string, string> = {
     "ACCURACY": "一、準確性（Accuracy）：AI判斷的結果與真實情況相近程度",
@@ -29,6 +30,9 @@ const CATEGORY_MAP: Record<string, string> = {
     "SECURITY": "十一、資訊安全性(Security)：防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全",
 };
 
+// ----------------------------------------------------
+// 後端回傳資料結構定義
+// ----------------------------------------------------
 interface Option {
     id: number;
     text: string;
@@ -59,10 +63,8 @@ interface QuestionnaireData {
     group: {
         id: number;
         name: string;
-        // ... 其他 group 字段
     }
 }
-
 
 type AnswerValue = {
     score?: number; 
@@ -70,18 +72,33 @@ type AnswerValue = {
     textValue?: string; 
 };
 
-// 答案狀態：Key 是 Question ID
+
 type Answers = Record<number, AnswerValue>; 
 
-const API_BASE_URL = "http://localhost:3001/api";
-
-interface QuestionnaireContentProps {
-    questionnaireId: string | number | null; 
-}
+// ----------------------------------------------------
+// 錯誤提示組件
+// ----------------------------------------------------
+const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
+    if (!message) return null;
+    return (
+        <div 
+            className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-600 text-white shadow-lg flex items-center justify-between transition-opacity duration-300"
+            role="alert"
+        >
+            <p className="font-medium">{message}</p>
+            <button 
+                onClick={onClose}
+                className="text-white opacity-90 hover:opacity-100 font-bold text-2xl ml-4"
+            >
+                &times;
+            </button>
+        </div>
+    );
+};
 
 
 // ----------------------------------------------------
-// 新增：問題渲染子元件 (根據 Type 渲染不同 UI)
+// 根據 Type 渲染不同 UI
 // ----------------------------------------------------
 
 interface QuestionRendererProps {
@@ -90,11 +107,10 @@ interface QuestionRendererProps {
     onAnswer: (answer: AnswerValue) => void;
 }
 
-// 刻度題 (Likert Scale 1-5)
+// 1. SCALE 題型
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
+    // 假設選項已經按 order 排序 + options 存在
     const options = question.options || [];
-    if (options.length === 0) return <p className="text-red-500">選項資料缺失。</p>; 
-    
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
@@ -124,11 +140,9 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
     );
 };
 
-
-
+// 2. SINGLE_CHOICE 題型
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
-    if (options.length === 0) return <p className="text-red-500">選項資料缺失。</p>; // 處理選項缺失的情況
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
@@ -150,8 +164,9 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
     );
 };
 
+// 3. MULTIPLE_CHOICE 題型
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    const options = question.options || []; // 確保 options 存在
+    const options = question.options || [];
     const selectedOptionIds = currentAnswer.optionIds || [];
 
     const handleOptionClick = (optionId: number) => {
@@ -164,20 +179,17 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
             newSelectedOptionIds = [...selectedOptionIds, optionId];
         }
 
-        // 可以根據需求計算總分數，這裡簡單地把所有選中選項的分數加起來
         const newScore = options
             .filter(opt => newSelectedOptionIds.includes(opt.id))
             .reduce((sum, opt) => {
-                // 將 opt.value 轉換為數字，如果轉換失敗則使用 0
-                const optionValue = Number(opt.value) || 0; 
+                const optionValue = Number(opt.value);
                 return sum + optionValue;
-            }, 0); // 確保起始值是數字 0
-
+            }, 0); // Initiate number = 0
         onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
     };
 
     return (
-        <div className="flex flex-wrap gap-3"> {/* 使用 flex-wrap 和 gap 讓選項在一行並自動換行 */}
+        <div className="flex flex-wrap gap-3">
             {options.map(opt => (
                 <button
                     key={opt.id}
@@ -197,7 +209,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
     );
 };
 
-// 文字輸入題 (Text)
+// 4. TEXT 題型
 const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const textValue = currentAnswer.textValue || '';
     
@@ -207,22 +219,22 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
             value={textValue}
             onChange={(e) => onAnswer({ textValue: e.target.value })}
             placeholder="請在此輸入您的回答..."
-            className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700"
+            className="w-full p-3 border border-indigo-300 rounded-lg resize-none text-gray-700"
         />
     );
 };
 
 
-// 根據問題類型選擇渲染元件
+// ----------------------------------------------------
+// 問題渲染器：根據 type 選擇組件
+// ----------------------------------------------------
 const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
     switch (props.question.type) {
         case 'SCALE':
             return <ScaleQuestion {...props} />;
         case 'SINGLE_CHOICE':
-            // 注意：單選題的選項通常在後端 API 中定義
             return <SingleChoiceQuestion {...props} />;
         case 'MULTIPLE_CHOICE':
-            // 這裡可以實現多選邏輯
             return <MultipleChoiceQuestion {...props} />; // Placeholder
         case 'TEXT':
             return <TextQuestion {...props} />;
@@ -233,32 +245,30 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 
 // ----------------------------------------------------
-// 通用问卷组件 (QuestionnaireContent)
+// 問卷內容主組件
 // ----------------------------------------------------
 
-export default function QuestionnaireContent({ questionnaireId }: QuestionnaireContentProps) {
+export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
     const router = useRouter();
-    
-    // --- 狀態管理 ---
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [currentPage, setCurrentPage] = useState(0);    
+    const [currentPage, setCurrentPage] = useState(0); 
     const [answers, setAnswers] = useState<Answers>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-    // ... (getPageTitle 保持不變) ...
+    // 1. 根據指標映射表獲取分頁標題
     const getPageTitle = (category: string): string => {
         return CATEGORY_MAP[category.toUpperCase()] || category;
     };
 
-
-    // ----------------------------------------------------
-    // 分頁邏輯 (useMemo 保持不變)
-    // ----------------------------------------------------
+    // 2. 分頁資料結果處理
     const allPages: PageData[] = useMemo(() => {
         if (!questionnaire) return [];
         
-        // 1. 按 category 分組，並按 order 排序
+        // 按 category 分組
         const grouped = questionnaire.questions.reduce((acc, question) => {
             const category = question.category;
             if (!acc[category]) {
@@ -268,16 +278,13 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             return acc;
         }, {} as Record<string, PageData & { category: string }>);
         
-        // 2. 將對象轉換為陣列，應用映射標題，並對每個頁面的問題按 order 排序
+        // 每個頁面的問題按 order 排序
         return Object.values(grouped)
             .sort((a, b) => {
-                const keys = Object.keys(CATEGORY_MAP); // 獲取正確的 category 順序
+                const keys = Object.keys(CATEGORY_MAP);
                 const indexA = keys.indexOf(a.category.toUpperCase());
                 const indexB = keys.indexOf(b.category.toUpperCase());
-                // 如果 CATEGORY_MAP 中有定義，就用它的順序，否則保持原始順序
-                if (indexA !== -1 && indexB !== -1) {
-                    return indexA - indexB;
-                }
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
                 return 0; 
             })
             .map(page => ({
@@ -286,20 +293,15 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             }));
     }, [questionnaire]);
 
+    // 3. 總頁數與當前頁面資料
     const TOTAL_PAGES = allPages.length;
     const currentPageData = allPages[currentPage];
+    const API_BASE_URL = "http://localhost:3001/api";
 
-
-    // --- API 調用：獲取問卷 (使用新的 API 響應結構) ---
+    // 4. --- 後端取問卷資料 --- //
     const fetchQuestionnaire = useCallback(async () => {
-        if (!questionnaireId) {
-            setLoadingStatus('error');
-            alert("問卷 ID 無效，無法加載。");
-            return;
-        }
-
+        // 預設問卷 ID 無誤 & 後端截取資料結構一定正確！
         setLoadingStatus('loading');
-      
         try {
             const response = await fetch(`${API_BASE_URL}/questionnaire/${questionnaireId}`, {
                 method: "GET",
@@ -309,27 +311,22 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 const errorData = await response.json();
                 throw new Error(errorData.message || `加載失敗，狀態碼: ${response.status}`);
             }
-
             const responseBody = await response.json();
-            // ⭐️ 核心變動：直接取 data.data
             const data = responseBody.data; 
-
-            if (data && data.questions && data.questions.length > 0) {
-                setQuestionnaire(data as QuestionnaireData); // 斷言為新的結構
-                setLoadingStatus('success');
-            } else {
-                throw new Error('問卷數據為空或結構不完整。');
-            }
-
+            setQuestionnaire(data as QuestionnaireData);
+            setLoadingStatus('success');
+            setSubmissionError(null);
         } catch (error) {
             console.error('獲取問卷詳情失敗:', error);
-            alert(`問卷加載失敗: ${error instanceof Error ? error.message : String(error)}`);
+            setSubmissionError(`問卷加載失敗: ${error instanceof Error ? error.message : String(error)}`);
             setLoadingStatus('error');
         }
-    }, [questionnaireId]);    
+    }, [questionnaireId]);
 
+    // 5. 分頁切換處理
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
+        setSubmissionError(null);
     }, [currentPage]);
 
     useEffect(() => {
@@ -337,20 +334,18 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
     }, [fetchQuestionnaire]);
 
 
-    // --- 狀態計算 ---
+    // 6. 進度計算與頁面完成檢查
     const progressPercent = useMemo(() => {
         return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
     }, [currentPage, TOTAL_PAGES]);
     
-    // 檢查當前頁面是否完成，現在需要檢查所有回答的屬性
     const isCurrentPageComplete = useMemo(() => {
         if (!currentPageData) return false;
         
         return currentPageData.questions.every(q => {
             const answer = answers[q.id];
-            if (!q.required) return true; // 如果不是必填，則視為完成
-
-            if (!answer) return false; // 沒有答案
+            if (!q.required) return true; 
+            if (!answer) return false; 
 
             switch (q.type) {
                 case 'SCALE':
@@ -360,7 +355,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 case 'MULTIPLE_CHOICE':
                     return answer.optionIds && answer.optionIds.length > 0;
                 case 'TEXT':
-                    // 檢查 textValue 不為空
                     return answer.textValue && answer.textValue.trim() !== ''; 
                 default:
                     return false;
@@ -368,8 +362,26 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         });
     }, [answers, currentPageData]);
 
-    // --- 交互處理 ---
-    // 答案處理現在接收一個 Question ID 和完整的 AnswerValue 物件
+    // 7. --- 後端製造報告 --- //
+    const generateReport = async (responseId: number, token: string) => {
+        const url = `${API_BASE_URL}/report/generate/${responseId}`;
+        // 假設後端一定會成功生成報告
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            return true;
+        } catch (error) {
+            console.error("報告生成過程中發生網路錯誤:", error);
+            return false;
+        }
+    };
+
+    // 8. 處理答案變更與分頁導航
     const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
         setAnswers(prev => ({
             ...prev,
@@ -378,11 +390,6 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
     };
 
     const handleNext = () => {
-        if (!isCurrentPageComplete) {
-            alert("請先完成本頁所有題目才能進入下一頁。");
-            return;
-        }
-
         if (currentPage < TOTAL_PAGES - 1) {
             setCurrentPage(currentPage + 1);
         }
@@ -394,39 +401,34 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         }
     };
 
-
-    // ----------------------------------------------------
-    // 提交問卷 (重大修改)
-    // ----------------------------------------------------
+    // 9. 提交問卷處理
     const handleSubmit = async () => {
-        if (!isCurrentPageComplete) {
-            alert("請先完成本頁所有題目才能提交問卷。");
-            return;
-        }
-
         setIsSubmitting(true);
+        setSubmissionError(null);
         
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
         const currentProjectId = localStorage.getItem('currentProjectId');
 
+        // 錯誤處理：基本不會使用到
         if (!currentUserId || !userToken) {
-            alert("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。");    
+            setSubmissionError("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。"); // ⭐️ 替換 alert
             setIsSubmitting(false);
-            router.push('/login');    
+            router.push('/login'); 
             return;
         }
         if (!currentProjectId) {
-            alert("錯誤：無法找到專案 ID。");    
+            setSubmissionError("錯誤：無法找到專案 ID。"); 
             setIsSubmitting(false);
             return;
         }
         if (!questionnaire) {
-            alert("錯誤：問卷資料尚未載入。");
+            setSubmissionError("錯誤：問卷資料尚未載入。"); 
             setIsSubmitting(false);
             return;
         }
 
+        // ** 記錄 answer[] 結構 **
         const answersPayload = Object.entries(answers).reduce<{
             questionId: number;
             optionId: number | null; // 給 SINGLE_CHOICE/SCALE 用
@@ -437,28 +439,26 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             const questionId = parseInt(idString, 10);
             const question = questionnaire.questions.find(q => q.id === questionId);
 
-            if (!question) return acc; // 忽略找不到的問題
+            if (!question) return acc; 
             const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
 
             // 處理不同類型的答案
             if (question.type === 'SCALE') {
                 const optionId = answerValue.optionIds?.[0] ?? null;
-                const valueToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    optionIds: null, // SCALE 不用這個
+                    optionIds: null, 
                     value: scoreToSubmit, 
                     textValue: null,
                 });
+
             } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
                 const optionId = answerValue.optionIds[0];
-                const selectedOption = question.options?.find(opt => opt.id === optionId);
-                const valueToSubmit = selectedOption?.value ?? null;
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    optionIds: null, // SINGLE_CHOICE 不用這個
+                    optionIds: null, 
                     value: scoreToSubmit, 
                     textValue: null,
                 });
@@ -466,9 +466,9 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
                 acc.push({
                     questionId: questionId,
-                    optionId: null, // MULTIPLE_CHOICE 不用這個
-                    optionIds: answerValue.optionIds, // 傳遞選中的 ID 陣列
-                    value: scoreToSubmit, // 傳遞計算出的總分數
+                    optionId: null, 
+                    optionIds: answerValue.optionIds, 
+                    value: scoreToSubmit, 
                     textValue: null,
                 });
             } else if (question.type === 'TEXT') {
@@ -491,6 +491,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                 ? parseInt(String(questionnaireId), 10)
                 : NaN;
 
+        // ** 最終提交的 Payload 結構 **
         const finalPayload = {
             userId: parsedUserId,
             projectId: parsedProjectId,
@@ -498,61 +499,72 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
             answers: answersPayload,
         };
 
-        console.log('--- 準備提交的 finalPayload ---');
-        console.log(finalPayload);
-        console.log('---------------------------------');
+
+        // --- 提交問卷給後端 --- //
         try {
             const response = await fetch(`${API_BASE_URL}/response`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,    
+                    'Authorization': `Bearer ${userToken}`, 
                 },
-                body: JSON.stringify(finalPayload),    
+                body: JSON.stringify(finalPayload), 
             });
 
             if (response.ok) {
                 const data = await response.json();
                 const responseId = data.data.id;
+                
                 localStorage.setItem('responseId', responseId.toString());
-
-                alert("問卷提交成功！");
-                router.push('/report');    
+                setSubmittedResponseId(responseId);
+                await generateReport(responseId, userToken);
+                setShowSuccessModal(true); 
+                
             } else {
-                let errorDetail = '伺服器錯誤 (500)';
-                try {
-                    const contentType = response.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                        const errorData = await response.json();
-                        // 嘗試提取 message 或 error 字段
-                        errorDetail = errorData.message || errorData.error || errorDetail;
-                    } else {
-                        // 嘗試獲取非 JSON 文本，例如 HTML 錯誤頁面
-                        const errorText = await response.text();
-                        console.error('伺服器 500 錯誤的原始回應:', errorText.substring(0, 200)); // 只顯示前 200 字元
-                        errorDetail = `伺服器 500 錯誤，請檢查後台日誌。`;
-                    }
-                } catch (parseError) {
-                    console.error('解析錯誤訊息失敗:', parseError);
-                    errorDetail = '伺服器返回了無法解析的回應。';
-                }
-                alert(`提交失敗: ${errorDetail}`);
+                let errorDetail = `伺服器錯誤 (${response.status})`;
+                setSubmissionError(`提交失敗: ${errorDetail}`); 
             }
         } catch (error) {
             console.error('提交錯誤:', error);
-            alert("提交過程中發生網路錯誤。");
+            setSubmissionError("提交過程中發生網路錯誤。"); 
         } finally {
             setIsSubmitting(false);
         }
     };
     
-    // --- 渲染邏輯 (UI 部分) ---
+    
+    // 10. 成功提交後的 Modal 組件 // ********************************** 改過design
+    const SuccessModal = () => (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm text-center">
+                <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">問卷提交成功！</h3>
+                <p className="text-gray-600 mb-6">評估報告已生成。</p>
+                <div className="flex justify-center space-x-4">
+                    <button
+                        onClick={() => router.push('/report')}
+                        className="py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
+                    >
+                        查看報告結果
+                    </button>
+                    <button
+                        onClick={() => router.push('/home')}
+                        className="py-2 px-4 bg-gray-200 text-gray-800 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-150"
+                    >
+                        返回主頁
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 
-    // Loading 和 Error 狀態渲染
+    // 11. loading / error 狀態處理
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <p className="text-xl font-medium text-purple-800">正在加载问卷...</p>
+                <p className="text-xl font-medium text-purple-800">正在加載問卷...</p>
             </div>
         );
     }
@@ -561,12 +573,13 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="p-8 bg-white rounded-xl shadow-lg text-center">
-                    <p className="text-xl font-bold text-red-600 mb-4">问卷加载失败或不存在。</p>
+                    <p className="text-xl font-bold text-red-600 mb-4">問卷加載失敗或不存在。</p>
+                    <p className="text-gray-600 mb-4">{submissionError}</p>
                     <button 
                         onClick={fetchQuestionnaire} 
-                        className="py-2 px-4 bg-purple-800 text-white rounded-lg hover:bg-purple-700"
+                        className="py-2 px-4 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition duration-150"
                     >
-                        重试加载
+                        重試加載
                     </button>
                 </div>
             </div>
@@ -575,9 +588,15 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
 
 
 
-    // 渲染主體
+    // 12. 正常問卷內容渲染!!!
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* 頂部錯誤提示 */}
+            <ErrorAlert 
+                message={submissionError} 
+                onClose={() => setSubmissionError(null)} 
+            />
+            
             <main className="pt-8 flex flex-col items-center min-h-[calc(100vh)] px-4">
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
                     {/* 問卷題目 titleA */}
@@ -619,7 +638,7 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                                             {q.required && <span className="text-red-500 ml-1">*</span>}
                                         </p>
                                         
-                                        {/* ⭐️ 渲染區塊：根據 type 渲染不同 UI */}
+                                        {/* 根據 type 渲染不同 UI */}
                                         <div className="flex justify-center sm:justify-start">
                                             <QuestionRenderer
                                                 question={q}
@@ -664,6 +683,8 @@ export default function QuestionnaireContent({ questionnaireId }: QuestionnaireC
                     </div>
                 </div>
             </main>
+            {/* Modal 渲染移到最頂層，由狀態控制 */}
+            {showSuccessModal && <SuccessModal />}
         </div>
     );
 }
