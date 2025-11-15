@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
@@ -76,13 +76,16 @@ export default function HistoryPage() {
 
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [fetchList, setFetchList] = useState<Record<number, ResponseData>>({});
-  const [curResponse, setCurResponse] = useState<ResponseData | null>(null);
+  const [responseState, setResponseState] = useState<{isLoading:boolean, curResponse:ResponseData | null}>({isLoading:true, curResponse:null});
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isResponseLoading, setIsResponseLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   const router = useRouter();
+  const menuSize = {x:200, y:200}
 
   // get userId authToken from localStorage
   useEffect(() => {
@@ -95,14 +98,7 @@ export default function HistoryPage() {
     }
   }, []);
 
-  /*
-  useEffect(() => {
-    console.log("fetchList 更新：", fetchList);
-    // do something
-  }, [fetchList]);
-  */
-
-  // 專門用於獲取專案清單的函式 (GET API)
+  // load all response from user id (GET API)
   const loadResponses = useCallback(async () => {
     if (!userId || userId === 'fallback-user-id' || !authToken) {
       return;
@@ -119,10 +115,10 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
+  // get single response from response id (GET API)
   const getResponse = async (id: number) => {
     if(!fetchList[id]){
-      setIsResponseLoading(true)
-      setCurResponse(null)
+      setResponseState({isLoading:true, curResponse:null})
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -135,15 +131,14 @@ export default function HistoryPage() {
             [id]: data
           }))
         };
-        setIsResponseLoading(false)
-        setCurResponse(data)
+        setResponseState({isLoading:false, curResponse:data})
       } catch (error) {
-        console.error("載入回應列失敗:", error);
+        setResponseState({isLoading:false, curResponse:null})
+        console.error("載入回應失敗:", error);
       }
       return;
     }
-    setIsResponseLoading(false)
-    setCurResponse(fetchList[id])
+    setResponseState({isLoading:false, curResponse:fetchList[id]})
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -156,8 +151,42 @@ export default function HistoryPage() {
     }
   }, [userId, authToken])
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    const { innerWidth, innerHeight } = window;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuSize.x > innerWidth) x -= menuSize.x;
+    if (y + menuSize.y > innerHeight) y -= menuSize.y;
+
+    setMenuPosition({ x, y });
+    setMenuPositionOriginal({ x, y });
+    setShowMenu(true);
+  }
+
+  useEffect(() => {
+    if(!showMenu) return
+    const handleResize = () => {
+      let x = menuPositionOriginal.x;
+      let y = menuPositionOriginal.y;
+
+      if (x + menuSize.x > window.innerWidth) x = window.innerWidth - menuSize.x - 8;
+      if (y + menuSize.y > window.innerHeight) y = window.innerHeight - menuSize.y - 8;
+
+      setMenuPosition({ x, y });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [menuPosition]);
+
   // 載入中狀態顯示
-  if (isLoading) return <LoadingWindow message="載入回應中..." />;
+  if (isLoading) return (
+    <div className='h-screen items-center justify-center'>
+      <LoadingComponent message="載入回應列表中..." />
+    </div>
+  );
   
   // 認證失敗/ID 缺失狀態顯示
   if (!userId || !authToken) {
@@ -177,27 +206,70 @@ export default function HistoryPage() {
   return (
     <ProtectedLayout>
       
+      {/* response window */}
       {isOpen && (
         <div 
           className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center"
           onClick={()=>setIsOpen(false)}
         >
-          <div className="bg-white p-6 rounded-xl shadow-lg w-72">
-            <ResponseWindow isloading={isResponseLoading} data={curResponse} />
-            <button
-              className="px-4 py-2 bg-gray-500 text-white rounded"
-              onClick={() => setIsOpen(false)}
-            >
-              關閉
-            </button>
+          <div className="
+            flex flex-col
+            w-full max-w-200 h-150
+            mx-20 p-5
+            bg-gray-100 rounded-xl shadow-lg"
+            onClick={(e) => e.stopPropagation()} // avoid clicking background
+          >
+            <div className="
+              h-full mb-5 rounded-md
+              bg-gray-50
+            ">
+              <ResponseWindow state={responseState} />
+            </div>
+            <div className="flex flex-col justify-center items-center">
+              <button
+                className="
+                  px-4 py-2 
+                  bg-gray-500 text-white rounded
+                  hover:bg-gray-400 active:bg-gray-600"
+                onClick={() => setIsOpen(false)}
+              >
+                關閉
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="p-8 bg-gray-50 min-h-screen font-sans">
+      {/* right click menu */}
+      {showMenu && (
+        <div
+          style={{
+            top: menuPosition.y,
+            left: menuPosition.x,
+          }}
+          className={`
+            absolute z-40
+            flex flex-col justify-between
+            w-[${menuSize.y}] h-[${menuSize.y}]
+            text-gray-600 bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="h-full px-4 py-2 rounded-t-md hover:bg-gray-100 cursor-pointer">
+            選項 1
+          </div>
+          <div className="h-full px-4 py-2 rounded-b-md hover:bg-gray-100 cursor-pointer">
+            選項 2
+          </div>
+        </div>
+      )}
+
+      <div className="
+        p-8 bg-gray-50 min-h-screen font-sans"
+        onClick={() => setShowMenu(false)}
+      >
         <AuthHeader />
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
-            歷史紀錄
+          歷史紀錄
         </h1>
         <div className="
             flex justify-center
@@ -208,15 +280,15 @@ export default function HistoryPage() {
             md:max-w-250
           ">
             <div className="
-              w-full
-              grid grid-cols-[1fr_1.5fr] gap-2
+              w-full h-[50]
+              grid grid-cols-[1fr_1.5fr] gap-2 items-center
               mb-2 py-2 px-2
               bg-gray-100 rounded-t-lg
 
-              sm:grid-cols-[1fr_1.5fr_250px]
+              sm:grid-cols-[1fr_1.5fr_250px_35px]
 
               md:min-w-150
-              md:grid-cols-[1.5fr_60px_2fr_250px]
+              md:grid-cols-[1.5fr_60px_2fr_250px_35px]
             ">
               <div className="size-fit text-gray-600">專案名稱</div>
               <div className="hidden size-fit text-gray-600 md:flex">版本</div>
@@ -226,13 +298,21 @@ export default function HistoryPage() {
 
             {/* sorting type? */}
             {responseList.map((data) => {
-              const item = responseItem(data);
+              const item = <ResponseItem 
+                meta={data}
+                showMenu={(e)=>{
+                  handleContextMenu(e)
+              }}/>
               return (
                 <div 
                   key={data.id}
-                  onClick={()=>{
+                  onDoubleClick={()=>{
                     setIsOpen(true)
                     getResponse(data.id)
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    handleContextMenu(e)
                   }}
                 >
                   {item}
@@ -246,52 +326,78 @@ export default function HistoryPage() {
   );
 }
 
-export function responseItem(meta: ResponseMeta){
+export function ResponseItem({meta, showMenu, setMyRef}: {meta:ResponseMeta, showMenu: (e:React.MouseEvent) => void, setMyRef: (ref:React.RefObject<HTMLDivElement>) => void}){
+  
+  const myRef = useRef<HTMLDivElement>(null);
+
   return (
     <div
       className="
-      w-full
-      grid grid-cols-[1fr_1.5fr] gap-2
+      w-full h-[50]
+      grid grid-cols-[1fr_1.5fr_20px] gap-2 items-center
       py-2 px-2
-      hover:bg-blue-50 active:bg-blue-100 cursor-pointer rounded-lg
+      hover:bg-gray-100 active:bg-gray-200 cursor-pointer rounded-lg
 
-      sm:grid-cols-[1fr_1.5fr_250px]
+      sm:grid-cols-[1fr_1.5fr_250px_35px]
 
       md:min-w-150
-      md:grid-cols-[1.5fr_60px_2fr_250px]
+      md:grid-cols-[1.5fr_60px_2fr_250px_35px]
     ">
       {/* project name */}
-      <div className="truncate text-blue-600 ">{meta.project.name}</div>
+      <div className="truncate h-fit text-blue-600">{meta.project.name}</div>
       
       {/* response ver */}
       <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
       
       {/* response title */}
-      <div className="truncate text-gray-600">{meta.version.title}</div>
+      <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
       
       {/* response date */}
       <div className="hidden size-fit text-gray-600 sm:flex md:flex">{meta.submittedAt}</div>
+
+      {/* ... i copy the icon from google drive */}
+      <div ref={myRef}
+        className="
+        flex justify-center items-center
+        size-[35]  rounded-full
+      hover:bg-gray-200 active:bg-gray-300"
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          if(myRef.current){
+            e.clientX = myRef.current.getBoundingClientRect().left
+            e.clientY = myRef.current.getBoundingClientRect().bottom
+          }
+          showMenu(e)
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" focusable="false"><path d="M10 6c.82 0 1.5-.68 1.5-1.5S10.82 3 10 3s-1.5.67-1.5 1.5S9.18 6 10 6zm0 5.5c.82 0 1.5-.68 1.5-1.5s-.68-1.5-1.5-1.5-1.5.68-1.5 1.5.68 1.5 1.5 1.5zm0 5.5c.82 0 1.5-.67 1.5-1.5 0-.82-.68-1.5-1.5-1.5s-1.5.68-1.5 1.5c0 .83.68 1.5 1.5 1.5z"></path></svg>
+      </div>
     </div>
   )
 }
 
-export function ResponseWindow({isloading = false, data = null}: {isloading:boolean, data: ResponseData | null}){
-  if (isloading) return <LoadingWindow message="載入中..." />;
-  if (!data) return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">獲取回應失敗</h2>
+export function ResponseWindow({state}: {state: {isLoading:boolean, curResponse:ResponseData | null}}){
+  if (state.isLoading) return <LoadingComponent message="載入中..." />;
+  if (!state.curResponse) return (
+    <div className="flex items-center justify-center w-full h-full">
+      <h2 className="text-red-600 text-lg font-semibold mb-4">獲取回應失敗</h2>
     </div>
   );
 
+  const data = state.curResponse
+  console.log(data)
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-4">小視窗</h2>
+    <div className="flex items-center justify-center w-full h-full">
       {data.submittedAt}
     </div>
   )
 }
 
-export function LoadingWindow({message}: {message: string}){
+export function LoadingComponent({message}: {message: string}){
   return (
     <div className="flex items-center justify-center h-full bg-gray-50 text-gray-600">
       <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
