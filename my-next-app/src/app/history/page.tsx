@@ -10,17 +10,35 @@ import {ProjectData} from '@/app/home/page'
 const BASE_URL = "http://localhost:3001/api";
 
 export interface AnswerData{
-  questionId: number,
-  optionId: number,
-  value: number,
-  textValue: string
+  id: number,
+  question: {
+    "id": number,
+    "text": string,
+    "type": string,
+    "category": string
+  },
+  value: 4,
+  option: null,
+  textValue: null
 }
 
 export interface ResponseData{
-  userId: number,
-  projectId: number,
-  versionId: number,
-  answers?: AnswerData[]
+  id: number,
+  user: {
+    id: number,
+    name: string,
+    email: string
+  },
+  project: {
+    id: number,
+    name: string
+    //submittedAt: string
+  },
+  version: {
+    id: number,
+    title: string
+  },
+  answers: AnswerData[]
 }
 
 export default function HistoryPage() {
@@ -32,6 +50,7 @@ export default function HistoryPage() {
 
   const router = useRouter();
 
+  // get userId authToken from localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUserId = localStorage.getItem('userId');
@@ -42,18 +61,21 @@ export default function HistoryPage() {
     }
   }, []);
 
+  useEffect(() => {
+    console.log("responses 更新：", responses);
+    // do something
+  }, [responses]);
+
   // 專門用於獲取專案清單的函式 (GET API)
   const loadResponses = useCallback(async () => {
     if (!userId || userId === 'fallback-user-id' || !authToken) {
       return;
     }
-    
     setIsLoading(true);
     try {
       const data = await fetchResponses(userId, authToken);
-      const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
-      setResponse(sortedData);
-      console.error(responses);
+      //const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
+      setResponse(data);
     } catch (error) {
       console.error("載入專案失敗:", error);
     } finally {
@@ -69,7 +91,7 @@ export default function HistoryPage() {
     } else if (userId !== null && authToken !== null) {
       setIsLoading(false)
     }
-  }, [loadResponses, userId, authToken])
+  }, [userId, authToken])
 
   // 載入中狀態顯示
   if (isLoading) {
@@ -157,6 +179,7 @@ async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authTok
     }
 
     // 確保回傳的是 data 欄位
+    //console.error(result.data as T)
     return result.data as T; 
   } catch (error: any) {
     console.error(`API 請求最終失敗 (${url}):`, error.message);
