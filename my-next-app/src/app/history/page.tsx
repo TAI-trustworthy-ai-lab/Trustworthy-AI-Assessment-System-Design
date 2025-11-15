@@ -184,31 +184,42 @@ export default function HistoryPage() {
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
             歷史紀錄
         </h1>
-        <div className="mt-1">
+        <div className="
+            flex justify-center
+            w-full
+        ">
           <div className="
-            w-full min-w-150
-            grid grid-cols-[1fr_55px_1fr_250px] gap-2
-            mb-2 py-2 px-2
-            bg-gray-100
+            w-full
+            md:max-w-200
           ">
-            <div className="size-fit text-gray-600">專案名稱</div>
-            <div className="size-fit text-gray-600">版本</div>
-            <div className="size-fit text-gray-600">問卷名稱</div>
-            <div className="size-fit text-gray-600">填寫日期</div>
-          </div>
+            <div className="
+              w-full
+              grid grid-cols-[1fr_1.5fr] gap-2
+              mb-2 py-2 px-2
+              bg-gray-100 rounded-t-lg
 
-          {/* sorting type? */}
-          {responseList.map((data) => {
-            const item = responseItem(data);
-            return (
-              <div 
-                key={data.id}
-                onClick={()=>getResponse(data.id)}
-              >
-                {item}
-              </div>
-            )
-          })}
+              md:min-w-150
+              md:grid-cols-[1fr_60px_1.5fr_250px]
+            ">
+              <div className="size-fit text-gray-600">專案名稱</div>
+              <div className="hidden size-fit text-gray-600 md:flex">版本</div>
+              <div className="size-fit text-gray-600">問卷名稱</div>
+              <div className="hidden size-fit text-gray-600 md:flex">填寫日期</div>
+            </div>
+
+            {/* sorting type? */}
+            {responseList.map((data) => {
+              const item = responseItem(data);
+              return (
+                <div 
+                  key={data.id}
+                  onClick={()=>getResponse(data.id)}
+                >
+                  {item}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </ProtectedLayout>
@@ -219,22 +230,25 @@ export function responseItem(meta: ResponseMeta){
   return (
     <div
       className="
-      w-full min-w-150
-      grid grid-cols-[1fr_55px_1fr_250px] gap-2
+      w-full
+      grid grid-cols-[1fr_1.5fr] gap-2
       py-2 px-2
       hover:bg-blue-50 active:bg-blue-100 cursor-pointer rounded-lg
+
+      md:min-w-150
+      md:grid-cols-[1fr_60px_1.5fr_250px]
     ">
       {/* project name */}
-      <div className="truncate text-blue-600">{meta.project.name}</div>
+      <div className="truncate text-blue-600 ">{meta.project.name}</div>
       
       {/* response ver */}
-      <div className="size-fit text-gray-600">{meta.version.id}</div>
+      <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
       
       {/* response title */}
       <div className="truncate text-gray-600">{meta.version.title}</div>
       
       {/* response date */}
-      <div className="size-fit text-gray-600">{meta.submittedAt}</div>
+      <div className="hidden size-fit text-gray-600 md:flex">{meta.submittedAt}</div>
     </div>
   )
 }
