@@ -170,5 +170,31 @@
       "fairness": "公平性",
       "security": "資訊安全"
     }
+  },
+  "choosePage": {
+    "loading": "正在載入問卷資料...",
+    "title": "選擇建模階段",
+    "description": "請選擇您目前進行到的階段，以開始填寫相應的量化評估問卷。",
+    "stages": {
+      "before": {
+        "title": "建模前",
+        "description": "專注於需求分析、資料準備和目標設定。"
+      },
+      "during": {
+        "title": "建模中",
+        "description": "專注於模型選擇、訓練過程中的監控及參數調整。"
+      },
+      "after": {
+        "title": "建模後",
+        "description": "專注於模型評估、部署準備和結果回顧。"
+      }
+    },
+    "error": {
+      "missingStage": "錯誤：找不到 {{stage}} 階段對應的最新問卷版本。",
+      "missingQuestionnaire": "(問卷缺失)"
+    },
+    "log": {
+      "enterStage": "進入 {{stage}} 階段，VersionID: {{versionId}}"
+    }
   }
 }
