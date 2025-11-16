@@ -70,23 +70,91 @@
     }
   },
 
-  "homePage": {
-    "title": "AI Evaluation System Homepage",
-    "startTest": "Start Test",
-    "viewReports": "View Previous Reports"
-  },
-
   "auth": {
     "logout": "Logout",
     "loggingOut": "Logging out...",
     "logoutTitle": "Logout",
     "loggingOutTitle": "Logging out...",
     "verifying": "Verifying, please wait..."
+  },
+
+  "homePage": {
+    "系統限制": "System Limits",
+    "最多可新增": "Maximum allowed to add",
+    "個專案": "projects",
+    "當前": "Current",
+    "個": "items",
+    "重要提醒": "Important Reminder",
+    "專案名稱與描述在建立後將無法變更": "Project name and description cannot be modified after creation",
+    "請輸入專案名稱": "Please enter project name",
+    "專案名稱": "Project Name",
+    "專案描述": "Project Description",
+    "請輸入專案描述": "Please enter project description",
+    "取消": "Cancel",
+    "新增": "Create",
+    "確認刪除專案": "Confirm Project Deletion",
+    "確定永久刪除": "Permanently delete",
+    "嗎": "?",
+    "刪除將同時": "Deleting will also",
+    "移除所有相關的評估報告": "remove all related evaluation reports",
+
+    "loading": {
+      "projects": "Loading project list..."
+    },
+
+    "error": {
+      "loadProjects": "Failed to load projects:",
+      "missingAuth": "Missing authentication information. Please log in again.",
+      "addProjectFailed": "handleAddProject failed:",
+      "authFailedTitle": "Authentication failed or user ID missing",
+      "authFailedMessage": "Unable to retrieve a valid userId or authToken from the browser's Local Storage. Please make sure you are logged in and the data is correctly stored."
+    },
+
+    "dashboard": {
+      "title": "My Project Dashboard",
+      "addProject": "Add Project",
+      "unnamedProject": "Untitled Project {{index}}",
+      "viewHistory": "View Previous Reports"
+    },
+
+    "viewProject": {
+      "title": "Project Details",
+      "nameLabel": "Project Name:",
+      "descriptionLabel": "Project Description:",
+      "noDescription": "No description provided for this project",
+      "tai": {
+        "label": "TAI Sorting Indicators:",
+        "noOrder": "TAI sorting indicators have not been configured for this project. Click “Enter Project” to set them.",
+        "noUse": "This project does not use TAI sorting"
+      },
+      "createdAtLabel": "Creation Date:",
+      "noDate": "No date information",
+      "deleteButton": "Delete Project",
+      "closeButton": "Close",
+      "enterButton": "Enter Project",
+      "error": {
+        "missingData": "Missing project/user data. Unable to delete.",
+        "deleteFailed": "Deletion failed: {{message}}"
+      }
+    },
+
+    "confirmDelete": {
+      "title": "Confirm Project Deletion",
+      "message": "Are you sure you want to permanently delete “{{projectName}}”?\nDeleting will also remove all related evaluation reports. This action cannot be undone.",
+      "confirmButton": "Confirm Deletion"
+    },
+
+    "cancel": "Cancel",
+
+    "card": {
+      "noDescription": "No description"
+    }
   }
-  
-  
 
-  
+}
 
-  
+
+
+
+
 }
