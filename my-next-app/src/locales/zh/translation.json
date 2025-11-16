@@ -192,9 +192,6 @@
     "error": {
       "missingStage": "錯誤：找不到 {{stage}} 階段對應的最新問卷版本。",
       "missingQuestionnaire": "(問卷缺失)"
-    },
-    "log": {
-      "enterStage": "進入 {{stage}} 階段，VersionID: {{versionId}}"
     }
   }
 }
