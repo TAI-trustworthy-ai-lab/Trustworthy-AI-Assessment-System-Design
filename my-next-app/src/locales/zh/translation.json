@@ -70,11 +70,7 @@
     }
   },
 
-  "homePage": {
-    "title": "AI評估系統主頁",
-    "startTest": "開始測驗",
-    "viewReports": "檢視先前報告"
-  },
+
 
   "auth": {
     "logout": "登出",
@@ -82,10 +78,75 @@
     "logoutTitle": "登出",
     "loggingOutTitle": "登出中...",
     "verifying": "驗證中，請稍候..."
-  }
-  
-  
-  
+  },
 
-  
+  "homePage": {
+    "系統限制": "系統限制",
+    "最多可新增": "最多可新增",
+    "個專案": "個專案",
+    "當前": "當前",
+    "個": "個",
+    "重要提醒": "重要提醒",
+    "專案名稱與描述在建立後將無法變更": "專案名稱與描述在建立後將無法變更",
+    "請輸入專案名稱": "請輸入專案名稱",
+    "專案名稱": "專案名稱",
+    "專案描述": "專案描述",
+    "請輸入專案描述": "請輸入專案描述",
+    "取消": "取消",
+    "新增": "新增",
+    "確認刪除專案": "確認刪除專案",
+    "確定永久刪除": "確定永久刪除",
+    "嗎": "嗎",
+    "刪除將同時": "刪除將同時",
+    "移除所有相關的評估報告": "移除所有相關的評估報告",
+    "loading": {
+      "projects": "載入專案列表..."
+    },
+    "error": {
+      "loadProjects": "載入專案失敗:",
+      "missingAuth": "認證資訊缺失，請重新登入。",
+      "addProjectFailed": "handleAddProject 失敗:",
+      "authFailedTitle": "認證失敗或用戶 ID 缺失",
+      "authFailedMessage": "無法從瀏覽器的 Local Storage 獲取有效的 userId 或 authToken。請確保您已登入且資料已正確儲存。"
+    },
+    "dashboard": {
+      "title": "我的專案儀表板",
+      "addProject": "新增專案",
+      "unnamedProject": "未命名專案 {{index}}",
+      "viewHistory": "檢視先前報告"
+    },
+    "viewProject": {
+      "title": "專案詳細資訊",
+      "nameLabel": "專案名稱:",
+      "descriptionLabel": "專案描述:",
+      "noDescription": "此專案未填寫描述",
+      "tai": {
+        "label": "TAI 排序指標:",
+        "noOrder": "此專案尚未設定 TAI 排序指標。點擊「進入專案」進行排序。",
+        "noUse": "此專案不使用 TAI 排序"
+      },
+      "createdAtLabel": "建立日期:",
+      "noDate": "無日期資訊",
+      "deleteButton": "刪除專案",
+      "closeButton": "關閉",
+      "enterButton": "進入專案",
+      "error": {
+        "missingData": "專案 / 使用者資料缺失，無法刪除。",
+        "deleteFailed": "刪除失敗: {{message}}"
+      }
+    },
+    "confirmDelete": {
+      "title": "確認刪除專案",
+      "message": "確定永久刪除「{{projectName}}」嗎？\n刪除將同時移除所有相關的評估報告，此操作無法復原。",
+      "confirmButton": "確認刪除"
+    },
+    "cancel": "取消",
+    "card": {
+      "noDescription": "無描述"
+
+    }
+
+
+
+  }
 }
