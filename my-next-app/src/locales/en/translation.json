@@ -171,9 +171,32 @@
       "fairness": "Fairness",
       "security": "Information Security"
     }
+  },
+  "choosePage": {
+    "loading": "Loading questionnaire data...",
+    "title": "Select Modeling Stage",
+    "description": "Please select the stage you are currently in to begin filling out the corresponding quantitative assessment questionnaire.",
+    "stages": {
+      "before": {
+        "title": "Before Modeling",
+        "description": "Focuses on requirements analysis, data preparation, and goal setting."
+      },
+      "during": {
+        "title": "During Modeling",
+        "description": "Focuses on model selection, monitoring during training, and parameter adjustment."
+      },
+      "after": {
+        "title": "After Modeling",
+        "description": "Focuses on model evaluation, deployment preparation, and outcome review."
+      }
+    },
+    "error": {
+      "missingStage": "Error: Cannot find the latest questionnaire version for the {{stage}} stage.",
+      "missingQuestionnaire": "(Questionnaire Missing)"
+    },
+    "log": {
+      "enterStage": "Entering {{stage}} stage, VersionID: {{versionId}}"
+    }
   }
-
-
-
 }
 
