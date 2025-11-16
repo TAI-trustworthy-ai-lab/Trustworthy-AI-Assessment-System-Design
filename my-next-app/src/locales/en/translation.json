@@ -149,12 +149,31 @@
     "card": {
       "noDescription": "No description"
     }
+  },
+  "sortPage": {
+    "loading": "Loading... Checking project status...",
+    "title": "TAI Indicator Priority Sorting",
+    "description": "This system provides TAI indicator priority sorting to help the report better reflect your project's characteristics and core needs. Drag the indicators to determine their importance. If you choose not to use the sorting feature, all indicators will be assigned equal weight.",
+    "warning": "To ensure consistency and accuracy of project indicators, the sorting function can only be performed once. Once sorting is completed or skipped, the system will lock this feature.",
+    "disableSort": "🔴 Do Not Use Sorting Function",
+    "enableSort": "🟢 Enable Sorting for All 11 TAI Indicators",
+    "startButton": "Start Answering",
+    "indicators": {
+      "accuracy": "Accuracy",
+      "reliability": "Reliability",
+      "safety": "Safety",
+      "resilience": "Resilience",
+      "transparency": "Transparency",
+      "accountability": "Accountability",
+      "explainability": "Explainability",
+      "autonomy": "Autonomy",
+      "privacy": "Privacy",
+      "fairness": "Fairness",
+      "security": "Information Security"
+    }
   }
 
-}
-
-
-
 
 
 }
+
