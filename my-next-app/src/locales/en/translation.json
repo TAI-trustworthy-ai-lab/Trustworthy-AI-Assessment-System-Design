@@ -174,28 +174,25 @@
   },
   "choosePage": {
     "loading": "Loading questionnaire data...",
-    "title": "Select Modeling Stage",
-    "description": "Please select the stage you are currently in to begin filling out the corresponding quantitative assessment questionnaire.",
+    "title": "Choose Modeling Stage",
+    "description": "Please select the stage you are currently in to start filling out the corresponding quantitative evaluation questionnaire.",
     "stages": {
       "before": {
         "title": "Before Modeling",
-        "description": "Focuses on requirements analysis, data preparation, and goal setting."
+        "description": "Focus on requirement analysis, data preparation, and goal setting."
       },
       "during": {
         "title": "During Modeling",
-        "description": "Focuses on model selection, monitoring during training, and parameter adjustment."
+        "description": "Focus on model selection, monitoring during training, and parameter tuning."
       },
       "after": {
         "title": "After Modeling",
-        "description": "Focuses on model evaluation, deployment preparation, and outcome review."
+        "description": "Focus on model evaluation, deployment preparation, and result review."
       }
     },
     "error": {
-      "missingStage": "Error: Cannot find the latest questionnaire version for the {{stage}} stage.",
+      "missingStage": "Error: Cannot find the latest questionnaire version for stage {{stage}}.",
       "missingQuestionnaire": "(Questionnaire Missing)"
-    },
-    "log": {
-      "enterStage": "Entering {{stage}} stage, VersionID: {{versionId}}"
     }
   }
 }
