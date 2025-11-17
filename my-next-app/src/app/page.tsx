@@ -9,9 +9,17 @@ export default function PreLoginPage() {
         <div className="flex flex-col justify-center">
             <Header titleHref="/">
                 <div className='flex justify-end space-x-5 items-center'>
-                    <div>
-                        {t('header.about')}
-                    </div>
+                    {/* about button */}
+                    <Link href="/about" className='mr-3'>
+                        <button className="
+                            py-2 px-4 rounded-2xl
+                            bg-gray-500 hover:bg-gray-400 active:bg-gray-600
+                            text-white font-bold
+                            transition duration-100
+                        ">
+                            {t('header.about')}
+                        </button>
+                    </Link>
 
 
                     {/* login button */}
