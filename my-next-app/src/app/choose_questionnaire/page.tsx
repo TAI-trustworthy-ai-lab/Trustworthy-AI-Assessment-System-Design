@@ -118,10 +118,7 @@ export default function ChooseQuestionnairePage() {
             console.error(`Missing QuestionnaireID for stage: ${stage}`);
             return;
         }
-
-        // console.log(`進入 ${stage} 階段，VersionID: ${versionId}`); // ***** 除錯用 *****
         localStorage.setItem("QuestionnaireID", String(versionId)); 
-
         router.push(`/model/${stage}`); 
     };
 
