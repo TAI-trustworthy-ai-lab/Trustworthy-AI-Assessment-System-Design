@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import {ProjectData} from '@/app/home/page'
+import ResponseViewer, {QuestionnaireData} from './Questionnaire';
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api";
@@ -70,14 +71,31 @@ export interface ResponseData{
   answers: AnswerData[]
 }
 
+enum ViewerState{
+  loading,
+  success,
+  fail
+}
+
 export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null); 
   const [authToken, setAuthToken] = useState<string | null>(null); 
 
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
-  const [fetchList, setFetchList] = useState<Record<number, ResponseData>>({});
   const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null); 
-  const [responseState, setResponseState] = useState<{isLoading:boolean, curResponse:ResponseData | null}>({isLoading:true, curResponse:null});
+  const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
+  const [viewerData, setViewerData] = useState<{
+    response: ResponseData | null,
+    questionnaire: QuestionnaireData | null
+    }>({response:null,questionnaire:null});
+
+  // reminder: key is response id
+  const fetchList: Record<
+    number,
+    {
+      response: ResponseData | null,
+      questionnaire: QuestionnaireData | null
+  }> = {};
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -116,31 +134,51 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  // get single response from response id (GET API)
-  const getResponse = async (id: number) => {
-    setResponseState({isLoading:true, curResponse:null})
-    if(!fetchList[id]){
+  // get response and questionnair from response id and qId (GET API)
+  const getResponseAndQuestionnaire = async (id: number, qId:number) => {
+    // if undefined, create null
+    fetchList[id] = fetchList[id] || {
+      response: null,
+      questionnaire: null
+    }
+
+    let r: ResponseData | null = null
+    let q: QuestionnaireData | null = null
+
+    // response
+    if(!(fetchList[id].response)){
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-      try {
-        const data = await fetchResponse(userId, authToken, id);
-        if(data === null) throw "fail to get response"
-        else{
-          setFetchList(prev => ({
-            ...prev,
-            [id]: data
-          }))
-        };
-        setResponseState({isLoading:false, curResponse:data})
-      } catch (error) {
-        setResponseState({isLoading:false, curResponse:null})
-        console.error("載入回應失敗:", error);
+      r = await fetchResponse(userId, authToken, id);
+      if(r === null){
+        setViewerState(ViewerState.fail)
+        throw "fail to get response"
+      }
+      else{
+        fetchList[id].response = r
       }
     }
-    else{
-      setResponseState({isLoading:false, curResponse:fetchList[id]})
+    else r = fetchList[id].response
+
+    // questionnaire
+    if(!(fetchList[id].questionnaire)){
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
+      q = await fetchQuestionnaire(userId, authToken, qId);
+      if(q === null){
+        setViewerState(ViewerState.fail)
+        throw "fail to get questionnaire"
+      }
+      else{
+        fetchList[id].questionnaire = q
+      }
     }
+    else q = fetchList[id].questionnaire
+ 
+    setViewerState(ViewerState.success)
+    setViewerData({response: r, questionnaire: q})
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -222,10 +260,10 @@ export default function HistoryPage() {
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              h-full mb-5 rounded-md
+              h-[500] mb-5 rounded-md
               bg-gray-50
             ">
-              <ResponseWindow state={responseState} />
+              <ResponseWindow state={viewerState} data={viewerData} />
             </div>
             <div className="flex flex-col justify-center items-center">
               <button
@@ -261,9 +299,16 @@ export default function HistoryPage() {
             className="flex items-center h-full px-4 py-2 rounded-t text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
               if(curResponse){
+                setViewerState(ViewerState.loading)
                 setIsOpen(true)
                 setShowMenu(false)
-                getResponse(curResponse.id)
+
+                try{
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId)
+                }
+                catch(e){
+                  console.error("取得回應時發生錯誤", e)
+                }
             }}}
           >
             開啟
@@ -330,8 +375,15 @@ export default function HistoryPage() {
                   key={data.id}
                   onClick={()=>setCurResponse(data)}
                   onDoubleClick={()=>{
+                    setViewerState(ViewerState.loading)
                     setIsOpen(true)
-                    getResponse(data.id)
+
+                    try{
+                      getResponseAndQuestionnaire(data.id, data.versionId)
+                    }
+                    catch(e){
+                      console.error("取得回應時發生錯誤", e)
+                    }
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault()
@@ -378,7 +430,7 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
       {/* response title */}
       <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
       
-      {/* response date */}
+      {/* response date, with format?*/}
       <div className="hidden size-fit text-gray-600 sm:flex md:flex">{meta.submittedAt}</div>
 
       {/* ... i copy the icon from google drive */}
@@ -407,19 +459,21 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
   )
 }
 
-export function ResponseWindow({state}: {state: {isLoading:boolean, curResponse:ResponseData | null}}){
-  if (state.isLoading) return <LoadingComponent message="載入中..." />;
-  if (!state.curResponse) return (
+export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
+  if (state === ViewerState.loading) return <LoadingComponent message="載入中..." />;
+  if (state === ViewerState.fail
+    || (data.response === null || data.questionnaire === null)
+  ) return (
     <div className="flex items-center justify-center w-full h-full">
       <h2 className="text-red-600 text-lg font-semibold mb-4">獲取回應失敗</h2>
     </div>
   );
 
-  const data = state.curResponse
-  console.log(data)
+  console.log(data.response)
+  console.log(data.questionnaire)
   return (
     <div className="flex items-center justify-center w-full h-full">
-      這裡會放 response
+      <ResponseViewer data={{response:data.response,questionnaire:data.questionnaire}} />
     </div>
   )
 }
@@ -435,6 +489,15 @@ export function LoadingComponent({message}: {message: string}){
     </div>
   );
 }
+
+export function fetchQuestionnaire(userId: string, authToken: string, id: number){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return null;
+  }
+  const url = `${BASE_URL}/questionnaire/version/${id}`;
+  return fetchWithRetry<QuestionnaireData>(url, { method: 'GET' }, authToken);
+};
 
 export function fetchResponse(userId: string, authToken: string, id: number){
   if (!userId || userId === 'fallback-user-id') {
