@@ -76,7 +76,7 @@ type AnswerValue = {
 type Answers = Record<number, AnswerValue>; 
 
 // ----------------------------------------------------
-// Loading UI
+// Loading UI - 提交按鈕上的指示器
 // ----------------------------------------------------
 const SubmissionLoadingIndicator: React.FC = () => (
     <div className="flex items-center justify-center space-x-2">
@@ -86,6 +86,32 @@ const SubmissionLoadingIndicator: React.FC = () => (
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
             <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+        </div>
+    </div>
+);
+
+
+// ----------------------------------------------------
+// Loading Overlay - 全頁面 loading設計
+// ----------------------------------------------------
+const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => (
+    <div className="fixed inset-0 z-[100] bg-gray-800/40 bg-opacity-70 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
+        <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
+            {/* 這裡使用一個旋轉的齒輪圖標，或替換成其他有趣的 SVG/動畫 */}
+            <svg 
+                className="w-16 h-16 text-indigo-600 animate-spin mb-4" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+            >
+                {/* 旋轉齒輪或類似圖案 */}
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+            </svg>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{message}</h3>
+            <p className="text-sm text-gray-500">這可能需要幾秒鐘，請不要關閉頁面。</p>
         </div>
     </div>
 );
@@ -274,6 +300,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
     // 1. 根據指標映射表獲取分頁標題
     const getPageTitle = (category: string): string => {
@@ -533,6 +560,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 
                 localStorage.setItem('responseId', responseId.toString());
                 setSubmittedResponseId(responseId);
+                setIsGeneratingReport(true);
                 await generateReport(responseId, userToken);
                 setShowSuccessModal(true); 
                 
@@ -545,6 +573,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             setSubmissionError("提交過程中發生網路錯誤。"); 
         } finally {
             setIsSubmitting(false);
+            setIsGeneratingReport(false);
         }
     };
     
@@ -702,6 +731,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </main>
             {/* Modal 渲染移到最頂層，由狀態控制 */}
             {showSuccessModal && <SuccessModal />}
+            {isGeneratingReport && <FullPageLoadingOverlay message="正在生成評估報告..." />}
         </div>
     );
 }
