@@ -70,11 +70,7 @@
     }
   },
 
-  "homePage": {
-    "title": "AI評估系統主頁",
-    "startTest": "開始測驗",
-    "viewReports": "檢視先前報告"
-  },
+
 
   "auth": {
     "logout": "登出",
@@ -82,10 +78,120 @@
     "logoutTitle": "登出",
     "loggingOutTitle": "登出中...",
     "verifying": "驗證中，請稍候..."
-  }
-  
-  
-  
+  },
 
-  
+  "homePage": {
+    "系統限制": "系統限制",
+    "最多可新增": "最多可新增",
+    "個專案": "個專案",
+    "當前": "當前",
+    "個": "個",
+    "重要提醒": "重要提醒",
+    "專案名稱與描述在建立後將無法變更": "專案名稱與描述在建立後將無法變更",
+    "請輸入專案名稱": "請輸入專案名稱",
+    "專案名稱": "專案名稱",
+    "專案描述": "專案描述",
+    "請輸入專案描述": "請輸入專案描述",
+    "取消": "取消",
+    "新增": "新增",
+    "確認刪除專案": "確認刪除專案",
+    "確定永久刪除": "確定永久刪除",
+    "嗎": "嗎",
+    "刪除將同時": "刪除將同時",
+    "移除所有相關的評估報告": "移除所有相關的評估報告",
+    "loading": {
+      "projects": "載入專案列表..."
+    },
+    "error": {
+      "loadProjects": "載入專案失敗:",
+      "missingAuth": "認證資訊缺失，請重新登入。",
+      "addProjectFailed": "handleAddProject 失敗:",
+      "authFailedTitle": "認證失敗或用戶 ID 缺失",
+      "authFailedMessage": "無法從瀏覽器的 Local Storage 獲取有效的 userId 或 authToken。請確保您已登入且資料已正確儲存。"
+    },
+    "dashboard": {
+      "title": "我的專案儀表板",
+      "addProject": "新增專案",
+      "unnamedProject": "未命名專案 {{index}}",
+      "viewHistory": "檢視先前報告"
+    },
+    "viewProject": {
+      "title": "專案詳細資訊",
+      "nameLabel": "專案名稱:",
+      "descriptionLabel": "專案描述:",
+      "noDescription": "此專案未填寫描述",
+      "tai": {
+        "label": "TAI 排序指標:",
+        "noOrder": "此專案尚未設定 TAI 排序指標。點擊「進入專案」進行排序。",
+        "noUse": "此專案不使用 TAI 排序"
+      },
+      "createdAtLabel": "建立日期:",
+      "noDate": "無日期資訊",
+      "deleteButton": "刪除專案",
+      "closeButton": "關閉",
+      "enterButton": "進入專案",
+      "error": {
+        "missingData": "專案 / 使用者資料缺失，無法刪除。",
+        "deleteFailed": "刪除失敗: {{message}}"
+      }
+    },
+    "confirmDelete": {
+      "title": "確認刪除專案",
+      "message": "確定永久刪除「{{projectName}}」嗎？\n刪除將同時移除所有相關的評估報告，此操作無法復原。",
+      "confirmButton": "確認刪除"
+    },
+    "cancel": "取消",
+    "card": {
+      "noDescription": "無描述"
+
+    }
+
+
+
+  },
+  "sortPage": {
+    "loading": "載入中，檢查專案狀態...",
+    "title": "TAI 指標優先排序",
+    "description": "本系統提供 TAI 指標優先排序以讓報告更貼近您專案之特性及核心需求。請拖曳指標以決定其重要性。若選擇不使用排序功能，所有指標將採相同權重。",
+    "warning": "為確保專案指標一致性及準確性，指標排序功能僅限執行一次。一旦排序完成或跳過，系統將鎖定此功能。",
+    "disableSort": "🔴 不使用排序功能",
+    "enableSort": "🟢 啟用 11 項 TAI 指標排序功能",
+    "startButton": "開始作答",
+    "indicators": {
+      "accuracy": "準確性",
+      "reliability": "可靠性",
+      "safety": "安全性",
+      "resilience": "韌性",
+      "transparency": "透明性",
+      "accountability": "當責性",
+      "explainability": "可解釋性",
+      "autonomy": "自主性",
+      "privacy": "隱私",
+      "fairness": "公平性",
+      "security": "資訊安全"
+    }
+  },
+  "choosePage": {
+    "loading": "正在載入問卷資料...",
+    "title": "選擇建模階段",
+    "description": "請選擇您目前進行到的階段，以開始填寫相應的量化評估問卷。",
+    "stages": {
+      "before": {
+        "title": "建模前",
+        "description": "專注於需求分析、資料準備和目標設定。"
+      },
+      "during": {
+        "title": "建模中",
+        "description": "專注於模型選擇、訓練過程中的監控及參數調整。"
+      },
+      "after": {
+        "title": "建模後",
+        "description": "專注於模型評估、部署準備和結果回顧。"
+      }
+    },
+    "error": {
+      "missingStage": "錯誤：找不到 {{stage}} 階段對應的最新問卷版本。",
+      "missingQuestionnaire": "(問卷缺失)"
+    }
+  }
 }

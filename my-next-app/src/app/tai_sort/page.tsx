@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
+import { useTranslation } from 'react-i18next';
+
 
 const BASE_URL = "http://localhost:3001/api";
 const TAI_INDICATOR_MAP: { [key: string]: string } = {
@@ -23,6 +25,8 @@ const TAI_INDICATOR_MAP: { [key: string]: string } = {
 export default function TAISorter() {
     const router = useRouter();
     const [enableSort, setEnableSort] = useState(true);
+    const { i18n,t } = useTranslation();
+
     const [indicators, setIndicators] = useState([
         "準確性",
         "可靠性",
@@ -92,6 +96,7 @@ export default function TAISorter() {
                 } else {
                     setIsLoading(false);
                 }
+
             } catch (error) {
                 console.error("檢查 TAI 排序狀態時發生網路或解析錯誤:", error);
                 setIsLoading(false); 
@@ -276,10 +281,10 @@ export default function TAISorter() {
             alert("錯誤：無法找到專案 ID。請重新選擇專案。");
             return;
         }
-
         // Assume indicators won't be outside the TAI_INDICATOR_MAP keys
         const payload = indicators.map((indicatorZh, index) => {
             const indicatorEn = TAI_INDICATOR_MAP[indicatorZh];
+            
             return {
                 indicator: indicatorEn, 
                 rank: index + 1, 
@@ -299,6 +304,7 @@ export default function TAISorter() {
         }
 
         const isConfirmed = confirm(confirmationMessage);
+        
 
         const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
         
@@ -349,7 +355,7 @@ export default function TAISorter() {
                 
                 {/* 替換原本的載入文字 */}
                 <p className="text-xl font-semibold text-gray-800">
-                    載入中，檢查專案狀態...
+                    {t("sortPage.loading")}
                 </p>
             </div>
         );
@@ -361,23 +367,23 @@ export default function TAISorter() {
                 <AuthHeader />
 
                 <div className="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl border-t-4 border-indigo-500">
-                    <h1 className="text-3xl text-center font-extrabold text-gray-900">TAI 指標優先排序</h1><br />
+                    <h1 className="text-3xl text-center font-extrabold text-gray-900">
+                        {t("sortPage.title")}
+                    </h1>
                     <p className="text-gray-600 text-left mb-6 max-w-xl leading-relaxed">
-                        本系統提供<b>TAI 指標優先排序</b>以讓報告將更貼近您專案之特性及核心需求。 <br />
-                        請<b>拖曳指標</b>以決定其重要性。若選擇<b>不使用排序功能</b>，所有指標將採相同權重。
+                        {t("sortPage.description")}
                     </p>
                     <p className="text-red-700 mt-1">
-                        為確保專案指標一致性及準確性，<b>指標排序功能僅限執行一次</b>。一旦排序完成或跳過，系統將鎖定此功能。
+                        {t("sortPage.warning")}
                     </p>
 
-                    {/* 啟用/停用按鈕 */}
                     <div className="flex justify-center mb-6 pt-4">
                         <button
                             onClick={() => setEnableSort(!enableSort)}
                             className={`px-8 py-3 rounded-full text-white font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 ${!enableSort ? "bg-gray-500 hover:bg-gray-600" : "bg-rose-700 hover:bg-rose-800"
                                 }`}
                         >
-                            {enableSort ? "🔴 不使用排序功能" : "🟢 啟用 11 項 TAI 指標排序功能"}
+                            {enableSort ? t("sortPage.disableSort") : t("sortPage.enableSort")}
                         </button>
                     </div>
                 </div>
@@ -411,7 +417,7 @@ export default function TAISorter() {
                                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
                                 </div>
                             </div>
-                            <span className="flex-1 text-lg user-select-none">{indicator}</span>
+                            <span className="flex-1 text-lg user-select-none">{(i18n.language == "zh") ? indicator : TAI_INDICATOR_MAP[indicator]}</span>
                         </div>
                     ))}
                 </div>
@@ -420,7 +426,7 @@ export default function TAISorter() {
                     onClick={handleStart}
                     className="mt-8 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-md transition"
                 >
-                    開始作答
+                    {t("sortPage.startButton")}
                 </button>
             </div>
         </ProtectedLayout>
