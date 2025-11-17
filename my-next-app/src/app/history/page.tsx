@@ -90,12 +90,12 @@ export default function HistoryPage() {
     }>({response:null,questionnaire:null});
 
   // reminder: key is response id
-  const fetchList: Record<
+  const [fetchList, setFetchList] = useState<Record<
     number,
     {
       response: ResponseData | null,
       questionnaire: QuestionnaireData | null
-  }> = {};
+  }>>({})
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -136,7 +136,6 @@ export default function HistoryPage() {
 
   // get response and questionnair from response id and qId (GET API)
   const getResponseAndQuestionnaire = async (id: number, qId:number) => {
-    // if undefined, create null
     fetchList[id] = fetchList[id] || {
       response: null,
       questionnaire: null
@@ -146,7 +145,7 @@ export default function HistoryPage() {
     let q: QuestionnaireData | null = null
 
     // response
-    if(!(fetchList[id].response)){
+    if(fetchList[id].response === null){
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -162,7 +161,7 @@ export default function HistoryPage() {
     else r = fetchList[id].response
 
     // questionnaire
-    if(!(fetchList[id].questionnaire)){
+    if(fetchList[id].questionnaire === null){
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -176,7 +175,7 @@ export default function HistoryPage() {
       }
     }
     else q = fetchList[id].questionnaire
- 
+
     setViewerState(ViewerState.success)
     setViewerData({response: r, questionnaire: q})
   }
@@ -469,8 +468,8 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
     </div>
   );
 
-  console.log(data.response)
-  console.log(data.questionnaire)
+  //console.log(data.response)
+  //console.log(data.questionnaire)
   return (
     <div className="flex items-center justify-center w-full h-full">
       <ResponseViewer data={{response:data.response,questionnaire:data.questionnaire}} />
