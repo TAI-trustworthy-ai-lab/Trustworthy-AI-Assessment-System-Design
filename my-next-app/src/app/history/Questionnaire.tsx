@@ -253,7 +253,7 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
         return o.value === data.value
       })?.id
       if(os) opts = [...opts, os]
-      console.log(`SCALE: ${os}`)
+      //console.log(`SCALE: ${os}`)
     }
     if(acc[data.questionId] && acc[data.questionId].optionIds){
       const tmp = acc[data.questionId].optionIds as number[]
