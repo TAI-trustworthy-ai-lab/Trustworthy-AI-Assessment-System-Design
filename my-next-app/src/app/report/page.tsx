@@ -1,5 +1,8 @@
 "use client";
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
@@ -273,6 +276,7 @@ export default function ReportPage() {
     });
 
     // --- 報告成功載入後的渲染 --- 
+    const markdownContent = report.analysisText;
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
             <AuthHeader />
@@ -312,10 +316,14 @@ export default function ReportPage() {
                                 <p className="text-lg font-medium text-gray-500 mt-1">評級</p>
                             </div>
                         </div>
-                        <p className="mt-4 text-sm text-gray-500 max-w-2xl mx-auto">
-                            {/* ⭐️ 使用 analysisText */}
-                            {report.analysisText} 
-                        </p>
+                        <div className="markdown-content text-left mt-6">
+                            <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
+                            >
+                                {markdownContent}
+                            </ReactMarkdown>
+                        </div>
                     </section>
 
                     {/* 各項指標細節區塊 */}
