@@ -40,6 +40,11 @@ export const useAuth = () => {
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        console.log("後端登出 API 呼叫失敗，原因：Token 已過期 (401)。視為成功登出。");
+                        return; 
+                    }
+
                     let errorDetails: any = { message: '無法解析錯誤細節' };
                     try {
                         const contentType = response.headers.get('content-type');

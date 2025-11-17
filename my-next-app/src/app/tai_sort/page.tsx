@@ -400,7 +400,7 @@ export default function TAISorter() {
                                 handleDragStart(e.clientY, index, e.currentTarget);
                             }}
                             onTouchStart={(e) => {
-                                e.preventDefault();
+                                // e.preventDefault();
                                 handleDragStart(e.touches[0].clientY, index, e.currentTarget);
                             }}
                         >

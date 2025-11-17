@@ -224,7 +224,7 @@ export default function ReportPage() {
             
         } catch (error) {
             const message = error instanceof Error ? error.message : "獲取報告時發生錯誤。";
-            setErrorMessage(`報告載入失敗，請確保報告已在問卷頁面生成: ${message}`);
+            setErrorMessage(`報告載入失敗: ${message}。也許登入時限已過期：請重新登入後至首頁查看您的報告記錄。`);
             setLoadingStatus('error');
             console.error("Failed to fetch report:", error);
         }
@@ -316,7 +316,7 @@ export default function ReportPage() {
                                 <p className="text-lg font-medium text-gray-500 mt-1">評級</p>
                             </div>
                         </div>
-                        <div className="markdown-content text-left mt-6">
+                        <div className="markdown-content text-left mt-6 overflow-x-auto">
                             <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeRaw]}
