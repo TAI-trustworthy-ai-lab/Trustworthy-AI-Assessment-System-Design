@@ -194,6 +194,14 @@
       "missingStage": "Error: Cannot find the latest questionnaire version for stage {{stage}}.",
       "missingQuestionnaire": "(Questionnaire Missing)"
     }
+  },
+  "aboutPage": {
+      "title": "About Us",
+      "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
+      "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
+      "values": "We value fairness, privacy, and responsibility in every step of our development process.",
+      "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
+      "back": "Back"
   }
 }
 
