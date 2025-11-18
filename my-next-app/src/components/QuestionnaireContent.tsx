@@ -16,6 +16,21 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const data = await res.json();
     return data.translatedText;
 };
+//用於條件或迴圈時的翻譯
+const TranslatedText: React.FC<{ text: string }> = ({ text }) => {
+    const { i18n } = useTranslation();
+    const [translated, setTranslated] = useState(text);
+
+    useEffect(() => {
+        if (i18n.language.startsWith("en")) {
+            translateText(text, "zh-CN", "en").then(setTranslated);
+        } else {
+            setTranslated(text);
+        }
+    }, [text, i18n.language]);
+
+    return <>{translated}</>;
+};
 
 const useRouter = () => {
     return {
@@ -32,17 +47,18 @@ const useRouter = () => {
 // 定义指標解釋映射表
 // ----------------------------------------------------
 const CATEGORY_MAP: Record<string, string> = {
-    "ACCURACY": "Questionnaire.category.ACCURACY",
-    "RELIABILITY": "Questionnaire.category.RELIABILITY",
-    "SAFETY": "Questionnaire.category.SAFETY",
-    "RESILIENCE": "Questionnaire.category.RESILIENCE",
-    "TRANSPARENCY": "Questionnaire.category.TRANSPARENCY",
-    "ACCOUNTABILITY": "Questionnaire.category.ACCOUNTABILITY",
-    "EXPLAINABILITY": "Questionnaire.category.EXPLAINABILITY",
-    "AUTONOMY": "Questionnaire.category.AUTONOMY",
-    "PRIVACY": "Questionnaire.category.PRIVACY",
-    "FAIRNESS": "Questionnaire.category.FAIRNESS",
-    "SECURITY": "Questionnaire.category.SECURITY",
+    "ACCURACY": "一、準確性（Accuracy）：AI判斷的結果與真實情況相近程度",
+    "RELIABILITY": "二、可靠性（Reliability)：AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定",
+    "SAFETY": "三、安全性（Safety）：AI系統若出錯，不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害",
+    "RESILIENCE": "四、韌性(Resilience)：AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰",
+    "TRANSPARENCY": "五、透明性(Transparency)：AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則",
+    "ACCOUNTABILITY": "六、當責性(Accountability)：當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人",
+    "EXPLAINABILITY": "七、可解釋性(Explanability)：AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由",
+    "AUTONOMY": "八、自主性(Autonomy)：AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策",
+    "PRIVACY": "九、隱私(Privacy)：在使用AI系統時，不會侵犯到個人隱私",
+    "FAIRNESS": "十、公平性(Fairness)：AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
+    "SECURITY": "十一、資訊安全性(Security)：防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全",
+    "UNKNOWN": "未知分類：{{category}}"
 };
 
 // ----------------------------------------------------
@@ -325,10 +341,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
+
     // 1. 根據指標映射表獲取分頁標題
     const getPageTitle = (category: string): string => {
-        const key = CATEGORY_MAP[category.toUpperCase()];
-        return key ? t(key) : category;
+        return CATEGORY_MAP[category.toUpperCase()] || category;
     };
 
     // 2. 分頁資料結果處理
@@ -670,12 +686,12 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
                     {/* 問卷題目 titleA */}
                     <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
-                        {questionnaire.title}
+                        {<TranslatedText text={questionnaire.title} />}
                     </h1>
 
                     {/* 问卷描述 description */}
-                    {questionnaire.description && (
-                        <p className="text-left text-gray-500 mb-8">{questionnaire.description}</p>
+                    {<TranslatedText text={questionnaire.description} /> && (
+                        <p className="text-left text-gray-500 mb-8">{<TranslatedText text={questionnaire.description} />}</p>
                     )}
 
                     {/* 进度条 (Progress Bar) */}
@@ -696,17 +712,17 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     {currentPageData && (
                         <div>
                             <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b pb-3">
-                                {currentPageData.pageTitle}
+                                {<TranslatedText text={currentPageData.pageTitle} />}
                             </h2>
 
                             <div className="space-y-6">
                                 {currentPageData.questions.map((q) => (
                                     <div key={q.id} className="p-4 border rounded-lg bg-gray-50">
                                         <p className="font-semibold text-gray-700 mb-3">
-                                            {q.text} 
+                                            {<TranslatedText text={q.text} />}
                                             {q.required && <span className="text-red-500 ml-1">*</span>}
                                         </p>
-                                        
+
                                         {/* 根據 type 渲染不同 UI */}
                                         <div className="flex justify-center sm:justify-start">
                                             <QuestionRenderer
