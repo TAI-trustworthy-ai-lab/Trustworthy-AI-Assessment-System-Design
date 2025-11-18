@@ -196,12 +196,53 @@
     }
   },
   "aboutPage": {
-      "title": "About Us",
-      "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
-      "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
-      "values": "We value fairness, privacy, and responsibility in every step of our development process.",
-      "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
-      "back": "Back"
+    "title": "About Us",
+    "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
+    "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
+    "values": "We value fairness, privacy, and responsibility in every step of our development process.",
+    "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
+    "back": "Back"
+  },
+  "Questionnaire": {
+    "category": {
+      "ACCURACY": "1. Accuracy: The degree to which AI results are close to reality",
+      "RELIABILITY": "2. Reliability: The AI model remains stable under disturbances or anomalies",
+      "SAFETY": "3. Safety: AI errors should not cause harm to users or the environment",
+      "RESILIENCE": "4. Resilience: The AI system adapts flexibly to changing environments and needs",
+      "TRANSPARENCY": "5. Transparency: Users can trace the data, algorithms, or rules behind AI decisions",
+      "ACCOUNTABILITY": "6. Accountability: Mechanisms exist to supervise and assign responsibility for negative impacts",
+      "EXPLAINABILITY": "7. Explainability: AI decision logic can be clearly described and understood",
+      "AUTONOMY": "8. Autonomy: Users maintain independence without over-relying on AI",
+      "PRIVACY": "9. Privacy: AI use does not infringe on personal privacy",
+      "FAIRNESS": "10. Fairness: AI treats different groups equally, avoiding bias",
+      "SECURITY": "11. Security: Protect AI models and data from external intrusion or damage",
+      "UNKNOWN": "Unknown category: {{category}}"
+    },
+    "loading": "Loading questionnaire...",
+    "loadFailedOrMissing": "Failed to load questionnaire or it does not exist.",
+    "submitting": "Submitting",
+    "overlay": {
+      "doNotClose": "This may take a few seconds, please do not close the page."
+    },
+    "placeholder": {
+      "answer": "Please enter your answer here..."
+    },
+    "submitSuccess": "Questionnaire submitted successfully!",
+    "report": {
+      "generated": "Evaluation report has been generated.",
+      "generating": "Generating report..."
+    },
+    "actions": {
+      "backToHome": "Back to Home",
+      "viewReport": "View Report",
+      "retryLoad": "Retry Load",
+      "prev": "Previous",
+      "next": "Next",
+      "finishAndSubmit": "Finish and Submit"
+    },
+    "progress": {
+      "page": "Page {{current}} of {{total}}"
+    }
   }
 }
 
