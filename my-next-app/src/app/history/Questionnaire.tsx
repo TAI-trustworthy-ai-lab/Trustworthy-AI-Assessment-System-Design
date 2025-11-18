@@ -51,11 +51,6 @@ interface Question {
   options?: Option[]; 
 }
 
-interface PageData {
-  pageTitle: string;
-  questions: Question[];
-}
-
 export interface QuestionnaireData {
   id: number;
   title: string;
@@ -72,6 +67,9 @@ type AnswerValue = {
   optionIds?: number[]; 
   textValue?: string; 
 };
+
+const styleSelected   = 'bg-indigo-500 text-white border border-transparent hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]' 
+const styleUnselected = 'bg-white text-gray-700 border border-gray-300 hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]'
 
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
@@ -117,10 +115,8 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
               onAnswer({ optionIds: [opt.id], score: opt.value }) 
             }
             className={`
-              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200
-              ${selectedOptionId === opt.id 
-                ? 'bg-indigo-500 text-white shadow-lg ring-3 ring-indigo-300'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-indigo-100'
+              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold
+              ${selectedOptionId === opt.id ? styleSelected: styleUnselected
               }
             `}
           >
@@ -134,71 +130,65 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
 
 // 2. SINGLE_CHOICE 題型
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    const options = question.options || [];
-    const selectedOptionId = currentAnswer.optionIds?.[0];
+  const options = question.options || [];
+  const selectedOptionId = currentAnswer.optionIds?.[0];
 
-    return (
-        <div className="flex space-x-6">
-            {options.map(opt => (
-                <button
-                    key={opt.id}
-                    onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
-                    className={`py-2 px-6 rounded-lg font-medium transition duration-150 border
-                        ${selectedOptionId === opt.id
-                            ? 'bg-indigo-500 text-white shadow-md border-indigo-700 ring-3 ring-indigo-300'
-                            : 'bg-white text-gray-800 hover:bg-indigo-50'
-                        }`}
-                >
-                    {opt.text}
-                </button>
-            ))}
-        </div>
-    );
+  return (
+    <div className="flex space-x-6">
+      {options.map(opt => (
+        <button
+          key={opt.id}
+          onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
+          className={`py-2 px-6 rounded-lg font-medium
+            ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
+        >
+          {opt.text}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 // 3. MULTIPLE_CHOICE 題型
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    const options = question.options || [];
-    const selectedOptionIds = currentAnswer.optionIds || [];
+  const options = question.options || [];
+  const selectedOptionIds = currentAnswer.optionIds || [];
 
-    const handleOptionClick = (optionId: number) => {
-        let newSelectedOptionIds;
-        if (selectedOptionIds.includes(optionId)) {
-            // 如果已經選中，則取消選中
-            newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
-        } else {
-            // 如果未選中，則選中
-            newSelectedOptionIds = [...selectedOptionIds, optionId];
-        }
+  const handleOptionClick = (optionId: number) => {
+    let newSelectedOptionIds;
+    if (selectedOptionIds.includes(optionId)) {
+      // 如果已經選中，則取消選中
+      newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
+    } else {
+      // 如果未選中，則選中
+      newSelectedOptionIds = [...selectedOptionIds, optionId];
+    }
 
-        const newScore = options
-            .filter(opt => newSelectedOptionIds.includes(opt.id))
-            .reduce((sum, opt) => {
-                const optionValue = Number(opt.value);
-                return sum + optionValue;
-            }, 0); // Initiate number = 0
-        onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
-    };
+    const newScore = options
+      .filter(opt => newSelectedOptionIds.includes(opt.id))
+      .reduce((sum, opt) => {
+        const optionValue = Number(opt.value);
+        return sum + optionValue;
+      }, 0); // Initiate number = 0
+    onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
+  };
 
-    return (
-        <div className="flex flex-wrap gap-3">
-            {options.map(opt => (
-                <button
-                    key={opt.id}
-                    onClick={() => handleOptionClick(opt.id)}
-                    className={`
-                        py-2 px-4 rounded-lg font-medium transition duration-150 border
-                        ${selectedOptionIds.includes(opt.id)
-                            ? 'bg-indigo-500 text-white shadow-md border-indigo-600' 
-                            : 'bg-white text-gray-800 hover:bg-indigo-50 border-gray-300' 
-                        }
-                    `}
-                >
-                    {opt.text}
-                </button>
-            ))}
-        </div>
-    );
+  return (
+    <div className="flex flex-wrap gap-3">
+      {options.map(opt => (
+        <button
+          key={opt.id}
+          onClick={() => handleOptionClick(opt.id)}
+          className={`
+            py-2 px-4 rounded-lg font-medium
+            ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
+          }`}
+        >
+          {opt.text}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 // 4. TEXT 題型
@@ -206,14 +196,18 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
     const textValue = currentAnswer.textValue || '';
     
     return (
-        <textarea
-            rows={3}
-            value={textValue}
-            onChange={(e) => onAnswer({ textValue: e.target.value })}
-            placeholder="請在此輸入您的回答..."
-            className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700 
-                       focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
-        />
+      <textarea
+        rows={3}
+        value={textValue}
+        onChange={(e) => onAnswer({ textValue: e.target.value })}
+        placeholder="請在此輸入您的回答..."
+        className="
+          w-full p-3
+          rounded-lg resize-none
+          border border-gray-300 text-gray-700 bg-[#fcfcfc]
+          focus:outline-none 
+          focus:ring-1 focus:ring-indigo-300 focus:bg-white"
+      />
     );
 };
 
@@ -244,6 +238,8 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 export default function ResponseViewer({ data }: { data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
   const q = data.questionnaire
   const r = data.response
+
+  // original answer
   const answers: Record<number, AnswerValue> = r.answers.reduce((acc, data)=>{
     let opts = [data.optionId]
     if(data.question.type === 'SCALE'){
@@ -268,9 +264,14 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
     return acc},  
     {} as Record<number, AnswerValue>
   )
+  // edited answer
+  const [a, setA] = useState<Record<number, AnswerValue>>(answers)
 
   const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
-
+    setA(prev => ({
+        ...prev,
+        [questionId]: answerValue,
+    }));
   }
 
   // 12. 正常問卷內容渲染!!!
@@ -290,7 +291,7 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
       <div>
         <div className="space-y-6">
           {q.questions.map((question) => (
-            <div key={question.id} className="p-4 border rounded-lg bg-gray-50">
+            <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
               <p className="font-semibold text-gray-700 mb-3">
                 {question.text} 
                 {question.required && <span className="text-red-500 ml-1">*</span>}
@@ -300,7 +301,7 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
               <div className="flex justify-center sm:justify-start">
                 <QuestionRenderer
                   question={question}
-                  currentAnswer={answers[question.id] || {}}
+                  currentAnswer={a[question.id] || {}}
                   onAnswer={(answer) => handleAnswer(question.id, answer)}
                 />
               </div>

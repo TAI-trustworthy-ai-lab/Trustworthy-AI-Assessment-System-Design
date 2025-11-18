@@ -259,7 +259,7 @@ export default function HistoryPage() {
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              h-[500] mb-5 rounded-md
+              h-[500] mb-5
               bg-gray-50
             ">
               <ResponseWindow state={viewerState} data={viewerData} />
@@ -345,7 +345,7 @@ export default function HistoryPage() {
           ">
             <div className="
               w-full h-[50]
-              grid grid-cols-[1fr_1.5fr] gap-2 items-center
+              grid grid-cols-[1fr_1.5fr_35px] gap-2 items-center
               mb-2 py-2 px-2
               bg-gray-100 rounded-t-lg
 
@@ -409,7 +409,7 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
     <div
       className={`
       w-full h-[50]
-      grid grid-cols-[1fr_1.5fr_20px] gap-2 items-center
+      grid grid-cols-[1fr_1.5fr_35px] gap-2 items-center
       select-none
       py-2 px-2
       ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
