@@ -100,13 +100,13 @@ interface QuestionRendererProps {
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
   // 假設選項已經按 order 排序 + options 存在
   const options = question.options || [];
-  const selectedOptionId = currentAnswer.optionIds?.[1];
+  const selectedOptionId = currentAnswer.optionIds?.[0];
   //console.log(`${options[0].id}, ${currentAnswer.optionIds[1]}`)
 
   return (
     <div className="flex justify-center space-x-2 sm:space-x-4">
       {options.map((opt) => {
-        const displayScore = opt.order; 
+        const displayScore = opt.value; 
         
         return (
           <button
@@ -115,7 +115,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
               onAnswer({ optionIds: [opt.id], score: opt.value }) 
             }
             className={`
-              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold
+              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold cursor-pointer 
               ${selectedOptionId === opt.id ? styleSelected: styleUnselected
               }
             `}
@@ -134,12 +134,12 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
   const selectedOptionId = currentAnswer.optionIds?.[0];
 
   return (
-    <div className="flex space-x-6">
+    <div className="flex space-x-4">
       {options.map(opt => (
         <button
           key={opt.id}
           onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
-          className={`py-2 px-6 rounded-lg font-medium
+          className={`py-2 px-6 rounded-lg font-medium cursor-pointer 
             ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
         >
           {opt.text}
@@ -180,7 +180,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
           key={opt.id}
           onClick={() => handleOptionClick(opt.id)}
           className={`
-            py-2 px-4 rounded-lg font-medium
+            py-2 px-4 rounded-lg font-medium cursor-pointer 
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
           }`}
         >
@@ -248,7 +248,7 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
         //console.log(`${o.value}, ${data.value}`)
         return o.value === data.value
       })?.id
-      if(os) opts = [...opts, os]
+      if(os) opts = [os]
       //console.log(`SCALE: ${os}`)
     }
     if(acc[data.questionId] && acc[data.questionId].optionIds){
@@ -292,10 +292,20 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
         <div className="space-y-6">
           {q.questions.map((question) => (
             <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
-              <p className="font-semibold text-gray-700 mb-3">
+              <div className="font-semibold text-gray-700 mb-3">
                 {question.text} 
-                {question.required && <span className="text-red-500 ml-1">*</span>}
-              </p>
+                {question.required && <span className="
+                  relative group text-red-500 px-2 select-none">
+                    *
+                    <div className='
+                      absolute top-0 left-5 w-fit px-1.5 py-1
+                      text-center font-bold text-xs text-white whitespace-nowrap
+                      bg-red-400 rounded-full shadow shadow-gray-500
+                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 delay-150'>
+                      必填
+                    </div>
+                  </span>}
+              </div>
               
               {/* 根據 type 渲染不同 UI */}
               <div className="flex justify-center sm:justify-start">

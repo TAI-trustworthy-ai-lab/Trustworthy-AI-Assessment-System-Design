@@ -253,13 +253,16 @@ export default function HistoryPage() {
         >
           <div className="
             flex flex-col
-            w-full max-w-200 h-150
-            mx-20 p-5
-            bg-gray-100 rounded-xl shadow-lg"
+            w-full h-150
+            mx-0 p-5
+            bg-gray-100 rounded-xl shadow-lg
+            
+            md:mx-20
+            md:max-w-[800]"
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              h-[500] mb-5
+              h-[500] w-full mb-5
               bg-gray-50
             ">
               <ResponseWindow state={viewerState} data={viewerData} />
@@ -268,8 +271,8 @@ export default function HistoryPage() {
               <button
                 className="
                   px-4 py-2 
-                  bg-gray-500 text-white rounded
-                  hover:bg-gray-400 active:bg-gray-600"
+                  bg-gray-500 text-white rounded-md
+                  hover:bg-gray-400 active:bg-gray-600 cursor-pointer "
                 onClick={() => setIsOpen(false)}
               >
                 關閉
@@ -459,7 +462,11 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
 }
 
 export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
-  if (state === ViewerState.loading) return <LoadingComponent message="載入中..." />;
+  if (state === ViewerState.loading) return (
+    <div className="flex items-center justify-center w-full h-full">
+      <LoadingComponent message="載入中..." />
+    </div>
+  )
   if (state === ViewerState.fail
     || (data.response === null || data.questionnaire === null)
   ) return (
@@ -469,7 +476,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
   );
 
   //console.log(data.response)
-  //console.log(data.questionnaire)
+  console.log(data.questionnaire)
   return (
     <div className="flex items-center justify-center w-full h-full">
       <ResponseViewer data={{response:data.response,questionnaire:data.questionnaire}} />
