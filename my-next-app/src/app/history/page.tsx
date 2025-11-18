@@ -134,6 +134,7 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
+  // open
   // get response and questionnair from response id and qId (GET API)
   const getResponseAndQuestionnaire = async (id: number, qId:number) => {
     fetchList[id] = fetchList[id] || {
@@ -149,7 +150,15 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-      r = await fetchResponse(userId, authToken, id);
+
+      try{
+        r = await fetchResponse(userId, authToken, id)
+      } catch(e){
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchResponse", e)
+        throw "fail to get response"
+      }
+
       if(r === null){
         setViewerState(ViewerState.fail)
         throw "fail to get response"
@@ -165,7 +174,15 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-      q = await fetchQuestionnaire(userId, authToken, qId);
+
+      try{
+        q = await fetchQuestionnaire(userId, authToken, qId);
+      } catch(e){
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchResponse", e)
+        throw "fail to get response"
+      }
+
       if(q === null){
         setViewerState(ViewerState.fail)
         throw "fail to get questionnaire"
@@ -178,6 +195,29 @@ export default function HistoryPage() {
 
     setViewerState(ViewerState.success)
     setViewerData({response: r, questionnaire: q})
+  }
+
+  // delete
+  const delResponse = async (id: number)=>{
+    const r = responseList.find(value => value.id === id)
+    if(r === null || r === undefined) return
+    setResponseList(prev=>prev.filter(value => value !== r))
+
+    if (!userId || userId === 'fallback-user-id' || !authToken) {
+      return;
+    }
+    try{
+      await deleteResponse(userId, authToken, id);
+    }
+    catch(e){
+      setResponseList(prev => {
+        const newList = [...prev];
+        newList[id] = r;
+        return newList;
+      })
+      console.error("fail to del response", e)
+      throw e
+    }
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -253,7 +293,7 @@ export default function HistoryPage() {
         >
           <div className="
             flex flex-col
-            w-full h-150
+            w-full h-[650]
             mx-0 p-5
             bg-gray-100 rounded-xl shadow-lg
             
@@ -262,8 +302,8 @@ export default function HistoryPage() {
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              h-[500] w-full mb-5
-              bg-gray-50
+              h-[550] w-full mb-5
+              bg-gray-50 rounded overflow-hidden
             ">
               <ResponseWindow state={viewerState} data={viewerData} />
             </div>
@@ -284,21 +324,9 @@ export default function HistoryPage() {
 
       {/* right click menu */}
       {showMenu && (
-        <div
-          style={{
-            top: menuPosition.y,
-            left: menuPosition.x,
-            width: `${menuSize.x}px`,
-            height: `${menuSize.y}px`
-          }}
-          className={`
-            absolute z-40 select-none
-            flex flex-col justify-evenly
-            text-gray-600 bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <ContextMenuStrip size={menuSize} position={menuPosition}>
           <div
-            className="flex items-center h-full px-4 py-2 rounded-t text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
               if(curResponse){
                 setViewerState(ViewerState.loading)
@@ -315,19 +343,31 @@ export default function HistoryPage() {
           >
             開啟
           </div>
-          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             下載
           </div>
-          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             編輯
           </div>
-          <div className="flex items-center h-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer  active:bg-gray-200">
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             詳細資訊
           </div>
-          <div className="flex items-center h-full px-4 py-2 rounded-b text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200">
+          <div
+            className="flex items-center size-full px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200"
+            onClick={()=>{
+              setShowMenu(false)
+              if(curResponse){
+                try{
+                  delResponse(curResponse.id)
+                }
+                catch(e){
+                  console.error("刪除回應時發生錯誤", e)
+                }
+            }}}
+          >
             刪除
           </div>
-        </div>
+        </ContextMenuStrip>
       )}
 
       <div className="
@@ -365,6 +405,7 @@ export default function HistoryPage() {
 
             {/* sorting type? */}
             {responseList.map((data) => {
+              //console.log("rendering response list...")
               const item = <ResponseItem 
                 meta={data}
                 selected={data===curResponse}
@@ -402,6 +443,52 @@ export default function HistoryPage() {
       </div>
     </ProtectedLayout>
   );
+}
+
+export function ContextMenuStrip({size, position, children}:{
+  size: {x:number, y:number},
+  position: {x:number, y:number},
+  children: React.JSX.Element[]
+}){
+
+  const childCount = children.length
+  const commonStyle = "flex items-center h-full overflow-hidden"
+
+  return(
+    <div
+      style={{
+        top: position.y,
+        left: position.x,
+        width: `${size.x}px`,
+        height: `${size.y}px`
+      }}
+      className={`
+        absolute z-40 select-none
+        flex flex-col justify-evenly
+        bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {
+        children.map((c, index)=>{
+          if(index <= 0){
+            return(
+              <div key={index} className={`${commonStyle} rounded-t`}>
+                {c}
+              </div>
+          )} else if(index >= childCount-1){
+            return(
+              <div key={index} className={`${commonStyle} rounded-b`}>
+                {c}
+              </div>
+          )} else{
+            return(
+              <div key={index} className={`${commonStyle}`}>
+                {c}
+              </div>
+          )}
+      })}
+    </div>
+  )
 }
 
 export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:ResponseMeta, selected:boolean, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
@@ -495,6 +582,38 @@ export function LoadingComponent({message}: {message: string}){
     </div>
   );
 }
+
+export async function deleteResponse(userId: string, authToken: string, id: number){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return;
+  }
+  if (!authToken || authToken === 'fallback-auth-token') {
+    throw new Error('認證失敗：未提供有效的 authToken。');
+  }
+  const url = `${BASE_URL}/response/${id}`;
+  const options = { method: 'DELETE' }
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    const result: { error?: string, message?: string } = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+  } catch (e) {
+    console.error(`API 請求最終失敗 (${url}):`, e); 
+  }
+};
 
 export function fetchQuestionnaire(userId: string, authToken: string, id: number){
   if (!userId || userId === 'fallback-user-id') {
