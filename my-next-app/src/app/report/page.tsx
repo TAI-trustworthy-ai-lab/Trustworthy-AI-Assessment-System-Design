@@ -22,17 +22,17 @@ const useRouter = () => {
 // 定义指標解釋映射表
 // ----------------------------------------------------
 const CATEGORY_MAP: Record<string, string> = {
-    "ACCURACY": "一、準確性（Accuracy）",
-    "RELIABILITY": "二、可靠性（Reliability）",
-    "SAFETY": "三、安全性（Safety）",
-    "RESILIENCE": "四、韌性（Resilience）",
-    "TRANSPARENCY": "五、透明性（Transparency）",
-    "ACCOUNTABILITY": "六、當責性（Accountability）",
-    "EXPLAINABILITY": "七、可解釋性（Explanability）",
-    "AUTONOMY": "八、自主性（Autonomy）",
-    "PRIVACY": "九、隱私（Privacy）",
-    "FAIRNESS": "十、公平性（Fairness）",
-    "SECURITY": "十一、資訊安全性（Security）",
+    "Accuracy": "一、準確性（Accuracy）",
+    "Reliability": "二、可靠性（Reliability）",
+    "Safety": "三、安全性（Safety）",
+    "Resilience": "四、韌性（Resilience）",
+    "Transparency": "五、透明性（Transparency）",
+    "Accountability": "六、當責性（Accountability）",
+    "Explainability": "七、可解釋性（Explanability）",
+    "Autonomy": "八、自主性（Autonomy）",
+    "Privacy": "九、隱私（Privacy）",
+    "Fairness": "十、公平性（Fairness）",
+    "Security": "十一、資訊安全性（Security）",
 };
 
 // ----------------------------------------------------
@@ -124,22 +124,16 @@ export default function ReportPage() {
     const [projectName, setProjectName] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
 
-    const { responseId, authToken, currentProjectId, questionnaireId, userId } = useMemo(() => {
-        if (typeof window === 'undefined') return { responseId: null, authToken: null, currentProjectId: null, questionnaireId: null, userId: null };
+    const { responseId, authToken } = useMemo(() => {
+        if (typeof window === 'undefined') return { responseId: null, authToken: null };
 
         const idString = localStorage.getItem('responseId'); 
         const token = localStorage.getItem('authToken');
-        const projId = localStorage.getItem('currentProjectId');
-        const qId = localStorage.getItem('QuestionnaireID');
-        const uId = localStorage.getItem('userId');
         const id = idString ? parseInt(idString, 10) : null;
         
         return { 
             responseId: id, 
             authToken: token,
-            currentProjectId: projId,
-            questionnaireId: qId,
-            userId: uId,
         };
     }, []);
 
@@ -149,7 +143,7 @@ export default function ReportPage() {
     }, [report]);
 
     const loadData = useCallback(async () => {
-        if (!responseId || !authToken || !currentProjectId || !questionnaireId || !userId) {
+        if (!responseId || !authToken) {
             setLoadingStatus('error');
             setErrorMessage("認證資訊或 ID 缺失。請從問卷頁面重新提交。");
             return;
@@ -158,8 +152,6 @@ export default function ReportPage() {
         setLoadingStatus('generating'); 
         try {
             const reportData = await fetchReport(responseId, authToken); 
-            
-            // 從 reportData.response 中提取需要的 ID 和名稱
             const projName = reportData.response?.project?.name ?? '專案名稱缺失';
             const verTitle = reportData.response?.version?.title ?? '問卷版本標題缺失';
             const uName = reportData.response?.user?.name ?? '使用者名稱缺失';
@@ -177,7 +169,7 @@ export default function ReportPage() {
             setLoadingStatus('error');
             console.error("Failed to fetch report:", error);
         }
-    }, [responseId, authToken, currentProjectId, questionnaireId, userId]);
+    }, [responseId, authToken]);
 
     useEffect(() => {
         loadData();
