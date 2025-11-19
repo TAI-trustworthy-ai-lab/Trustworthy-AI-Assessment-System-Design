@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translationCache } from "../components/translationCache";
 import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
@@ -20,16 +21,41 @@ const translateText = async (text: string, source = "zh-CN", target = "en", capi
     const data = await res.json();
     return data.translatedText;
 };
-//用於條件或迴圈時的翻譯
+class TranslationCache {
+    private cache: Record<string, string> = {};
+
+    set(original: string, translated: string) {
+        this.cache[original] = translated;
+    }
+
+    get(original: string) {
+        return this.cache[original];
+    }
+
+    has(original: string) {
+        return !!this.cache[original];
+    }
+
+    clear() {
+        this.cache = {};
+    }
+}
 const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
 
     useEffect(() => {
         if (i18n.language.startsWith("en")) {
-            translateText(text, "zh-CN", "en").then(result => {
-                setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
-            });
+            if (translationCache.has(text)) {
+                const result = translationCache.get(text)!;
+                setTranslated(capitalize ? result.charAt(0).toUpperCase() + result.slice(1) : result);
+            } else {
+                // fallback: 如果沒快取才呼叫 API
+                translateText(text, "zh-CN", "en").then(result => {
+                    translationCache.set(text, result);
+                    setTranslated(capitalize ? result.charAt(0).toUpperCase() + result.slice(1) : result);
+                });
+            }
         } else {
             setTranslated(text);
         }
@@ -47,6 +73,8 @@ const useRouter = () => {
         },
     };
 };
+
+
 
 
 // ----------------------------------------------------
@@ -336,7 +364,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { i18n, t } = useTranslation();
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [currentPage, setCurrentPage] = useState(0); 
@@ -651,7 +679,47 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         </div>
     );
 
-    // 11. loading / error 狀態處理
+    // 11. 問卷載入或語言切換時集中翻譯
+    useEffect(() => {
+        if (questionnaire && i18n.language.startsWith("en")) {
+            const texts: string[] = [
+                questionnaire.title,
+                questionnaire.description ?? "",
+                ...questionnaire.questions.map(q => q.text),
+                ...questionnaire.questions.flatMap(q => q.options?.map(o => o.text) || []),
+                ...Object.values(CATEGORY_MAP)
+            ];
+
+            const uniqueTexts = Array.from(new Set(texts));
+
+            // 檢查哪些文字還沒翻譯過
+            const missingTexts = uniqueTexts.filter(text => !translationCache.has(text));
+
+            if (missingTexts.length > 0) {
+                setLoadingStatus("loading");
+                Promise.all(missingTexts.map(text => translateText(text, "zh-CN", "en")))
+                    .then(results => {
+                        missingTexts.forEach((text, i) => {
+                            translationCache.set(text, results[i]);
+                        });
+                        setLoadingStatus("success");
+                    })
+                    .catch(err => {
+                        console.error("翻譯失敗:", err);
+                        setLoadingStatus("error");
+                    });
+            }
+        }
+    }, [questionnaire, i18n.language]);
+
+    // 離開頁面時清空快取
+    useEffect(() => {
+        return () => {
+            translationCache.clear();
+        };
+    }, []);
+
+    // 12. loading / error 狀態處理
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -676,10 +744,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </div>
         );
     }
+    
 
 
-
-    // 12. 正常問卷內容渲染!!!
+    // 13. 正常問卷內容渲染!!!
     return (
         <div className="min-h-screen bg-gray-50">
             {/* 頂部錯誤提示 */}
