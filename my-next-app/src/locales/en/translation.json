@@ -196,12 +196,39 @@
     }
   },
   "aboutPage": {
-      "title": "About Us",
-      "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
-      "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
-      "values": "We value fairness, privacy, and responsibility in every step of our development process.",
-      "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
-      "back": "Back"
+    "title": "About Us",
+    "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
+    "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
+    "values": "We value fairness, privacy, and responsibility in every step of our development process.",
+    "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
+    "back": "Back"
+  },
+  "Questionnaire": {
+    "loading": "Loading questionnaire...",
+    "loadFailedOrMissing": "Failed to load questionnaire or it does not exist.",
+    "submitting": "Submitting",
+    "overlay": {
+      "doNotClose": "This may take a few seconds, please do not close the page."
+    },
+    "placeholder": {
+      "answer": "Please enter your answer here..."
+    },
+    "submitSuccess": "Questionnaire submitted successfully!",
+    "report": {
+      "generated": "Evaluation report has been generated.",
+      "generating": "Generating report..."
+    },
+    "actions": {
+      "backToHome": "Back to Home",
+      "viewReport": "View Report",
+      "retryLoad": "Retry Load",
+      "prev": "Previous",
+      "next": "Next",
+      "finishAndSubmit": "Finish and Submit"
+    },
+    "progress": {
+      "page": "Page {{current}} of {{total}}"
+    }
   }
 }
 

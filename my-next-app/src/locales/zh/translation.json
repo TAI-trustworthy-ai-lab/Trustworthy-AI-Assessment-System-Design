@@ -201,5 +201,35 @@
     "values": "我們重視公平、隱私與責任，並在每個開發環節中落實。",
     "future": "展望未來，我們將持續創新與優化系統，以滿足全球需求。",
     "back": "返回"
+  },
+
+  "Questionnaire": {
+    "loading": "正在加載問卷...",
+    "loadFailedOrMissing": "問卷加載失敗或不存在。",
+    "submitting": "提交中",
+    "overlay": {
+      "doNotClose": "這可能需要幾秒鐘，請不要關閉頁面。"
+    },
+    "placeholder": {
+      "answer": "請在此輸入您的回答..."
+    },
+    "submitSuccess": "問卷提交成功！",
+    "report": {
+      "generated": "評估報告已生成。",
+      "generating": "正在生成報告..."
+    },
+    "actions": {
+      "backToHome": "返回主頁",
+      "viewReport": "查看報告結果",
+      "retryLoad": "重試加載",
+      "prev": "上一步",
+      "next": "下一步",
+      "finishAndSubmit": "完成並提交"
+    },
+    "progress": {
+      "page": "第 {{current}} / {{total}} 頁"
+    }
   }
+  
+
 }

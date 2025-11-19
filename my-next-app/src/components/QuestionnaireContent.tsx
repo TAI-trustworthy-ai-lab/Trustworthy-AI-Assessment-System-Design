@@ -1,6 +1,36 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import translate from 'google-translate-api-x';
+// ----------------------------------------------------
+// 翻譯工具函式 (Google Translate API-X)
+// ----------------------------------------------------
+const translateText = async (text: string, source = "zh-CN", target = "en") => {
+    const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target })
+    });
+
+    const data = await res.json();
+    return data.translatedText;
+};
+//用於條件或迴圈時的翻譯
+const TranslatedText: React.FC<{ text: string }> = ({ text }) => {
+    const { i18n } = useTranslation();
+    const [translated, setTranslated] = useState(text);
+
+    useEffect(() => {
+        if (i18n.language.startsWith("en")) {
+            translateText(text, "zh-CN", "en").then(setTranslated);
+        } else {
+            setTranslated(text);
+        }
+    }, [text, i18n.language]);
+
+    return <>{translated}</>;
+};
 
 const useRouter = () => {
     return {
@@ -28,6 +58,7 @@ const CATEGORY_MAP: Record<string, string> = {
     "PRIVACY": "九、隱私(Privacy)：在使用AI系統時，不會侵犯到個人隱私",
     "FAIRNESS": "十、公平性(Fairness)：AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
     "SECURITY": "十一、資訊安全性(Security)：防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全",
+    "UNKNOWN": "未知分類：{{category}}"
 };
 
 // ----------------------------------------------------
@@ -78,43 +109,49 @@ type Answers = Record<number, AnswerValue>;
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
 // ----------------------------------------------------
-const SubmissionLoadingIndicator: React.FC = () => (
-    <div className="flex items-center justify-center space-x-2">
-        <span className="font-bold">提交中</span>
-        {/* Animated Dots using Tailwind's built-in animate-pulse */}
-        <div className="flex items-end h-4 pb-0.5">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+const SubmissionLoadingIndicator: React.FC = () => {
+    const { t } = useTranslation();
+    return (
+        <div className="flex items-center justify-center space-x-2">
+            <span className="font-bold">{t('questionnaire.submitting')}</span>
+            {/* Animated Dots using Tailwind's built-in animate-pulse */}
+            <div className="flex items-end h-4 pb-0.5">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 
 // ----------------------------------------------------
 // Loading Overlay - 全頁面 loading設計
 // ----------------------------------------------------
-const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => (
-    <div className="fixed inset-0 z-[100] bg-gray-800/40 bg-opacity-70 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
-        <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
-            {/* 這裡使用一個旋轉的齒輪圖標，或替換成其他有趣的 SVG/動畫 */}
-            <svg 
-                className="w-16 h-16 text-indigo-600 animate-spin mb-4" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-            >
-                {/* 旋轉齒輪或類似圖案 */}
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
-            </svg>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">{message}</h3>
-            <p className="text-sm text-gray-500">這可能需要幾秒鐘，請不要關閉頁面。</p>
+const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="fixed inset-0 z-[100] bg-gray-800/40 bg-opacity-70 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
+            <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
+                {/* 這裡使用一個旋轉的齒輪圖標，或替換成其他有趣的 SVG/動畫 */}
+                <svg
+                    className="w-16 h-16 text-indigo-600 animate-spin mb-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    {/* 旋轉齒輪或類似圖案 */}
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{message}</h3>
+                <p className="text-sm text-gray-500">{t('Questionnaire.overlay.doNotClose')}</p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // ----------------------------------------------------
 // 錯誤提示組件
@@ -253,13 +290,13 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
 // 4. TEXT 題型
 const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const textValue = currentAnswer.textValue || '';
-    
+    const { t } = useTranslation();
     return (
         <textarea
             rows={3}
             value={textValue}
             onChange={(e) => onAnswer({ textValue: e.target.value })}
-            placeholder="請在此輸入您的回答..."
+            placeholder={t('Questionnaire.placeholder.answer')}
             className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700 
                        focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
         />
@@ -271,6 +308,7 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
 // 問題渲染器：根據 type 選擇組件
 // ----------------------------------------------------
 const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
+    const { t } = useTranslation();
     switch (props.question.type) {
         case 'SCALE':
             return <ScaleQuestion {...props} />;
@@ -281,7 +319,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
         case 'TEXT':
             return <TextQuestion {...props} />;
         default:
-            return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
+            return <p className="text-red-500">{t('Questionnaire.error.unknownType', { type: props.question.type })}</p>;
     }
 };
 
@@ -292,6 +330,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
     const router = useRouter();
+    const { t } = useTranslation();
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [currentPage, setCurrentPage] = useState(0); 
@@ -301,6 +340,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
 
     // 1. 根據指標映射表獲取分頁標題
     const getPageTitle = (category: string): string => {
@@ -585,20 +625,20 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 className="text-xl font-bold text-gray-900mb-2">問卷提交成功！</h3>
-                <p className="text-gray-600 mb-6">評估報告已生成。</p>
+                <h3 className="text-xl font-bold text-gray-900mb-2">{t('Questionnaire.submitSuccess')}</h3>
+                <p className="text-gray-600 mb-6">{t('Questionnaire.report.generated')}。</p>
                 <div className="flex justify-center space-x-4">
                     <button
                         onClick={() => router.push('/home')}
                         className="py-2 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-md hover:bg-gray-300 transition duration-150"
                     >
-                        返回主頁
+                        {t('Questionnaire.actions.backToHome')}
                     </button>
                     <button
                         onClick={() => router.push('/report')}
                         className="py-2 px-4 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-800 transition duration-150"
                     >
-                        查看報告結果
+                        {t('Questionnaire.actions.viewReport')}
                     </button>
                 </div>
             </div>
@@ -609,7 +649,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <p className="text-xl font-medium text-purple-800">正在加載問卷...</p>
+                <p className="text-xl font-medium text-purple-800">{t('Questionnaire.loading')}</p>
             </div>
         );
     }
@@ -618,13 +658,13 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="p-8 bg-white rounded-xl shadow-lg text-center">
-                    <p className="text-xl font-bold text-red-600 mb-4">問卷加載失敗或不存在。</p>
+                    <p className="text-xl font-bold text-red-600 mb-4">{t('Questionnaire.loadFailedOrMissing')}</p>
                     <p className="text-gray-600 mb-4">{submissionError}</p>
                     <button 
                         onClick={fetchQuestionnaire} 
                         className="py-2 px-4 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition duration-150"
                     >
-                        重試加載
+                        {t('Questionnaire.actions.retryLoad')}
                     </button>
                 </div>
             </div>
@@ -646,18 +686,18 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
                     {/* 問卷題目 titleA */}
                     <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
-                        {questionnaire.title}
+                        {<TranslatedText text={questionnaire.title} />}
                     </h1>
 
                     {/* 问卷描述 description */}
-                    {questionnaire.description && (
-                        <p className="text-left text-gray-500 mb-8">{questionnaire.description}</p>
+                    {<TranslatedText text={questionnaire.description} /> && (
+                        <p className="text-left text-gray-500 mb-8">{<TranslatedText text={questionnaire.description} />}</p>
                     )}
 
                     {/* 进度条 (Progress Bar) */}
                     <div className="w-full mb-8">
                         <div className="text-sm font-medium text-gray-700 mb-2 flex justify-between">
-                            <span>第 {currentPage + 1} / {TOTAL_PAGES} 頁</span>
+                            <span>{t('Questionnaire.progress.page', { current: currentPage + 1, total: TOTAL_PAGES })}</span>
                             <span>{progressPercent}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -672,17 +712,17 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     {currentPageData && (
                         <div>
                             <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b pb-3">
-                                {currentPageData.pageTitle}
+                                {<TranslatedText text={currentPageData.pageTitle} />}
                             </h2>
 
                             <div className="space-y-6">
                                 {currentPageData.questions.map((q) => (
                                     <div key={q.id} className="p-4 border rounded-lg bg-gray-50">
                                         <p className="font-semibold text-gray-700 mb-3">
-                                            {q.text} 
+                                            {<TranslatedText text={q.text} />}
                                             {q.required && <span className="text-red-500 ml-1">*</span>}
                                         </p>
-                                        
+
                                         {/* 根據 type 渲染不同 UI */}
                                         <div className="flex justify-center sm:justify-start">
                                             <QuestionRenderer
@@ -705,7 +745,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             disabled={currentPage === 0 || isSubmitting}
                             className="py-2 px-6 bg-gray-500 text-white font-bold rounded-lg transition duration-150 hover:bg-gray-400 disabled:opacity-50"
                         >
-                            上一步
+                            {t('Questionnaire.actions.prev')}
                         </button>
 
                         {currentPage < TOTAL_PAGES - 1 ? (
@@ -714,7 +754,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                                 disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
                                 className="py-2 px-6 bg-violet-600 text-white font-bold rounded-lg transition duration-150 hover:bg-violet-500 disabled:opacity-50"
                             >
-                                下一步
+                                {t('Questionnaire.actions.next')}
                             </button>
                         ) : (
                             <button
@@ -723,7 +763,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                                 // 增加 min-width 以確保動畫有足夠空間
                                 className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
                             >
-                                {isSubmitting ? <SubmissionLoadingIndicator /> : '完成並提交'}
+                                {isSubmitting ? <SubmissionLoadingIndicator /> : t('Questionnaire.actions.finishAndSubmit')}
                             </button>
                         )}
                     </div>
@@ -731,7 +771,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </main>
             {/* Modal 渲染移到最頂層，由狀態控制 */}
             {showSuccessModal && <SuccessModal />}
-            {isGeneratingReport && <FullPageLoadingOverlay message="正在生成評估報告..." />}
+            {isGeneratingReport && <FullPageLoadingOverlay message={t('Questionnaire.report.generating')} />}
         </div>
     );
 }
