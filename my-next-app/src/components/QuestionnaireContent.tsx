@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { translationCache } from "../components/translationCache";
 import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
@@ -20,25 +21,6 @@ const translateText = async (text: string, source = "zh-CN", target = "en", capi
     const data = await res.json();
     return data.translatedText;
 };
-class TranslationCache {
-    private cache: Record<string, string> = {};
-
-    set(original: string, translated: string) {
-        this.cache[original] = translated;
-    }
-
-    get(original: string) {
-        return this.cache[original];
-    }
-
-    has(original: string) {
-        return !!this.cache[original];
-    }
-
-    clear() {
-        this.cache = {};
-    }
-}
 const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
