@@ -224,7 +224,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
-        <div className="flex space-x-6">
+        <div className="flex flex-wrap gap-3">
             {options.map(opt => (
                 <button
                     key={opt.id}
