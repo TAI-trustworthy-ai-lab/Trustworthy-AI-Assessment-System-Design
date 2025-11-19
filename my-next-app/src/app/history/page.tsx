@@ -323,7 +323,7 @@ export default function HistoryPage() {
             <div className="
               relative h-full w-full
               bg-gray-50 
-              rounded overflow-hidden 
+              rounded overflow-hidden
             ">
               <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
               <ResponseWindow state={viewerState} data={viewerData} />
@@ -712,7 +712,6 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
 
   useEffect(()=>{
     setCurState(state)
-    console.log(state, curState)
   }, [state])
   
   // loading
@@ -724,43 +723,47 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
 
   // detail
   const detailPanel = (<div
-      className="flex flex-col items-center justify-center size-fit"
+      className="flex flex-col items-center justify-center w-full size-fit"
     >
       <div className="text-black text-2xl font-semibold mb-5">詳細資訊</div>
-      <div className='
-        grid grid-cols-[135px_1fr] space-y-2
-        col-end-2
-      '>
-        <div>使用者:</div>
-        <div>{data.response?.user.name}</div>
+      <div 
+        className="w-full px-3 flex justify-center"
+        onClick={(e)=>e.stopPropagation()}
+      >
+        <div
+          className={`grid grid-cols-[135px_1fr] max-w-fit w-[100%] space-y-2 whitespace-nowrap ${curState === ViewerState.detail? "overflow-x-auto": "overflow-hidden"}`}
+        >
+          <div>使用者:</div>
+          <div>{data.response?.user.name}</div>
 
-        <div>使用者 id:</div>
-        <div>{data.response?.user.id}</div>
+          <div>使用者 ID:</div>
+          <div>{data.response?.user.id}</div>
 
-        <div>使用者帳號:</div>
-        <div>{data.response?.user.email}</div>
+          <div>使用者帳號:</div>
+          <div>{data.response?.user.email}</div>
 
-        <div>專案名稱:</div>
-        <div>{data.response?.project.name}</div>
+          <div>專案名稱:</div>
+          <div>{data.response?.project.name}</div>
 
-        <div>專案 id:</div>
-        <div>{data.response?.project.id}</div>
+          <div>專案 ID:</div>
+          <div>{data.response?.project.id}</div>
 
-        <div>問卷名稱:</div>
-        <div>{data.response?.version.title}</div>
+          <div>問卷名稱:</div>
+          <div>{data.response?.version.title}</div>
 
-        <div>問卷 id:</div>
-        <div>{data.response?.version.id}</div>
+          <div>問卷 ID:</div>
+          <div>{data.response?.version.id}</div>
 
-        <div>標籤:</div>
-        <div>{data.response?.label}</div>
+          <div>標籤:</div>
+          <div>{data.response?.label}</div>
 
-        <div>回應 id:</div>
-        <div>{data.response?.id}</div>
+          <div>回應 ID:</div>
+          <div>{data.response?.id}</div>
 
-        <div>提交時間:</div>
-        <div>{data.response?.submittedAt}</div>
+          <div>提交時間:</div>
+          <div>{data.response?.submittedAt}</div>
 
+        </div>
       </div>
     </div>)
 
@@ -781,19 +784,51 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
       >
         <div
           className={`
-            absolute -top-[88%] z-52
-            px-4 pb-5 w-[80%] h-[100%]
-            flex flex-col justify-end items-center
+            absolute -top-[70%] z-52 overflow-hidden
+            w-[100%] h-[82%]
+            flex flex-col justify-start items-center
             rounded-b-md
             transform transition-transform duration-200 ease-out
+
+            sm:w-[80%]
             ${curState === ViewerState.detail ? 
-              "translate-y-[76%] bg-white/90 backdrop-blur-sm shadow-xl shadow-black/13" :
+              "translate-y-[82%] bg-white/90 backdrop-blur-sm shadow-xl shadow-black/13" :
               "translate-y-0 bg-white/50 backdrop-blur-sm shadow-md shadow-black/10"}
           `}
-          onClick={(e)=>{setCurState(ViewerState.detail); e.stopPropagation()}}
+          onClick={(e)=>{
+            if(curState === ViewerState.detail) setCurState(ViewerState.success)
+            else setCurState(ViewerState.detail)
+            e.stopPropagation()
+          }}
         >
+          <div className={'h-[23%]'}></div>
           {detailPanel}
-          <div className='h-[14%]'></div>
+          <div className='
+            relative
+            flex justify-center items-center]
+            w-[100%] h-[28%]
+          '>
+            <div className={`
+              absolute bottom-0 h-[100%]
+              flex items-center
+              transform transition-transform duration-200 ease-out
+
+              ${curState === ViewerState.detail ? 
+              "translate-y-[100%]" :
+              "translate-y-0"}
+            `}>
+              <div
+                className='
+                  size-10 rounded-full p-2
+                  bg-blue-300
+                  text-white text-center text-lg font-bold
+                  hover:bg-blue-400 active:bg-blue-500
+                  cursor-pointer'
+                onClick={(e)=>{setCurState(ViewerState.detail);e.stopPropagation()}}>
+                i
+            </div>
+            </div>
+          </div>
         </div>
         <ResponseViewer data={{response:data.response, questionnaire:data.questionnaire}} />
       </div>
