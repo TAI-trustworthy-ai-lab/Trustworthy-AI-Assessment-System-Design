@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { translationCache } from "../components/translationCache";
 import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
