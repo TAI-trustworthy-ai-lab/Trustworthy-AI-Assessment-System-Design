@@ -6,7 +6,11 @@ import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
 // ----------------------------------------------------
-const translateText = async (text: string, source = "zh-CN", target = "en") => {
+const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+const translateText = async (text: string, source = "zh-CN", target = "en", capitalize = false) => {
     const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -17,13 +21,15 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
     return data.translatedText;
 };
 //用於條件或迴圈時的翻譯
-const TranslatedText: React.FC<{ text: string }> = ({ text }) => {
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
 
     useEffect(() => {
         if (i18n.language.startsWith("en")) {
-            translateText(text, "zh-CN", "en").then(setTranslated);
+            translateText(text, "zh-CN", "en").then(result => {
+                setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+            });
         } else {
             setTranslated(text);
         }
@@ -235,7 +241,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
                             : 'bg-white text-gray-800 hover:bg-indigo-50'
                         }`}
                 >
-                    {opt.text}
+                    <TranslatedText text={opt.text} capitalize={true} />
                 </button>
             ))}
         </div>
@@ -280,7 +286,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
                         }
                     `}
                 >
-                    {opt.text}
+                    <TranslatedText text={opt.text} capitalize={true} />
                 </button>
             ))}
         </div>
