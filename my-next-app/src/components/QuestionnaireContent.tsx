@@ -6,7 +6,11 @@ import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
 // ----------------------------------------------------
-const translateText = async (text: string, source = "zh-CN", target = "en") => {
+const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+const translateText = async (text: string, source = "zh-CN", target = "en", capitalize = false) => {
     const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -17,13 +21,15 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
     return data.translatedText;
 };
 //用於條件或迴圈時的翻譯
-const TranslatedText: React.FC<{ text: string }> = ({ text }) => {
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
 
     useEffect(() => {
         if (i18n.language.startsWith("en")) {
-            translateText(text, "zh-CN", "en").then(setTranslated);
+            translateText(text, "zh-CN", "en").then(result => {
+                setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+            });
         } else {
             setTranslated(text);
         }
@@ -76,9 +82,9 @@ interface Question {
     text: string;
     category: string;
     order: number;
-    type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT'; 
+    type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
     required: boolean;
-    options?: Option[]; 
+    options?: Option[];
 }
 
 interface PageData {
@@ -98,13 +104,13 @@ interface QuestionnaireData {
 }
 
 type AnswerValue = {
-    score?: number; 
-    optionIds?: number[]; 
-    textValue?: string; 
+    score?: number;
+    optionIds?: number[];
+    textValue?: string;
 };
 
 
-type Answers = Record<number, AnswerValue>; 
+type Answers = Record<number, AnswerValue>;
 
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
@@ -159,12 +165,12 @@ const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
     if (!message) return null;
     return (
-        <div 
+        <div
             className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-600 text-white shadow-lg flex items-center justify-between transition-opacity duration-300"
             role="alert"
         >
             <p className="font-medium">{message}</p>
-            <button 
+            <button
                 onClick={onClose}
                 className="text-white opacity-90 hover:opacity-100 font-bold text-2xl ml-4"
             >
@@ -194,17 +200,17 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
     return (
         <div className="flex justify-center space-x-2 sm:space-x-4">
             {options.map((opt) => {
-                const displayScore = opt.order; 
-                
+                const displayScore = opt.order;
+
                 return (
                     <button
                         key={opt.id}
-                        onClick={() => 
-                            onAnswer({ optionIds: [opt.id], score: opt.value }) 
+                        onClick={() =>
+                            onAnswer({ optionIds: [opt.id], score: opt.value })
                         }
                         className={`
                             w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-200
-                            ${selectedOptionId === opt.id 
+                            ${selectedOptionId === opt.id
                                 ? 'bg-indigo-500 text-white shadow-lg ring-3 ring-indigo-300'
                                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-indigo-100'
                             }
@@ -235,7 +241,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
                             : 'bg-white text-gray-800 hover:bg-indigo-50'
                         }`}
                 >
-                    {opt.text}
+                    <TranslatedText text={opt.text} capitalize={true} />
                 </button>
             ))}
         </div>
@@ -275,12 +281,12 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
                     className={`
                         py-2 px-4 rounded-lg font-medium transition duration-150 border
                         ${selectedOptionIds.includes(opt.id)
-                            ? 'bg-indigo-500 text-white shadow-md border-indigo-600' 
-                            : 'bg-white text-gray-800 hover:bg-indigo-50 border-gray-300' 
+                            ? 'bg-indigo-500 text-white shadow-md border-indigo-600'
+                            : 'bg-white text-gray-800 hover:bg-indigo-50 border-gray-300'
                         }
                     `}
                 >
-                    {opt.text}
+                    <TranslatedText text={opt.text} capitalize={true} />
                 </button>
             ))}
         </div>
@@ -333,7 +339,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const { t } = useTranslation();
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [currentPage, setCurrentPage] = useState(0); 
+    const [currentPage, setCurrentPage] = useState(0);
     const [answers, setAnswers] = useState<Answers>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -350,7 +356,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // 2. 分頁資料結果處理
     const allPages: PageData[] = useMemo(() => {
         if (!questionnaire) return [];
-        
+
         // 按 category 分組
         const grouped = questionnaire.questions.reduce((acc, question) => {
             const category = question.category;
@@ -360,7 +366,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             acc[category].questions.push(question);
             return acc;
         }, {} as Record<string, PageData & { category: string }>);
-        
+
         // 每個頁面的問題按 order 排序
         return Object.values(grouped)
             .sort((a, b) => {
@@ -368,10 +374,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 const indexA = keys.indexOf(a.category.toUpperCase());
                 const indexB = keys.indexOf(b.category.toUpperCase());
                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                return 0; 
+                return 0;
             })
             .map(page => ({
-                pageTitle: getPageTitle(page.pageTitle), 
+                pageTitle: getPageTitle(page.pageTitle),
                 questions: page.questions.sort((a, b) => a.order - b.order) // 保持頁面內的問題按 order 排序
             }));
     }, [questionnaire]);
@@ -395,7 +401,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 throw new Error(errorData.message || `加載失敗，狀態碼: ${response.status}`);
             }
             const responseBody = await response.json();
-            const data = responseBody.data; 
+            const data = responseBody.data;
             setQuestionnaire(data as QuestionnaireData);
             setLoadingStatus('success');
             setSubmissionError(null);
@@ -421,14 +427,14 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const progressPercent = useMemo(() => {
         return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
     }, [currentPage, TOTAL_PAGES]);
-    
+
     const isCurrentPageComplete = useMemo(() => {
         if (!currentPageData) return false;
-        
+
         return currentPageData.questions.every(q => {
             const answer = answers[q.id];
-            if (!q.required) return true; 
-            if (!answer) return false; 
+            if (!q.required) return true;
+            if (!answer) return false;
 
             switch (q.type) {
                 case 'SCALE':
@@ -438,7 +444,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 case 'MULTIPLE_CHOICE':
                     return answer.optionIds && answer.optionIds.length > 0;
                 case 'TEXT':
-                    return answer.textValue && answer.textValue.trim() !== ''; 
+                    return answer.textValue && answer.textValue.trim() !== '';
                 default:
                     return false;
             }
@@ -488,7 +494,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmissionError(null);
-        
+
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
         const currentProjectId = localStorage.getItem('currentProjectId');
@@ -497,16 +503,16 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         if (!currentUserId || !userToken) {
             setSubmissionError("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。"); // ⭐️ 替換 alert
             setIsSubmitting(false);
-            router.push('/login'); 
+            router.push('/login');
             return;
         }
         if (!currentProjectId) {
-            setSubmissionError("錯誤：無法找到專案 ID。"); 
+            setSubmissionError("錯誤：無法找到專案 ID。");
             setIsSubmitting(false);
             return;
         }
         if (!questionnaire) {
-            setSubmissionError("錯誤：問卷資料尚未載入。"); 
+            setSubmissionError("錯誤：問卷資料尚未載入。");
             setIsSubmitting(false);
             return;
         }
@@ -522,7 +528,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             const questionId = parseInt(idString, 10);
             const question = questionnaire.questions.find(q => q.id === questionId);
 
-            if (!question) return acc; 
+            if (!question) return acc;
             const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
 
             // 處理不同類型的答案
@@ -531,8 +537,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    optionIds: null, 
-                    value: scoreToSubmit, 
+                    optionIds: null,
+                    value: scoreToSubmit,
                     textValue: null,
                 });
 
@@ -541,17 +547,17 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 acc.push({
                     questionId: questionId,
                     optionId: optionId,
-                    optionIds: null, 
-                    value: scoreToSubmit, 
+                    optionIds: null,
+                    value: scoreToSubmit,
                     textValue: null,
                 });
 
             } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
                 acc.push({
                     questionId: questionId,
-                    optionId: null, 
-                    optionIds: answerValue.optionIds, 
-                    value: scoreToSubmit, 
+                    optionId: null,
+                    optionIds: answerValue.optionIds,
+                    value: scoreToSubmit,
                     textValue: null,
                 });
             } else if (question.type === 'TEXT') {
@@ -565,7 +571,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             }
             return acc;
         }, []);
-        
+
         const parsedUserId = parseInt(currentUserId, 10);
         const parsedProjectId = parseInt(currentProjectId, 10);
         const parsedVersionId = typeof questionnaireId === 'number'
@@ -589,35 +595,35 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`, 
+                    'Authorization': `Bearer ${userToken}`,
                 },
-                body: JSON.stringify(finalPayload), 
+                body: JSON.stringify(finalPayload),
             });
 
             if (response.ok) {
                 const data = await response.json();
                 const responseId = data.data.id;
-                
+
                 localStorage.setItem('responseId', responseId.toString());
                 setSubmittedResponseId(responseId);
                 setIsGeneratingReport(true);
                 await generateReport(responseId, userToken);
-                setShowSuccessModal(true); 
-                
+                setShowSuccessModal(true);
+
             } else {
                 let errorDetail = `伺服器錯誤 (${response.status})`;
-                setSubmissionError(`提交失敗: ${errorDetail}`); 
+                setSubmissionError(`提交失敗: ${errorDetail}`);
             }
         } catch (error) {
             console.error('提交錯誤:', error);
-            setSubmissionError("提交過程中發生網路錯誤。"); 
+            setSubmissionError("提交過程中發生網路錯誤。");
         } finally {
             setIsSubmitting(false);
             setIsGeneratingReport(false);
         }
     };
-    
-    
+
+
     // 10. 成功提交後的 Modal 組件
     const SuccessModal = () => (
         <div className="fixed inset-0 bg-gray-700/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -660,8 +666,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 <div className="p-8 bg-white rounded-xl shadow-lg text-center">
                     <p className="text-xl font-bold text-red-600 mb-4">{t('Questionnaire.loadFailedOrMissing')}</p>
                     <p className="text-gray-600 mb-4">{submissionError}</p>
-                    <button 
-                        onClick={fetchQuestionnaire} 
+                    <button
+                        onClick={fetchQuestionnaire}
                         className="py-2 px-4 bg-purple-800 text-white rounded-lg hover:bg-purple-700 transition duration-150"
                     >
                         {t('Questionnaire.actions.retryLoad')}
@@ -677,11 +683,11 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     return (
         <div className="min-h-screen bg-gray-50">
             {/* 頂部錯誤提示 */}
-            <ErrorAlert 
-                message={submissionError} 
-                onClose={() => setSubmissionError(null)} 
+            <ErrorAlert
+                message={submissionError}
+                onClose={() => setSubmissionError(null)}
             />
-            
+
             <main className="pt-8 flex flex-col items-center min-h-[calc(100vh)] px-4">
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
                     {/* 問卷題目 titleA */}
@@ -701,8 +707,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <span>{progressPercent}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2.5">
-                            <div 
-                                className="bg-purple-700 h-2.5 rounded-full transition-all duration-500" 
+                            <div
+                                className="bg-purple-700 h-2.5 rounded-full transition-all duration-500"
                                 style={{ width: `${progressPercent}%` }}
                             ></div>
                         </div>
