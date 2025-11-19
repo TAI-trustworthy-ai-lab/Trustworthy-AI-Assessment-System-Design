@@ -2,16 +2,11 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { translationCache } from "../components/translationCache";
 import translate from 'google-translate-api-x';
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
 // ----------------------------------------------------
-const capitalizeFirstLetter = (text: string) => {
-    if (!text) return text;
-    return text.charAt(0).toUpperCase() + text.slice(1);
-};
-const translateText = async (text: string, source = "zh-CN", target = "en", capitalize = false) => {
+const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -21,23 +16,14 @@ const translateText = async (text: string, source = "zh-CN", target = "en", capi
     const data = await res.json();
     return data.translatedText;
 };
-
-const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
+//用於條件或迴圈時的翻譯
+const TranslatedText: React.FC<{ text: string }> = ({ text }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
 
     useEffect(() => {
         if (i18n.language.startsWith("en")) {
-            if (translationCache.has(text)) {
-                const result = translationCache.get(text)!;
-                setTranslated(capitalize ? result.charAt(0).toUpperCase() + result.slice(1) : result);
-            } else {
-                // fallback: 如果沒快取才呼叫 API
-                translateText(text, "zh-CN", "en").then(result => {
-                    translationCache.set(text, result);
-                    setTranslated(capitalize ? result.charAt(0).toUpperCase() + result.slice(1) : result);
-                });
-            }
+            translateText(text, "zh-CN", "en").then(setTranslated);
         } else {
             setTranslated(text);
         }
@@ -55,8 +41,6 @@ const useRouter = () => {
         },
     };
 };
-
-
 
 
 // ----------------------------------------------------
@@ -251,7 +235,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
                             : 'bg-white text-gray-800 hover:bg-indigo-50'
                         }`}
                 >
-                    <TranslatedText text={opt.text} capitalize={true} />
+                    {opt.text}
                 </button>
             ))}
         </div>
@@ -296,7 +280,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
                         }
                     `}
                 >
-                    <TranslatedText text={opt.text} capitalize={true} />
+                    {opt.text}
                 </button>
             ))}
         </div>
@@ -346,10 +330,9 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
     const router = useRouter();
-    const { i18n, t } = useTranslation();
+    const { t } = useTranslation();
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
-    const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading'); // 問卷資料
-    const [translationLoading, setTranslationLoading] = useState(true); // 翻譯進行中
+    const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [currentPage, setCurrentPage] = useState(0); 
     const [answers, setAnswers] = useState<Answers>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -662,45 +645,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         </div>
     );
 
-    // 11. 問卷載入或語言切換時集中翻譯
-    useEffect(() => {
-        if (questionnaire && i18n.language.startsWith("en")) {
-            const texts: string[] = [
-                questionnaire.title,
-                questionnaire.description ?? "",
-                ...questionnaire.questions.map(q => q.text),
-                ...questionnaire.questions.flatMap(q => q.options?.map(o => o.text) || []),
-                ...Object.values(CATEGORY_MAP)
-            ];
-
-            const uniqueTexts = Array.from(new Set(texts));
-            const missingTexts = uniqueTexts.filter(text => !translationCache.has(text));
-
-            if (missingTexts.length > 0) {
-                setTranslationLoading(true);
-                Promise.all(missingTexts.map(text => translateText(text, "zh-CN", "en")))
-                    .then(results => {
-                        missingTexts.forEach((text, i) => {
-                            translationCache.set(text, results[i]);
-                        });
-                        setTranslationLoading(false);
-                    })
-                    .catch(err => {
-                        console.error("翻譯失敗:", err);
-                        setTranslationLoading(false);
-                    });
-            }
-        }
-    }, [questionnaire, i18n.language]);
-
-    // 離開頁面時清空快取
-    useEffect(() => {
-        return () => {
-            translationCache.clear();
-        };
-    }, []);
-
-    // 12. loading / error 狀態處理
+    // 11. loading / error 狀態處理
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -708,6 +653,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </div>
         );
     }
+
     if (loadingStatus === 'error' || !questionnaire) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -724,16 +670,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </div>
         );
     }
-    if (translationLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <p className="text-xl font-medium text-purple-800">{t('Questionnaire.translationLoading')}</p>
-            </div>
-        );
-    }
 
 
-    // 13. 正常問卷內容渲染!!!
+
+    // 12. 正常問卷內容渲染!!!
     return (
         <div className="min-h-screen bg-gray-50">
             {/* 頂部錯誤提示 */}
