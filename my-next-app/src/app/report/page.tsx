@@ -111,53 +111,6 @@ const fetchReport = async (responseId: number, authToken: string): Promise<Repor
     return result.data as ReportData; 
 };
 
-// 2. GET 專案名稱 - currentProjectId from local storage
-const fetchProjectTitle = async (projectId: string, authToken: string): Promise<string | null> => {
-    // 假設不應該得不到專案名稱
-    const url = `${API_BASE_URL}/project/${projectId}`;
-    const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-            },
-        });
-
-        const result = await response.json();
-        return result.data.name as string; 
-};
-
-// 3. GET 問卷標題 - questionnaireId from local storage
-const fetchVersionTitle = async (questionnaireId: string, authToken: string): Promise<string | null> => {
-    // 假設不應該得不到問卷標題
-    const url = `${API_BASE_URL}/questionnaire/${questionnaireId}`;
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-        },
-    });
-
-    const result = await response.json();
-    return result.data.title as string; 
-};
-
-// 4. GET 使用者名稱 - userId from local storage
-const fetchUserName = async (userId: string, authToken: string): Promise<string | null> => {
-    // 假設不應該得不到使用者名稱
-    const url = `${API_BASE_URL}/user/${userId}`;
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-        },
-    });
-    const result = await response.json();
-    return result.data.name || '使用者名稱缺失'; 
-};
-
 
 // ----------------------------------------------------
 // 報告頁面組件
@@ -204,25 +157,19 @@ export default function ReportPage() {
 
         setLoadingStatus('generating'); 
         try {
-            // 取後端資料
-            const reportDataPromise = fetchReport(responseId, authToken); 
-            const projectTitlePromise = (await reportDataPromise).response?.project.name;
-            const versionTitlePromise = (await reportDataPromise).response?.version.title;
-            const userNamePromise = (await reportDataPromise).response?.userId;
+            const reportData = await fetchReport(responseId, authToken); 
             
-            // 等待所有 API 完成
-            const [data, projName, verTitle, uName] = await Promise.all([
-                reportDataPromise,
-                projectTitlePromise,
-                versionTitlePromise,
-                userNamePromise,
-            ]);
+            // 從 reportData.response 中提取需要的 ID 和名稱
+            const projName = reportData.response?.project?.name ?? '專案名稱缺失';
+            const verTitle = reportData.response?.version?.title ?? '問卷版本標題缺失';
+            const uName = reportData.response?.user?.name ?? '使用者名稱缺失';
             
-            setReport(data);
+            // 3. 更新狀態
+            setReport(reportData);
             setProjectName(projName);
             setVersionTitle(verTitle);
             setUserName(uName);
-            setLoadingStatus('success');; 
+            setLoadingStatus('success');
             
         } catch (error) {
             const message = error instanceof Error ? error.message : "獲取報告時發生錯誤。";
