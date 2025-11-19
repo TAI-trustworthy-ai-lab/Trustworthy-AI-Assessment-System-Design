@@ -73,6 +73,8 @@ export interface ResponseData{
 
 enum ViewerState{
   loading,
+  editing,
+  detail,
   success,
   fail
 }
@@ -138,7 +140,7 @@ export default function HistoryPage() {
 
   // open
   // get response and questionnair from response id and qId (GET API)
-  const getResponseAndQuestionnaire = async (id: number, qId:number) => {
+  const getResponseAndQuestionnaire = async (id: number, qId:number, finalState: ViewerState) => {
     fetchList[id] = fetchList[id] || {
       response: null,
       questionnaire: null
@@ -195,7 +197,7 @@ export default function HistoryPage() {
     }
     else q = fetchList[id].questionnaire
 
-    setViewerState(ViewerState.success)
+    setViewerState(finalState)
     setViewerData({response: r, questionnaire: q})
   }
 
@@ -305,12 +307,12 @@ export default function HistoryPage() {
       {/* response window */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
-          onClick={()=>setIsOpen(false)}
+          className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
+          onClick={()=>{setIsOpen(false)}}
         >
-          <div className="
-            flex flex-col
-            w-full h-[86vh] max-h-[650]
+          <div className=" 
+            absolute flex flex-col top-[3vh]
+            w-full h-[90vh] max-h-[680]
             mx-0 p-5
             bg-gray-100 rounded-xl shadow-lg
             
@@ -319,21 +321,12 @@ export default function HistoryPage() {
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              h-[550] w-full mb-5
-              bg-gray-50 rounded overflow-hidden
+              relative h-full w-full
+              bg-gray-50 
+              rounded overflow-hidden 
             ">
+              <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
               <ResponseWindow state={viewerState} data={viewerData} />
-            </div>
-            <div className="flex flex-col justify-center items-center">
-              <button
-                className="
-                  px-4 py-2 
-                  bg-gray-500 text-white rounded-md
-                  hover:bg-gray-400 active:bg-gray-600 cursor-pointer "
-                onClick={() => setIsOpen(false)}
-              >
-                關閉
-              </button>
             </div>
           </div>
         </div>
@@ -373,7 +366,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try{
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, ViewerState.success)
                 }
                 catch(e){
                   console.error("取得回應時發生錯誤", e)
@@ -391,13 +384,12 @@ export default function HistoryPage() {
               //localStorage.setItem('userId', (userId).toString());
               //localStorage.setItem('authToken', (authToken).toString());
 
-              console.log(curResponse.id)
-
               localStorage.setItem('responseId', (curResponse.id).toString());
               localStorage.setItem('currentProjectId', (curResponse.projectId).toString());
               localStorage.setItem('QuestionnaireID', (curResponse.versionId).toString());
               
-              router.push('/report')
+              window.open("/report", "_blank")
+              //router.push('/report')
             }}
           >
             檢視報告
@@ -405,10 +397,31 @@ export default function HistoryPage() {
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             下載
           </div>
-          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
+          <div
+            className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={()=>{
+              setShowMenu(false)
+              setViewerState(ViewerState.editing)
+              setIsOpen(true)
+            }}
+          >
             編輯
           </div>
-          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={()=>{
+              if(curResponse){
+                setViewerState(ViewerState.loading)
+                setIsOpen(true)
+                setShowMenu(false)
+
+                try{
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, ViewerState.detail)
+                }
+                catch(e){
+                  console.error("取得回應時發生錯誤", e)
+                }
+            }}}
+          >
             詳細資訊
           </div>
           <div
@@ -422,7 +435,7 @@ export default function HistoryPage() {
 
       <div className="
         p-8 bg-gray-50 min-h-screen font-sans"
-        onClick={() => setShowMenu(false)}
+        onClick={() => {setShowMenu(false); setCurResponse(null)}}
       >
         <AuthHeader />
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
@@ -481,13 +494,13 @@ export default function HistoryPage() {
                 return (
                   <div 
                     key={data.id}
-                    onClick={()=>setCurResponse(data)}
+                    onClick={(e)=>{setCurResponse(data); e.stopPropagation(); setShowMenu(false)}}
                     onDoubleClick={()=>{
                       setViewerState(ViewerState.loading)
                       setIsOpen(true)
 
                       try{
-                        getResponseAndQuestionnaire(data.id, data.versionId)
+                        getResponseAndQuestionnaire(data.id, data.versionId, ViewerState.success)
                       }
                       catch(e){
                         console.error("取得回應時發生錯誤", e)
@@ -537,7 +550,6 @@ export function ContextMenuStrip({size, position, children}:{
         fixed z-40 select-none
         flex flex-col justify-evenly
         bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
-      onClick={(e) => e.stopPropagation()}
     >
       {
         children.map((c, index)=>{
@@ -602,25 +614,29 @@ export function ComfirmWindow({text, comfirm, cancel}: {text:string, comfirm: ()
   )
 }
 
-export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:ResponseMeta, selected:boolean, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
-  
+export function ResponseItem({meta, selected, setCurResponse, showMenu}:{
+  meta:ResponseMeta,
+  selected:boolean,
+  setCurResponse: () => void,
+  showMenu: (e:React.MouseEvent) => void})
+{  
   const myRef = useRef<HTMLDivElement>(null);
 
   return (
     <div
       className={`
-      w-full h-[50]
-      grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
-      select-none
-      py-2 px-2
-      ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
-      cursor-pointer rounded-lg
+        w-full h-[50]
+        grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+        select-none
+        py-2 px-2
+        ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
+        cursor-pointer rounded-lg
 
-      sm:grid-cols-[1fr_1.5fr_160px_35px]
+        sm:grid-cols-[1fr_1.5fr_160px_35px]
 
-      md:min-w-150
-      md:grid-cols-[1.5fr_60px_2fr_160px_35px]
-    `}>
+        md:min-w-150
+        md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
+    >
       {/* project name */}
       <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
       
@@ -692,25 +708,96 @@ export function formatRelativeTime(isoString: string): string {
 }
 
 export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
-  if (state === ViewerState.loading) return (
+  const [curState, setCurState] = useState(state)
+
+  useEffect(()=>{
+    setCurState(state)
+    console.log(state, curState)
+  }, [state])
+  
+  // loading
+  if (curState === ViewerState.loading) return (
     <div className="flex items-center justify-center w-full h-full">
       <LoadingComponent message="載入中..." />
     </div>
   )
-  if (state === ViewerState.fail
+
+  // detail
+  const detailPanel = (<div
+      className="flex flex-col items-center justify-center size-fit"
+    >
+      <div className="text-black text-2xl font-semibold mb-5">詳細資訊</div>
+      <div className='
+        grid grid-cols-[135px_1fr] space-y-2
+        col-end-2
+      '>
+        <div>使用者:</div>
+        <div>{data.response?.user.name}</div>
+
+        <div>使用者 id:</div>
+        <div>{data.response?.user.id}</div>
+
+        <div>使用者帳號:</div>
+        <div>{data.response?.user.email}</div>
+
+        <div>專案名稱:</div>
+        <div>{data.response?.project.name}</div>
+
+        <div>專案 id:</div>
+        <div>{data.response?.project.id}</div>
+
+        <div>問卷名稱:</div>
+        <div>{data.response?.version.title}</div>
+
+        <div>問卷 id:</div>
+        <div>{data.response?.version.id}</div>
+
+        <div>標籤:</div>
+        <div>{data.response?.label}</div>
+
+        <div>回應 id:</div>
+        <div>{data.response?.id}</div>
+
+        <div>提交時間:</div>
+        <div>{data.response?.submittedAt}</div>
+
+      </div>
+    </div>)
+
+  // fail
+  if (curState === ViewerState.fail
     || (data.response === null || data.questionnaire === null)
   ) return (
     <div className="flex items-center justify-center w-full h-full">
       <h2 className="text-red-600 text-lg font-semibold mb-4">獲取回應失敗</h2>
     </div>
-  );
+  )
 
-  //console.log(data.response)
-  //console.log(data.questionnaire)
   return (
-    <div className="flex items-center justify-center w-full h-full">
-      <ResponseViewer data={{response:data.response,questionnaire:data.questionnaire}} />
-    </div>
+    <>
+      <div
+        className="relative flex items-center justify-center w-full h-full"
+        onClick={() => setCurState(ViewerState.success)}
+      >
+        <div
+          className={`
+            absolute -top-[88%] z-52
+            px-4 pb-5 w-[80%] h-[100%]
+            flex flex-col justify-end items-center
+            rounded-b-md
+            transform transition-transform duration-200 ease-out
+            ${curState === ViewerState.detail ? 
+              "translate-y-[76%] bg-white/90 backdrop-blur-sm shadow-xl shadow-black/13" :
+              "translate-y-0 bg-white/50 backdrop-blur-sm shadow-md shadow-black/10"}
+          `}
+          onClick={(e)=>{setCurState(ViewerState.detail); e.stopPropagation()}}
+        >
+          {detailPanel}
+          <div className='h-[14%]'></div>
+        </div>
+        <ResponseViewer data={{response:data.response, questionnaire:data.questionnaire}} />
+      </div>
+    </>
   )
 }
 
