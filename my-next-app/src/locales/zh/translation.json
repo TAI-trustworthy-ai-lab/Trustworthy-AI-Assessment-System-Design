@@ -205,6 +205,7 @@
 
   "Questionnaire": {
     "loading": "正在加載問卷...",
+    "translationLoading": "正在翻譯問卷...",
     "loadFailedOrMissing": "問卷加載失敗或不存在。",
     "submitting": "提交中",
     "overlay": {
