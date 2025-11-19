@@ -47,7 +47,11 @@ interface ReportData {
     radarData: Record<string, number>; 
     taiWeightSnapshot: Record<string, number> | null; // 應該沒有使用
     llmMeta: any | null; //應該沒有使用
-    response: ResponseMeta | null
+    response: (ResponseMeta & {
+        project?: { name?: string };
+        version?: { title?: string };
+        user?: { name?: string };
+    }) | null;
     
     // images: ReportImage[]; // ********************************* 之後會新增這個！
 }
@@ -139,7 +143,8 @@ export default function ReportPage() {
 
     // 從 overallScore 計算評級，用於 UI 顯示
     const grade = useMemo(() => {
-        return report ? getGrade(report.overallScore) : 'D';
+        const score100 = report ? report.overallScore * 100 : 0; 
+        return getGrade(score100);
     }, [report]);
 
     const loadData = useCallback(async () => {
@@ -273,8 +278,9 @@ export default function ReportPage() {
                         <div className="space-y-4">
                             {/* ⭐️ 迭代 radarData */}
                             {Object.entries(CATEGORY_MAP).map(([key, title]) => {
-                                const score = report.radarData[key];
-                                if (score === undefined) return null; // 如果後端沒有提供該類別分數則跳過
+                                const rawScore = report.radarData[key];
+                                if (rawScore === undefined) return null; 
+                                const score100 = rawScore * 100; // 轉換為 0-100 的分數
 
                                 return (
                                     <div key={key} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
@@ -283,11 +289,11 @@ export default function ReportPage() {
                                             <div className="flex items-center">
                                                 <div className="w-full h-3 rounded-full bg-gray-200">
                                                     <div 
-                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score)}`} 
-                                                        style={{ width: `${score}%` }}
+                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score100)}`} 
+                                                        style={{ width: `${score100}%` }}
                                                     ></div>
                                                 </div>
-                                                <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">{score}</span>
+                                                <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">{score100.toFixed(2)}</span>
                                             </div>
                                         </div>
                                     </div>
