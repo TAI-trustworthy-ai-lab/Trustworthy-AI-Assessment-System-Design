@@ -250,7 +250,7 @@ export default function ReportPage() {
                         <div className="flex justify-center items-center space-x-8">
                             <div>
                                 {/* ⭐️ 使用 overallScore */}
-                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p> 
+                                <p className="text-5xl font-extrabold text-purple-700">{(report.overallScore * 100).toFixed(2)}</p> 
                                 <p className="text-lg font-medium text-gray-500">總體分數 (滿分 100)</p>
                             </div>
                             <div className="text-center">
