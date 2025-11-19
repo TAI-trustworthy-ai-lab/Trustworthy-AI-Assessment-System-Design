@@ -4,6 +4,20 @@ import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import { useTranslation } from 'react-i18next';
+import translate from 'google-translate-api-x';
+// ----------------------------------------------------
+// 翻譯工具函式 (Google Translate API-X)
+// ----------------------------------------------------
+const translateText = async (text: string, source = "zh-CN", target = "en") => {
+    const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target })
+    });
+
+    const data = await res.json();
+    return data.translatedText;
+};
 
 
 const BASE_URL = "http://localhost:3001/api";
@@ -200,6 +214,7 @@ export default function TAISorter() {
         const floating = floatingElRef.current;
         if (!floating) return;
 
+        const { i18n, t } = useTranslation();
         const children = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
         const floatingHeight = placeholderHeightsRef.current[draggingIndexRef.current];
         const floatingMiddle = targetYRef.current + floatingHeight / 2;
@@ -275,8 +290,9 @@ export default function TAISorter() {
         };
     }, [dragging]);
 
-    const handleStart = async () => { 
-        const projectId = localStorage.getItem('currentProjectId'); 
+    const handleStart = async () => {
+
+        const projectId = localStorage.getItem('currentProjectId');
         if (!projectId) {
             alert("錯誤：無法找到專案 ID。請重新選擇專案。");
             return;
@@ -284,48 +300,54 @@ export default function TAISorter() {
         // Assume indicators won't be outside the TAI_INDICATOR_MAP keys
         const payload = indicators.map((indicatorZh, index) => {
             const indicatorEn = TAI_INDICATOR_MAP[indicatorZh];
-            
+
             return {
-                indicator: indicatorEn, 
-                rank: index + 1, 
-                weight: enableSort ? 1 : 0, 
+                indicator: indicatorEn,
+                rank: index + 1,
+                weight: enableSort ? 1 : 0,
             };
         });
 
         let confirmationMessage = "請注意：若點擊「確定」將無法再次修改！\n\n";
 
         if (enableSort) {
-            confirmationMessage += 
+            confirmationMessage +=
                 "目前 TAI 指標優先順序：\n" +
                 indicators.join(" → ")
         } else {
-            confirmationMessage += 
+            confirmationMessage +=
                 "您選擇不使用 TAI 指標排序。\n"
         }
 
+        if (i18n.language === "en") {
+            confirmationMessage = await translateText(confirmationMessage, "zh-CN", "en");
+        }
         const isConfirmed = confirm(confirmationMessage);
+        
+        
         
 
         const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
-        
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    //'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                },
-                body: JSON.stringify(payload),
-            });
+        if (isConfirmed) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        //'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                    },
+                    body: JSON.stringify(payload),
+                });
 
-            if (response.ok) {
-                router.push("/choose_questionnaire");
-            } else {
-                const errorData = await response.json();
-                alert(`儲存失敗 (${response.status})：${errorData.message || '請檢查後端日誌。'}`);
+                if (response.ok) {
+                    router.push("/choose_questionnaire");
+                } else {
+                    const errorData = await response.json();
+                    alert(`儲存失敗 (${response.status})：${errorData.message || '請檢查後端日誌。'}`);
+                }
+            } catch (error) {
+                alert("網路錯誤或呼叫 API 失敗。");
             }
-        } catch (error) {
-            alert("網路錯誤或呼叫 API 失敗。");
         }
     };
 

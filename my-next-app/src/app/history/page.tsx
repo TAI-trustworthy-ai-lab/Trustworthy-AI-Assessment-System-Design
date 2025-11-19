@@ -96,6 +96,7 @@ export default function HistoryPage() {
       response: ResponseData | null,
       questionnaire: QuestionnaireData | null
   }>>({})
+  const [infoText, setInfoText] = useState<string>("")
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -201,7 +202,10 @@ export default function HistoryPage() {
   // delete
   const delResponse = async (id: number)=>{
     const r = responseList.find(value => value.id === id)
+    
     if(r === null || r === undefined) return
+
+    const index = responseList.indexOf(r)
     setResponseList(prev=>prev.filter(value => value !== r))
 
     if (!userId || userId === 'fallback-user-id' || !authToken) {
@@ -209,15 +213,13 @@ export default function HistoryPage() {
     }
     try{
       await deleteResponse(userId, authToken, id);
-    }
-    catch(e){
+    } catch(e) {
       setResponseList(prev => {
-        const newList = [...prev];
-        newList[id] = r;
-        return newList;
+        const newList = [...prev]
+        newList.splice(index, 0, r)
+        return newList
       })
       console.error("fail to del response", e)
-      throw e
     }
   }
 
@@ -226,8 +228,9 @@ export default function HistoryPage() {
     if(curResponse){
       try{
         delResponse(curResponse.id)
-      }
-      catch(e){
+        setInfoText("刪除成功")
+      } catch(e){
+        setInfoText("刪除失敗")
         console.error("刪除回應時發生錯誤", e)
       }
     }
@@ -509,7 +512,7 @@ export function ContextMenuStrip({size, position, children}:{
         height: `${size.y}px`
       }}
       className={`
-        absolute z-40 select-none
+        fixed z-40 select-none
         flex flex-col justify-evenly
         bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
       onClick={(e) => e.stopPropagation()}
@@ -693,10 +696,11 @@ export async function deleteResponse(userId: string, authToken: string, id: numb
 
     if (!response.ok) {
       const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-      throw new Error(errorMessage);
+      throw errorMessage;
     }
   } catch (e) {
     console.error(`API 請求最終失敗 (${url}):`, e); 
+    throw e
   }
 };
 
