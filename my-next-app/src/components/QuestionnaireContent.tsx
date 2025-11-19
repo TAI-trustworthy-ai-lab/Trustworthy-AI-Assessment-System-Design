@@ -638,7 +638,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                         onClick={() => router.push('/report')}
                         className="py-2 px-4 bg-violet-600 text-white font-semibold rounded-lg shadow-md hover:bg-violet-800 transition duration-150"
                     >
-                        {t('Questionnaire.actions.backToHome')}
+                        {t('Questionnaire.actions.viewReport')}
                     </button>
                 </div>
             </div>
