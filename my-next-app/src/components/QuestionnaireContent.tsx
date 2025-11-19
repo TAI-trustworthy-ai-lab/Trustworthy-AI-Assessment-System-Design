@@ -21,6 +21,7 @@ const translateText = async (text: string, source = "zh-CN", target = "en", capi
     const data = await res.json();
     return data.translatedText;
 };
+
 const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
@@ -347,7 +348,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const router = useRouter();
     const { i18n, t } = useTranslation();
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
-    const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
+    const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading'); // 問卷資料
+    const [translationLoading, setTranslationLoading] = useState(true); // 翻譯進行中
     const [currentPage, setCurrentPage] = useState(0); 
     const [answers, setAnswers] = useState<Answers>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -672,22 +674,20 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             ];
 
             const uniqueTexts = Array.from(new Set(texts));
-
-            // 檢查哪些文字還沒翻譯過
             const missingTexts = uniqueTexts.filter(text => !translationCache.has(text));
 
             if (missingTexts.length > 0) {
-                setLoadingStatus("loading");
+                setTranslationLoading(true);
                 Promise.all(missingTexts.map(text => translateText(text, "zh-CN", "en")))
                     .then(results => {
                         missingTexts.forEach((text, i) => {
                             translationCache.set(text, results[i]);
                         });
-                        setLoadingStatus("success");
+                        setTranslationLoading(false);
                     })
                     .catch(err => {
                         console.error("翻譯失敗:", err);
-                        setLoadingStatus("error");
+                        setTranslationLoading(false);
                     });
             }
         }
@@ -708,7 +708,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </div>
         );
     }
-
     if (loadingStatus === 'error' || !questionnaire) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -725,7 +724,13 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             </div>
         );
     }
-    
+    if (translationLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <p className="text-xl font-medium text-purple-800">{t('Questionnaire.translationLoading')}</p>
+            </div>
+        );
+    }
 
 
     // 13. 正常問卷內容渲染!!!
