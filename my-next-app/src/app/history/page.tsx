@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import {ProjectData} from '@/app/home/page'
-import ResponseViewer, {QuestionnaireData} from './Questionnaire';
+import ResponseViewer, {QuestionnaireData, styleSelected, styleUnselected} from './ResponseViewer';
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api";
@@ -99,6 +99,7 @@ export default function HistoryPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
@@ -220,6 +221,18 @@ export default function HistoryPage() {
     }
   }
 
+  const deleteResponseHandler = ()=>{
+    setIsDeleteWindowOpen(false)
+    if(curResponse){
+      try{
+        delResponse(curResponse.id)
+      }
+      catch(e){
+        console.error("刪除回應時發生錯誤", e)
+      }
+    }
+  }
+
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
     if (userId && authToken) {
@@ -293,7 +306,7 @@ export default function HistoryPage() {
         >
           <div className="
             flex flex-col
-            w-full h-[650]
+            w-full h-[86vh] max-h-[650]
             mx-0 p-5
             bg-gray-100 rounded-xl shadow-lg
             
@@ -322,6 +335,28 @@ export default function HistoryPage() {
         </div>
       )}
 
+      {
+        isDeleteWindowOpen && (
+          <div 
+            className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
+            onClick={()=>setIsDeleteWindowOpen(false)}
+          >
+            <div className="
+              flex flex-col
+              w-full max-w-[315] h-[45vh] max-h-[170]
+              overflow-hidden rounded-xl"
+
+              onClick={(e) => e.stopPropagation()} // avoid clicking background
+            >
+              <ComfirmWindow
+                text="刪除後無法復原，確認刪除？"
+                comfirm={deleteResponseHandler}
+                cancel={()=>setIsDeleteWindowOpen(false)}/>
+            </div>
+          </div>
+        )
+      }
+
       {/* right click menu */}
       {showMenu && (
         <ContextMenuStrip size={menuSize} position={menuPosition}>
@@ -343,6 +378,26 @@ export default function HistoryPage() {
           >
             開啟
           </div>
+          <div
+            className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={() => {
+              setShowMenu(false)
+              if(curResponse === null || curResponse === undefined) return
+
+              //localStorage.setItem('userId', (userId).toString());
+              //localStorage.setItem('authToken', (authToken).toString());
+
+              console.log(curResponse.id)
+
+              localStorage.setItem('responseId', (curResponse.id).toString());
+              localStorage.setItem('currentProjectId', (curResponse.projectId).toString());
+              localStorage.setItem('QuestionnaireID', (curResponse.versionId).toString());
+              
+              router.push('/report')
+            }}
+          >
+            查看報告
+          </div>
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             下載
           </div>
@@ -354,16 +409,7 @@ export default function HistoryPage() {
           </div>
           <div
             className="flex items-center size-full px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200"
-            onClick={()=>{
-              setShowMenu(false)
-              if(curResponse){
-                try{
-                  delResponse(curResponse.id)
-                }
-                catch(e){
-                  console.error("刪除回應時發生錯誤", e)
-                }
-            }}}
+            onClick={()=>{setShowMenu(false); setIsDeleteWindowOpen(true)}}
           >
             刪除
           </div>
@@ -491,6 +537,46 @@ export function ContextMenuStrip({size, position, children}:{
   )
 }
 
+export function ComfirmWindow({text, comfirm, cancel}: {text:string, comfirm: ()=>void, cancel: ()=>void}){
+  return (
+    <div className='
+      flex flex-col justify-center
+      size-full
+      bg-white shadow-xl
+    '>
+      <div className='
+        flex justify-center items-end text-center h-[50vh]
+      '>
+        {text}
+      </div>
+      <div className='h-[17vh]'></div>
+      <div className='
+        flex justify-evenly
+        h-fit pt-2 pb-4 px-9
+      '>
+        <button
+          className={`
+            px-6 py-2.5 rounded cursor-pointer
+            ${styleSelected}
+          `}
+          onClick={comfirm}
+        >
+          確認
+        </button>
+        <button
+          className={`
+            px-6 py-2.5 rounded cursor-pointer
+            ${styleUnselected}
+          `}
+          onClick={cancel}
+        >
+          取消
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:ResponseMeta, selected:boolean, setCurResponse: () => void, showMenu: (e:React.MouseEvent) => void}){
   
   const myRef = useRef<HTMLDivElement>(null);
@@ -600,7 +686,6 @@ export async function deleteResponse(userId: string, authToken: string, id: numb
       headers: {
         'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
-        ...options.headers,
       },
     });
 
@@ -676,8 +761,8 @@ export async function fetchWithRetry<T>(url: string, options: RequestInit = {}, 
     // 確保回傳的是 data 欄位
     //console.error(result.data as T)
     return result.data as T; 
-  } catch (error: any) {
-    console.error(`API 請求最終失敗 (${url}):`, error.message);
+  } catch (error) {
+    console.error(`API 請求最終失敗 (${url}):`, error);
     throw error; 
   }
 }

@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {ResponseMeta} from '@/app/history/page'
 
 const useRouter = () => {
     return {
@@ -46,6 +47,7 @@ interface ReportData {
     radarData: Record<string, number>; 
     taiWeightSnapshot: Record<string, number> | null; // 應該沒有使用
     llmMeta: any | null; //應該沒有使用
+    response: ResponseMeta | null
     
     // images: ReportImage[]; // ********************************* 之後會新增這個！
 }
@@ -204,9 +206,9 @@ export default function ReportPage() {
         try {
             // 取後端資料
             const reportDataPromise = fetchReport(responseId, authToken); 
-            const projectTitlePromise = fetchProjectTitle(currentProjectId, authToken);
-            const versionTitlePromise = fetchVersionTitle(questionnaireId, authToken);
-            const userNamePromise = fetchUserName(userId, authToken);
+            const projectTitlePromise = (await reportDataPromise).response?.project.name;
+            const versionTitlePromise = (await reportDataPromise).response?.version.title;
+            const userNamePromise = (await reportDataPromise).response?.userId;
             
             // 等待所有 API 完成
             const [data, projName, verTitle, uName] = await Promise.all([

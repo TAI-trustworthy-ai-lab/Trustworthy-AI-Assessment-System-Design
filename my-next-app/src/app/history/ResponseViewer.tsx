@@ -68,8 +68,8 @@ type AnswerValue = {
   textValue?: string; 
 };
 
-const styleSelected   = 'bg-indigo-500 text-white border border-transparent hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]' 
-const styleUnselected = 'bg-white text-gray-700 border border-gray-300 hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]'
+export const styleSelected   = 'bg-indigo-500 text-white border border-transparent hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]' 
+export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]'
 
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
