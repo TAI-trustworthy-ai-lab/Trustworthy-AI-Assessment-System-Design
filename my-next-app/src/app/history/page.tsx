@@ -240,6 +240,7 @@ export default function HistoryPage() {
   useEffect(() => {
     if (userId && authToken) {
       console.debug("loadResponses()")
+      //setIsLoading(false)
       loadResponses()
     } else if (userId !== null && authToken !== null) {
       setIsLoading(false)
@@ -399,7 +400,7 @@ export default function HistoryPage() {
               router.push('/report')
             }}
           >
-            查看報告
+            檢視報告
           </div>
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             下載
@@ -429,69 +430,90 @@ export default function HistoryPage() {
         </h1>
         <div className="
             flex justify-center
-            w-full
+            w-full mb-14
         ">
           <div className="
             w-full
             md:max-w-250
           ">
-            <div className="
-              w-full h-[50]
-              grid grid-cols-[1fr_1.5fr_35px] gap-2 items-center
-              mb-2 py-2 px-2
-              bg-gray-100 rounded-t-lg
-
-              sm:grid-cols-[1fr_1.5fr_250px_35px]
-
-              md:min-w-150
-              md:grid-cols-[1.5fr_60px_2fr_250px_35px]
-            ">
-              <div className="size-fit text-gray-600">專案名稱</div>
-              <div className="hidden size-fit text-gray-600 md:flex">版本</div>
-              <div className="size-fit text-gray-600">問卷名稱</div>
-              <div className="hidden size-fit text-gray-600 sm:flex md:flex">填寫日期</div>
-            </div>
-
-            {/* sorting type? */}
-            {responseList.map((data) => {
-              //console.log("rendering response list...")
-              const item = <ResponseItem 
-                meta={data}
-                selected={data===curResponse}
-                setCurResponse={()=>setCurResponse(data)}
-                showMenu={(e)=>{
-                  handleContextMenu(e)
-              }}/>
-              return (
-                <div 
-                  key={data.id}
-                  onClick={()=>setCurResponse(data)}
-                  onDoubleClick={()=>{
-                    setViewerState(ViewerState.loading)
-                    setIsOpen(true)
-
-                    try{
-                      getResponseAndQuestionnaire(data.id, data.versionId)
-                    }
-                    catch(e){
-                      console.error("取得回應時發生錯誤", e)
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault()
-                    setCurResponse(data)
-                    handleContextMenu(e)
-                  }}
-                >
-                  {item}
+            
+            {
+              // no history
+              responseList.length <= 0 && (
+                <div className='
+                  flex justify-center
+                  mt-10 w-full
+                  italic font-bold text-gray-400 text-center text-xl
+                '>
+                  - 目前沒有可供查閱的歷史記錄 -
                 </div>
               )
-            })}
+            }
+            {
+              // sorting type?
+              responseList.length > 0 &&
+              <>
+              <div className="
+                w-full h-[50]
+                grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+                mb-2 py-2 px-2
+                bg-gray-100 rounded-t-lg
+
+                sm:grid-cols-[1fr_1.5fr_160px_35px]
+
+                md:min-w-150
+                md:grid-cols-[1.5fr_60px_2fr_160px_35px]
+              ">
+                <div className="size-fit text-gray-600">專案名稱</div>
+                <div className="hidden size-fit text-gray-600 md:flex">版本</div>
+                <div className="size-fit text-gray-600">問卷名稱</div>
+                <div className="hidden size-fit text-gray-600 sm:flex md:flex">填寫日期</div>
+              </div>
+              
+              {responseList.map((data) => {
+                const item = <ResponseItem 
+                  meta={data}
+                  selected={data===curResponse}
+                  setCurResponse={()=>setCurResponse(data)}
+                  showMenu={(e)=>{
+                    handleContextMenu(e)
+                }}/>
+                return (
+                  <div 
+                    key={data.id}
+                    onClick={()=>setCurResponse(data)}
+                    onDoubleClick={()=>{
+                      setViewerState(ViewerState.loading)
+                      setIsOpen(true)
+
+                      try{
+                        getResponseAndQuestionnaire(data.id, data.versionId)
+                      }
+                      catch(e){
+                        console.error("取得回應時發生錯誤", e)
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setCurResponse(data)
+                      handleContextMenu(e)
+                    }}
+                  >
+                    {item}
+                  </div>
+                )
+              })}
+              </>
+            }
           </div>
         </div>
       </div>
     </ProtectedLayout>
   );
+}
+
+export function Notification(){
+
 }
 
 export function ContextMenuStrip({size, position, children}:{
@@ -588,16 +610,16 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
     <div
       className={`
       w-full h-[50]
-      grid grid-cols-[1fr_1.5fr_35px] gap-2 items-center
+      grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
       select-none
       py-2 px-2
       ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200": "hover:bg-gray-100 active:bg-gray-200"}
       cursor-pointer rounded-lg
 
-      sm:grid-cols-[1fr_1.5fr_250px_35px]
+      sm:grid-cols-[1fr_1.5fr_160px_35px]
 
       md:min-w-150
-      md:grid-cols-[1.5fr_60px_2fr_250px_35px]
+      md:grid-cols-[1.5fr_60px_2fr_160px_35px]
     `}>
       {/* project name */}
       <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
@@ -608,8 +630,8 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
       {/* response title */}
       <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
       
-      {/* response date, with format?*/}
-      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{meta.submittedAt}</div>
+      {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
+      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
 
       {/* ... i copy the icon from google drive */}
       <div ref={myRef}
@@ -637,6 +659,38 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}: {meta:R
   )
 }
 
+export function formatRelativeTime(isoString: string): string {
+  const date = new Date(isoString);
+  const now = new Date();
+
+  const diff = now.getTime() - date.getTime();
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+  const hr  = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+
+  // formated time difference
+  if (sec < 60) return "剛剛";
+  if (min < 60) return `${min} 分鐘前`;
+  if (hr < 24)  return `${hr} 小時前`;
+
+  // yesterday / the day before yesterday (or just "2 days ago")
+  if (day === 1) return "昨天";
+  if (day === 2) return "前天";
+
+  // xx days ago
+  if (day < 7) return `${day} 天前`;
+
+  // this year "MM/DD", or other format?
+  const thisYear = now.getFullYear();
+  if (date.getFullYear() === thisYear) {
+    return `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+  }
+
+  // over one year "YYYY/MM/DD", or other format?
+  return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+}
+
 export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
   if (state === ViewerState.loading) return (
     <div className="flex items-center justify-center w-full h-full">
@@ -652,7 +706,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
   );
 
   //console.log(data.response)
-  console.log(data.questionnaire)
+  //console.log(data.questionnaire)
   return (
     <div className="flex items-center justify-center w-full h-full">
       <ResponseViewer data={{response:data.response,questionnaire:data.questionnaire}} />
