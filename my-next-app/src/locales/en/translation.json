@@ -205,6 +205,7 @@
   },
   "Questionnaire": {
     "loading": "Loading questionnaire...",
+    "translationLoading": "Translating questionnaire...",
     "loadFailedOrMissing": "Failed to load questionnaire or it does not exist.",
     "submitting": "Submitting",
     "overlay": {
