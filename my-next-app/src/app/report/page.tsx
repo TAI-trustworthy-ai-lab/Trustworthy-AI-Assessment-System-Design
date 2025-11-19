@@ -38,6 +38,14 @@ const CATEGORY_MAP: Record<string, string> = {
 // ----------------------------------------------------
 // 後端回傳資料結構定義
 // ----------------------------------------------------
+interface ReportImage {
+    id: number;
+    reportId: number;
+    url: string; 
+    caption: string; 
+    createdAt: string;
+}
+
 interface ReportData {
     id: number;
     responseId: number;
@@ -52,8 +60,7 @@ interface ReportData {
         version?: { title?: string };
         user?: { name?: string };
     }) | null;
-    
-    // images: ReportImage[]; // ********************************* 之後會新增這個！
+    images: ReportImage[]; 
 }
 
 // ----------------------------------------------------
@@ -143,8 +150,7 @@ export default function ReportPage() {
 
     // 從 overallScore 計算評級，用於 UI 顯示
     const grade = useMemo(() => {
-        const score100 = report ? report.overallScore * 100 : 0; 
-        return getGrade(score100);
+        return report ? getGrade(report.overallScore) : 'D';
     }, [report]);
 
     const loadData = useCallback(async () => {
@@ -250,7 +256,7 @@ export default function ReportPage() {
                         <div className="flex justify-center items-center space-x-8">
                             <div>
                                 {/* ⭐️ 使用 overallScore */}
-                                <p className="text-5xl font-extrabold text-purple-700">{(report.overallScore * 100).toFixed(2)}</p> 
+                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p> 
                                 <p className="text-lg font-medium text-gray-500">總體分數 (滿分 100)</p>
                             </div>
                             <div className="text-center">
@@ -272,15 +278,39 @@ export default function ReportPage() {
                         </div>
                     </section>
 
+                    {/* 圖片顯示 */}
+                    {report.images && report.images.length > 0 && (
+                        <section className="mb-10 p-6 bg-white border border-gray-200 rounded-xl shadow-lg">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">圖表分析</h2>
+                            <div className="space-y-8">
+                                {report.images.map((image) => (
+                                    <div key={image.id} className="text-center">
+                                        <h3 className="text-xl font-semibold text-gray-700 mb-4">{image.caption}</h3>
+                                        <div className="flex justify-center">
+                                            {/* 使用 Next.js 的 Image 組件會更好，但如果沒有設定，這裡使用原生 img 標籤 */}
+                                            {/* 注意：如果使用原生 `img`，請確保在 `next.config.js` 中配置了該圖片的域名 (cloudinary.com) */}
+                                            <img
+                                                src={image.url}
+                                                alt={image.caption}
+                                                className="max-w-full h-auto rounded-lg shadow-xl border border-gray-100"
+                                                // 為了響應式和避免過大圖片撐破佈局，可以考慮設置 max-height 或 max-width
+                                                style={{ maxHeight: '600px' }} 
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
                     {/* 各項指標細節區塊 */}
                     <section className="mb-8">
                         <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">細項指標表現</h2>
                         <div className="space-y-4">
                             {/* ⭐️ 迭代 radarData */}
                             {Object.entries(CATEGORY_MAP).map(([key, title]) => {
-                                const rawScore = report.radarData[key];
-                                if (rawScore === undefined) return null; 
-                                const score100 = rawScore * 100; // 轉換為 0-100 的分數
+                                const score = report.radarData[key];
+                                if (score === undefined) return null; 
 
                                 return (
                                     <div key={key} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
@@ -289,11 +319,11 @@ export default function ReportPage() {
                                             <div className="flex items-center">
                                                 <div className="w-full h-3 rounded-full bg-gray-200">
                                                     <div 
-                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score100)}`} 
-                                                        style={{ width: `${score100}%` }}
+                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score)}`} 
+                                                        style={{ width: `${score}%` }}
                                                     ></div>
                                                 </div>
-                                                <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">{score100.toFixed(2)}</span>
+                                                <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">{score.toFixed(2)}</span>
                                             </div>
                                         </div>
                                     </div>
