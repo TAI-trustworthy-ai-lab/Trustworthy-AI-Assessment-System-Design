@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import translate from 'google-translate-api-x';
+
+
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
 // ----------------------------------------------------
@@ -109,8 +111,58 @@ type AnswerValue = {
     textValue?: string;
 };
 
+type PayloadAnswer = {
+    questionId: number;
+    optionId: number | null;
+    optionIds: number[] | null;
+    value: number | null;
+    textValue: string | null;
+}[]
+
 
 type Answers = Record<number, AnswerValue>;
+// ----------------------------------------------------
+// 傳入後端 Answer 格式
+// ----------------------------------------------------
+const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Question[]): PayloadAnswer => {
+    return Object.entries(currentAnswers).reduce<PayloadAnswer>((acc, [idString, answerValue]) => {
+        const questionId = parseInt(idString, 10);
+        const question = allQuestions.find(q => q.id === questionId);
+
+        if (!question) return acc;
+        const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
+
+        // 處理不同類型的答案
+        if (question.type === 'SCALE' || question.type === 'SINGLE_CHOICE') {
+            const optionId = answerValue.optionIds?.[0] ?? null;
+            acc.push({
+                questionId: questionId,
+                optionId: optionId,
+                optionIds: null,
+                value: scoreToSubmit,
+                textValue: null,
+            });
+
+        } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
+            acc.push({
+                questionId: questionId,
+                optionId: null,
+                optionIds: answerValue.optionIds,
+                value: scoreToSubmit,
+                textValue: null,
+            });
+        } else if (question.type === 'TEXT') {
+            acc.push({
+                questionId: questionId,
+                optionId: null,
+                optionIds: null,
+                value: null,
+                textValue: answerValue.textValue ?? null, // 文字回答或 null
+            });
+        }
+        return acc;
+    }, []);
+};
 
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
@@ -132,7 +184,7 @@ const SubmissionLoadingIndicator: React.FC = () => {
 
 
 // ----------------------------------------------------
-// Loading Overlay - 全頁面 loading設計
+// Loading Overlay - 全頁面 loading 設計
 // ----------------------------------------------------
 const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
     const { t } = useTranslation();
@@ -184,7 +236,6 @@ const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({
 // ----------------------------------------------------
 // 根據 Type 渲染不同 UI
 // ----------------------------------------------------
-
 interface QuestionRendererProps {
     question: Question;
     currentAnswer: AnswerValue;
@@ -346,14 +397,19 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [draftResponseId, setDraftResponseId] = useState<number | null>(null);
+    const [isSavingDraft, setIsSavingDraft] = useState(false);
 
 
-    // 1. 根據指標映射表獲取分頁標題
+    // =============
+    //     分頁
+    // =============
+        // 1. 根據指標映射表獲取分頁標題
     const getPageTitle = (category: string): string => {
         return CATEGORY_MAP[category.toUpperCase()] || category;
     };
 
-    // 2. 分頁資料結果處理
+        // 2. 分頁資料結果處理
     const allPages: PageData[] = useMemo(() => {
         if (!questionnaire) return [];
 
@@ -387,7 +443,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const currentPageData = allPages[currentPage];
     const API_BASE_URL = "http://localhost:3001/api";
 
-    // 4. --- 後端取問卷資料 --- //
+    // =============
+    //    後端API
+    // =============
+    // 1. 取問卷内容
     const fetchQuestionnaire = useCallback(async () => {
         // 預設問卷 ID 無誤 & 後端截取資料結構一定正確！
         setLoadingStatus('loading');
@@ -412,18 +471,161 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     }, [questionnaireId]);
 
-    // 5. 分頁切換處理
+    // 2. 儲存草稿
+    const saveDraft = useCallback(async (currentAnswers: Answers, currentDraftId: number | null) => {
+        const userToken = localStorage.getItem('authToken');
+        const currentUserId = localStorage.getItem('userId');
+        const currentProjectId = localStorage.getItem('currentProjectId');
+        
+        if (!userToken || !questionnaire || !currentUserId || !currentProjectId) return;
+        
+        setIsSavingDraft(true);
+        setSubmissionError(null);
+
+        const answersPayload = formatAnswersForSubmission(currentAnswers, questionnaire.questions);
+        const parsedUserId = parseInt(currentUserId, 10);
+        const parsedProjectId = parseInt(currentProjectId, 10);
+        const parsedVersionId = typeof questionnaireId === 'number' ? questionnaireId : parseInt(String(questionnaireId), 10);
+
+        const basePayload = {
+            answers: answersPayload,
+            isDraft: true, // 標記為草稿
+        };
+
+        let finalPayload: any = basePayload;
+        
+        // 如果是 POST (創建草稿)，則需要這些 ID
+        if (!currentDraftId) {
+            finalPayload = {
+                ...basePayload,
+                userId: parsedUserId,
+                projectId: parsedProjectId,
+                versionId: parsedVersionId,
+            };
+        }
+/* 後端 PATCH 有問題，暫時注解掉
+        try {
+            const method = currentDraftId ? 'PATCH' : 'POST';
+            const url = currentDraftId 
+                ? `${API_BASE_URL}/response/${currentDraftId}` // PATCH: 更新現有草稿
+                : `${API_BASE_URL}/response`;               // POST: 創建新草稿
+                
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${userToken}`,
+                },
+                body: JSON.stringify(finalPayload),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const newResponseId = data.data.id;
+                
+                if (!currentDraftId) {
+                    setDraftResponseId(newResponseId); // 設置新的草稿 ID
+                    localStorage.setItem('draftResponseId', newResponseId.toString()); // 儲存到 LocalStorage
+                }
+                console.log(`草稿儲存成功: ID ${newResponseId}`);
+            } else {
+                const status = response.status;
+                let errorData;
+                
+                try {
+                    // 嘗試解析 JSON。如果後端沒有傳送 JSON，這裡可能會失敗。
+                    errorData = await response.json();
+                } catch (e) {
+                    errorData = { message: `無法解析錯誤回應內容 (HTTP ${status})` };
+                }
+                console.error(
+                    `儲存草稿失敗 (HTTP ${status})`, 
+                    errorData
+                );
+            }
+        } catch (error) {
+            console.error('儲存草稿時發生網路錯誤:', error);
+        } finally {
+            setIsSavingDraft(false);
+        }
+*/
+    }, [questionnaire, questionnaireId]);
+
+    // 3. 載入草稿
+    const loadDraft = useCallback(async (draftId: number, token: string) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/response/${draftId}`, {
+                method: "GET",
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const draftData = data.data;
+
+                const loadedAnswers: Answers = (draftData.answers || []).reduce((acc: Answers, ans: any) => {
+                    acc[ans.questionId] = {
+                        score: ans.value || undefined,
+                        optionIds: ans.optionIds || (ans.optionId ? [ans.optionId] : undefined),
+                        textValue: ans.textValue || undefined,
+                    };
+                    return acc;
+                }, {});
+                
+                setAnswers(loadedAnswers);
+            } else {
+                // ⭐️ 增加這一段：如果 GET 失敗，清除 LocalStorage 中的 ID
+                console.error(`載入草稿失敗 (HTTP ${response.status})，清除無效 ID。`, await response.json());
+                localStorage.removeItem('draftResponseId');
+                setDraftResponseId(null);
+            }
+        } catch (error) {
+            console.error('載入草稿時發生網路錯誤:', error);
+            localStorage.removeItem('draftResponseId');
+            setDraftResponseId(null);
+        }
+    }, []);
+
+
+    // =============
+    //   useEffect
+    // =============
+    // 1. 下一頁自動划去最高點
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
         setSubmissionError(null);
     }, [currentPage]);
 
+    // 2. 取問卷資料
     useEffect(() => {
-        fetchQuestionnaire();
-    }, [fetchQuestionnaire]);
+        fetchQuestionnaire().then(() => {
+            const savedDraftIdString = localStorage.getItem('draftResponseId');
+            const userToken = localStorage.getItem('authToken');
+            
+            if (savedDraftIdString && userToken) {
+                const savedDraftId = parseInt(savedDraftIdString, 10);
+                setDraftResponseId(savedDraftId);
+                // 載入草稿答案並覆蓋初始的空答案
+                loadDraft(savedDraftId, userToken);
+            }
+        });
+    }, [fetchQuestionnaire, loadDraft]);
 
+    // 3. 自動儲存機制（每 30 秒自動儲存）
+/* 後端 PATCH 有問題，暫時注解掉！！！
+    useEffect(() => {
+        if (loadingStatus !== 'success') return;
+        const intervalId = setInterval(() => {
+            saveDraft(answers, draftResponseId); 
+        }, 30000); 
 
-    // 6. 進度計算與頁面完成檢查
+        return () => clearInterval(intervalId); // 清除定時器
+    }, [answers, draftResponseId, saveDraft, loadingStatus]);
+*/
+
+    // =============
+    //   分頁進度
+    // =============
     const progressPercent = useMemo(() => {
         return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
     }, [currentPage, TOTAL_PAGES]);
@@ -451,7 +653,9 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         });
     }, [answers, currentPageData]);
 
-    // 7. --- 後端製造報告 --- //
+    // =============
+    // 後端POST報告
+    // =============
     const generateReport = async (responseId: number, token: string) => {
         const url = `${API_BASE_URL}/report/generate/${responseId}`;
         // 假設後端一定會成功生成報告
@@ -470,7 +674,9 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     };
 
-    // 8. 處理答案變更與分頁導航
+    // =============
+    //  不同處理
+    // =============
     const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
         setAnswers(prev => ({
             ...prev,
@@ -490,7 +696,9 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     };
 
-    // 9. 提交問卷處理
+    // =============
+    // 後端提交問卷
+    // =============
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmissionError(null);
@@ -516,62 +724,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             setIsSubmitting(false);
             return;
         }
-
-        // ** 記錄 answer[] 結構 **
-        const answersPayload = Object.entries(answers).reduce<{
-            questionId: number;
-            optionId: number | null; // 給 SINGLE_CHOICE/SCALE 用
-            optionIds: number[] | null; // 給 MULTIPLE_CHOICE 用
-            value: number | null;
-            textValue: string | null;
-        }[]>((acc, [idString, answerValue]) => {
-            const questionId = parseInt(idString, 10);
-            const question = questionnaire.questions.find(q => q.id === questionId);
-
-            if (!question) return acc;
-            const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
-
-            // 處理不同類型的答案
-            if (question.type === 'SCALE') {
-                const optionId = answerValue.optionIds?.[0] ?? null;
-                acc.push({
-                    questionId: questionId,
-                    optionId: optionId,
-                    optionIds: null,
-                    value: scoreToSubmit,
-                    textValue: null,
-                });
-
-            } else if (question.type === 'SINGLE_CHOICE' && answerValue.optionIds?.[0]) {
-                const optionId = answerValue.optionIds[0];
-                acc.push({
-                    questionId: questionId,
-                    optionId: optionId,
-                    optionIds: null,
-                    value: scoreToSubmit,
-                    textValue: null,
-                });
-
-            } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
-                acc.push({
-                    questionId: questionId,
-                    optionId: null,
-                    optionIds: answerValue.optionIds,
-                    value: scoreToSubmit,
-                    textValue: null,
-                });
-            } else if (question.type === 'TEXT') {
-                acc.push({
-                    questionId: questionId,
-                    optionId: null,
-                    optionIds: null,
-                    value: null,
-                    textValue: answerValue.textValue ?? null, // 文字回答或 null
-                });
-            }
-            return acc;
-        }, []);
-
+        const answersPayload = formatAnswersForSubmission(answers, questionnaire.questions);
         const parsedUserId = parseInt(currentUserId, 10);
         const parsedProjectId = parseInt(currentProjectId, 10);
         const parsedVersionId = typeof questionnaireId === 'number'
@@ -605,6 +758,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 const responseId = data.data.id;
 
                 localStorage.setItem('responseId', responseId.toString());
+                localStorage.removeItem('draftResponseId');
+                setDraftResponseId(null);
                 setSubmittedResponseId(responseId);
                 setIsGeneratingReport(true);
                 await generateReport(responseId, userToken);
