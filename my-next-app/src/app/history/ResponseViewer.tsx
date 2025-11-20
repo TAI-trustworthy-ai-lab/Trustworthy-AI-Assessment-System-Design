@@ -295,13 +295,14 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
               <div className="font-semibold text-gray-700 mb-3">
                 {question.text} 
                 {question.required && <span className="
-                  relative group text-red-500 px-2 select-none">
+                  relative inline-flex justify-center items-center w-fit
+                  text-red-500 px-2 select-none overflow-hidden
+                  hover:overflow-visible">
                     *
                     <div className='
-                      absolute top-0 left-5 w-fit px-1.5 py-1
+                      absolute -right-[180%] w-fit px-1.5 py-1
                       text-center font-bold text-xs text-white whitespace-nowrap
-                      bg-red-400 rounded-full shadow shadow-gray-500
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-100 delay-150'>
+                      bg-red-400 rounded-full shadow shadow-gray-500'>
                       必填
                     </div>
                   </span>}

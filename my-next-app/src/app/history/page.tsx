@@ -6,6 +6,7 @@ import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import {ProjectData} from '@/app/home/page'
 import ResponseViewer, {QuestionnaireData, styleSelected, styleUnselected} from './ResponseViewer';
+import { Info, Edit, FileText } from 'lucide-react'
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api";
@@ -709,6 +710,7 @@ export function formatRelativeTime(isoString: string): string {
 
 export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
   const [curState, setCurState] = useState(state)
+  const [transDone, setTransDone] = useState(true)
 
   useEffect(()=>{
     setCurState(state)
@@ -723,15 +725,21 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
 
   // detail
   const detailPanel = (<div
-      className="flex flex-col items-center justify-center w-full size-fit"
+      className="flex flex-col items-center justify-end w-full size-fit"
     >
-      <div className="text-black text-2xl font-semibold mb-5">詳細資訊</div>
+      <div className="text-black text-2xl font-semibold mb-7">詳細資訊</div>
       <div 
-        className="w-full px-3 flex justify-center"
+        className={`
+          w-full px-3 flex justify-center
+          overflow-x-auto
+
+          sm:w-fit`}
         onClick={(e)=>e.stopPropagation()}
       >
         <div
-          className={`grid grid-cols-[135px_1fr] max-w-fit w-[100%] space-y-2 whitespace-nowrap ${curState === ViewerState.detail? "overflow-x-auto": "overflow-hidden"}`}
+          className={
+            `grid grid-cols-[135px_1fr] max-w-fit w-[100%] space-y-2
+            whitespace-nowrap`}
         >
           <div>使用者:</div>
           <div>{data.response?.user.name}</div>
@@ -784,49 +792,114 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
       >
         <div
           className={`
-            absolute -top-[70%] z-52 overflow-hidden
-            w-[100%] h-[82%]
-            flex flex-col justify-start items-center
-            rounded-b-md
-            transform transition-transform duration-200 ease-out
+            absolute -top-[70%] z-52
+            w-[100%] h-[83%]
+            flex flex-col justify-end items-center
+            rounded-b-md border border-white
+            transform transition duration-200 ease-out
 
             sm:w-[80%]
             ${curState === ViewerState.detail ? 
-              "translate-y-[82%] bg-white/90 backdrop-blur-sm shadow-xl shadow-black/13" :
-              "translate-y-0 bg-white/50 backdrop-blur-sm shadow-md shadow-black/10"}
+              `translate-y-[83%] bg-white/80 backdrop-blur-md shadow-xl shadow-black/13
+                overflow-hidden` :
+              `translate-y-0 bg-white/25 backdrop-blur-sm shadow-md shadow-black/10
+                ${transDone? "overflow-visible": "overflow-hidden"}` }
           `}
           onClick={(e)=>{
             if(curState === ViewerState.detail) setCurState(ViewerState.success)
             else setCurState(ViewerState.detail)
             e.stopPropagation()
           }}
+          onTransitionStart={()=>setTransDone(false)}
+          onTransitionEnd={()=>{
+            if(curState === ViewerState.detail) setTransDone(false)
+            else setTransDone(true)
+          }}
         >
-          <div className={'h-[23%]'}></div>
           {detailPanel}
-          <div className='
+          <div className={`
             relative
             flex justify-center items-center]
-            w-[100%] h-[28%]
-          '>
+            w-[100%]
+            ${curState === ViewerState.detail? "h-[11%]": "h-[16%]"}
+          `}>
             <div className={`
-              absolute bottom-0 h-[100%]
-              flex items-center
+              absolute bottom-0 h-[100%] w-full
+              flex justify-evenly items-center
               transform transition-transform duration-200 ease-out
 
+              sm:w-[50%]
+
               ${curState === ViewerState.detail ? 
-              "translate-y-[100%]" :
+              "translate-y-[120%]" :
               "translate-y-0"}
             `}>
               <div
                 className='
-                  size-10 rounded-full p-2
-                  bg-blue-300
-                  text-white text-center text-lg font-bold
-                  hover:bg-blue-400 active:bg-blue-500
-                  cursor-pointer'
-                onClick={(e)=>{setCurState(ViewerState.detail);e.stopPropagation()}}>
-                i
-            </div>
+                  relative
+                  flex justify-center items-center
+                  size-13 rounded-full overflow-hidden select-none
+                  
+                  bg-orange-400/50 shadow shadow-black/50 border border-orange-200
+                  hover:bg-orange-500/50 active:bg-orange-600/50
+                  hover:overflow-visible cursor-pointer'
+                onClick={(e)=>{
+                  e.stopPropagation()
+                }}
+              >
+                <Edit size={30} color="#ffffff" />
+                <div className='
+                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
+                  text-center font-bold text-xs text-white whitespace-nowrap
+                  bg-orange-500/50 rounded-full shadow shadow-gray-500'>
+                  編輯
+                </div>
+              </div>
+              <div
+                className='
+                  relative
+                  flex justify-center items-center
+                  size-13 rounded-full overflow-hidden select-none
+                  
+                  bg-blue-400/50 shadow shadow-black/50 border border-blue-200
+                  hover:bg-blue-500/50 active:bg-blue-600/50
+                  hover:overflow-visible cursor-pointer'
+                onClick={()=>setCurState(ViewerState.detail)}>
+                <Info size={30} color="#ffffff" />
+                <div className='
+                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
+                  text-center font-bold text-xs text-white whitespace-nowrap
+                  bg-blue-500/50 rounded-full shadow shadow-gray-500'>
+                  詳細資訊
+                </div>
+              </div>
+              <div
+                className='
+                  relative
+                  flex justify-center items-center
+                  size-13 rounded-full overflow-hidden select-none
+                  
+                  bg-green-400/50 shadow shadow-black/50 border border-green-200
+                  hover:bg-green-500/50 active:bg-green-600/50
+                  hover:overflow-visible cursor-pointer'
+                onClick={(e)=>{
+                  e.stopPropagation()
+                  if(data.response === null || data.response === undefined) return
+
+                  localStorage.setItem('responseId', (data.response.id).toString());
+                  localStorage.setItem('currentProjectId', (data.response.projectId).toString());
+                  localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
+                  
+                  window.open("/report", "_blank")
+                }}>
+                <FileText size={30} color="#ffffff" />
+                <div className='
+                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
+                  text-center font-bold text-xs text-white whitespace-nowrap
+                  bg-green-500/50 rounded-full shadow shadow-gray-500'>
+                  檢視報告
+                </div>
+              </div>
             </div>
           </div>
         </div>

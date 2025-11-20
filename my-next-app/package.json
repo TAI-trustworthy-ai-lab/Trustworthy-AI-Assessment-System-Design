@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "google-translate-api-x": "^10.7.2",
     "i18next": "^25.6.0",
     "lucide-react": "^0.546.0",
     "next": "15.5.5",
@@ -18,8 +19,7 @@
     "react-i18next": "16.2.3",
     "react-markdown": "^10.1.0",
     "rehype-raw": "^7.0.0",
-    "remark-gfm": "^4.0.1",
-    "google-translate-api-x": "10.7.2"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
