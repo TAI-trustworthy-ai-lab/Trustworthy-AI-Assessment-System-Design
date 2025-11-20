@@ -795,14 +795,15 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
             absolute -top-[70%] z-52
             w-[100%] h-[83%]
             flex flex-col justify-end items-center
-            rounded-b-md border border-white
+            rounded-b-2xl border border-white
             transform transition duration-200 ease-out
 
+            sm:rounded-b-md
             sm:w-[80%]
             ${curState === ViewerState.detail ? 
               `translate-y-[83%] bg-white/80 backdrop-blur-md shadow-xl shadow-black/13
                 overflow-hidden` :
-              `translate-y-0 bg-white/25 backdrop-blur-sm shadow-md shadow-black/10
+              `translate-y-0 bg-gray-100/58 backdrop-blur-sm shadow-md shadow-black/10
                 ${transDone? "overflow-visible": "overflow-hidden"}` }
           `}
           onClick={(e)=>{
@@ -851,7 +852,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
                 <div className='
                   absolute -bottom-8 w-fit px-1.5 py-1 z-55
                   text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-orange-500/50 rounded-full shadow shadow-gray-500'>
+                  bg-orange-400 rounded-full shadow shadow-gray-500'>
                   編輯
                 </div>
               </div>
@@ -869,7 +870,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
                 <div className='
                   absolute -bottom-8 w-fit px-1.5 py-1 z-55
                   text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-blue-500/50 rounded-full shadow shadow-gray-500'>
+                  bg-blue-400 rounded-full shadow shadow-gray-500'>
                   詳細資訊
                 </div>
               </div>
@@ -896,7 +897,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
                 <div className='
                   absolute -bottom-8 w-fit px-1.5 py-1 z-55
                   text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-green-500/50 rounded-full shadow shadow-gray-500'>
+                  bg-green-400 rounded-full shadow shadow-gray-500'>
                   檢視報告
                 </div>
               </div>
