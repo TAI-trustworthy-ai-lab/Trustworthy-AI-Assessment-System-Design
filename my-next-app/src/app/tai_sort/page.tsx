@@ -214,7 +214,6 @@ export default function TAISorter() {
         const floating = floatingElRef.current;
         if (!floating) return;
 
-        const { i18n, t } = useTranslation();
         const children = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
         const floatingHeight = placeholderHeightsRef.current[draggingIndexRef.current];
         const floatingMiddle = targetYRef.current + floatingHeight / 2;
