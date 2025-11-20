@@ -6,6 +6,7 @@ import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {ResponseMeta} from '@/app/history/page'
+import { ReportRadarChart } from '@/components/ReportRadarChart';
 
 const useRouter = () => {
     return {
@@ -38,14 +39,6 @@ const CATEGORY_MAP: Record<string, string> = {
 // ----------------------------------------------------
 // 後端回傳資料結構定義
 // ----------------------------------------------------
-interface ReportImage {
-    id: number;
-    reportId: number;
-    url: string; 
-    caption: string; 
-    createdAt: string;
-}
-
 interface ReportData {
     id: number;
     responseId: number;
@@ -60,7 +53,6 @@ interface ReportData {
         version?: { title?: string };
         user?: { name?: string };
     }) | null;
-    images: ReportImage[]; 
 }
 
 // ----------------------------------------------------
@@ -76,7 +68,7 @@ const getGrade = (score: number): 'A+' | 'A' | 'B' | 'C' | 'D' => {
 
 const getScoreColor = (score: number) => {
     if (score >= 90) return 'bg-green-400';
-    if (score >= 80) return 'bg-lime-400';
+    if (score >= 80) return 'bg-lime-500';
     if (score >= 70) return 'bg-yellow-400';
     if (score >= 60) return 'bg-orange-300';
     return 'bg-red-400';
@@ -119,7 +111,20 @@ const fetchReport = async (responseId: number, authToken: string): Promise<Repor
         throw new Error(`獲取報告失敗: ${errorMessage}`);
     }
 
-    return result.data as ReportData; 
+    const reportData = result.data as ReportData; 
+
+    // 將後端回傳的 0-1 數值轉換為 0-100
+    const convertedRadarData: Record<string, number> = {};
+    for (const key in reportData.radarData) {
+        if (reportData.radarData.hasOwnProperty(key)) {
+            convertedRadarData[key] = reportData.radarData[key] * 100;
+        }
+    }
+
+    reportData.radarData = convertedRadarData;
+    reportData.overallScore = reportData.overallScore * 100;
+
+    return reportData;
 };
 
 
@@ -254,13 +259,13 @@ export default function ReportPage() {
                     <section className="text-center mb-10 p-6 bg-white border border-gray-200 rounded-xl shadow-lg">
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">評估結果</h2>
                         <div className="flex justify-center items-center space-x-8">
+                            {/* 總分 */}
                             <div>
-                                {/* ⭐️ 使用 overallScore */}
                                 <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p> 
                                 <p className="text-lg font-medium text-gray-500">總體分數 (滿分 100)</p>
                             </div>
+                            {/* 評級 */}
                             <div className="text-center">
-                                {/* ⭐️ 使用前端計算的 grade */}
                                 <p className="text-4xl font-extrabold text-white inline-block px-4 py-2 rounded-lg shadow-md"
                                    style={{ backgroundColor: grade === 'A+' || grade === 'A' ? '#10B981' : (grade === 'B' ? '#F59E0B' : '#EF4444') }}>
                                     {grade}
@@ -268,6 +273,15 @@ export default function ReportPage() {
                                 <p className="text-lg font-medium text-gray-500 mt-1">評級</p>
                             </div>
                         </div>
+                        {/* 雷達圖 */}
+                        <div className="w-full mb-8 text-center margin-center">
+                            <h3 className="text-xl font-bold text-gray-700 mb-4 border-t pt-4">指標分佈雷達圖</h3>
+
+                            <div className="w-full">
+                                <ReportRadarChart radarData={report.radarData} />
+                            </div>
+                        </div>
+
                         <div className="markdown-content text-left mt-6 overflow-x-auto">
                             <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
@@ -277,31 +291,6 @@ export default function ReportPage() {
                             </ReactMarkdown>
                         </div>
                     </section>
-
-                    {/* 圖片顯示 */}
-                    {report.images && report.images.length > 0 && (
-                        <section className="mb-10 p-6 bg-white border border-gray-200 rounded-xl shadow-lg">
-                            <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">圖表分析</h2>
-                            <div className="space-y-8">
-                                {report.images.map((image) => (
-                                    <div key={image.id} className="text-center">
-                                        <h3 className="text-xl font-semibold text-gray-700 mb-4">{image.caption}</h3>
-                                        <div className="flex justify-center">
-                                            {/* 使用 Next.js 的 Image 組件會更好，但如果沒有設定，這裡使用原生 img 標籤 */}
-                                            {/* 注意：如果使用原生 `img`，請確保在 `next.config.js` 中配置了該圖片的域名 (cloudinary.com) */}
-                                            <img
-                                                src={image.url}
-                                                alt={image.caption}
-                                                className="max-w-full h-auto rounded-lg shadow-xl border border-gray-100"
-                                                // 為了響應式和避免過大圖片撐破佈局，可以考慮設置 max-height 或 max-width
-                                                style={{ maxHeight: '600px' }} 
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
 
                     {/* 各項指標細節區塊 */}
                     <section className="mb-8">
