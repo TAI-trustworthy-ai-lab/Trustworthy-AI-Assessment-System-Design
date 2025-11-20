@@ -114,7 +114,7 @@ export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData })
 
     return (
     <div className="flex justify-center h-96">
-        <div className="max-w-sm w-full h-full">
+        <div className="max-w-sm w-full max-w-lg">
         <Radar data={data} options={options} />
         </div>
     </div>

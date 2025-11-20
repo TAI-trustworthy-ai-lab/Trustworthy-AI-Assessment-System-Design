@@ -37,18 +37,15 @@ export default function PreLoginPage() {
             </Header>
 
             {/* header */}
-            <div className="
-            flex-col
-            mb-10
-            w-full h-fit
-        ">
+            <div className="flex-col mb-16 w-full h-fit">
                 <div className="
-                flex justify-center items-end
-                mt-50
-                whitespace-nowrap
-                text-7xl text-center
-                text-gray-800
-            ">
+                    flex justify-center items-end
+                    mt-25 md:mt-20
+                    text-center
+                    text-4xl sm:text-6xl md:text-7xl  
+                    text-gray-800 font-extrabold 
+                    leading-tight
+                ">
                     {t('preloginPage.title')}
                 </div>
             </div>
@@ -65,13 +62,13 @@ export default function PreLoginPage() {
                 <TaiIntroduction />
                 <InfoBlock title={t("preloginPage.questionnairePurpose")} content={t("preloginPage.purposeContent")} />
             </div>
-
-            {/* end */}
             <div className="
-            flex justify-center items-center
-            w-full h-70
-            text-7xl text-center
-        ">
+                flex justify-center items-center
+                w-full
+                py-16 sm:py-24 /* 使用 padding 來控制高度，讓它更靈活 */
+                text-4xl sm:text-5xl md:text-6xl text-center /* 響應式字體 */
+                text-gray-500 font-extrabold
+            ">
                 -end-
             </div>
         </div>
@@ -81,23 +78,23 @@ export default function PreLoginPage() {
 function InfoBlock({ title, content }: { title: string, content: string }) {
     return (
         <div className="
-            flex
-            flex-col justify-center
+            flex flex-col justify-center items-center
+            w-full px-4 md:px-0
         ">
             <div className="
                 mb-5
-                whitespace-nowrap
                 text-center
-                text-4xl
+                text-3xl md:text-4xl font-extrabold
+                text-gray-700
             ">
                 {title}
             </div>
             <div className="
                 text-center
-                text-2xl
-
-                md:w-150
-                md:text-xl
+                text-lg sm:text-xl
+                text-gray-600
+                max-w-3xl
+                leading-relaxed
             ">
                 {content}
             </div>
@@ -108,10 +105,11 @@ function InfoBlock({ title, content }: { title: string, content: string }) {
 function TaiIntroduction() {
     const { t } = useTranslation();
     return (
-        <div>
+        <div className="w-full max-w-6xl mx-auto px-4"> 
             <div className="
-                w-full grid grid-cols-2 gap-2
-                md:grid md:grid-cols-4 md:gap-2
+                w-full grid 
+                grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 /* 響應式調整 */
+                gap-4 md:gap-6
             ">
 
                 <TaiElement title={t("preloginPage.accuracy")} content={t("preloginPage.accuracyContent")} color="bg-blue-200" />
@@ -137,21 +135,21 @@ function TaiElement({ title, content, color }: { title: string, content: string,
     const taiStyle = "grow h-20\
         md:grow md:max-w-50 md:h-60 " + color;
     return (
-        <div className={taiStyle}>
+        <div className={`
+            flex flex-col p-4 md:p-6
+            ${color} rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 /* 增加圓角和陰影 */
+            h-auto min-h-[150px] md:min-h-[200px] 
+        `}>
             <div className="
-                flex justify-center items-center h-full
-                text-2xl font-bold
-                md:h-fit
-                md:py-4
+                text-center text-xl sm:text-2xl font-extrabold mb-2
+                text-gray-800
+                border-b border-gray-400/50 pb-2 
             ">
                 {title}
             </div>
             <div className="
-                hidden
-
-                md:flex md:justify-center md:items-center
-                md:px-5
-                md:text-left
+                text-sm md:text-base text-gray-700
+                mt-2 overflow-hidden /* 確保內容不會溢出 */
             ">
                 {content}
             </div>

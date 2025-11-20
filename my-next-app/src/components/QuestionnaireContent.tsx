@@ -872,7 +872,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     {/* 當期分頁內容 */}
                     {currentPageData && (
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800 mb-6 text-center border-b pb-3">
+                            <h2 className="text-xl font-bold text-gray-800 mb-6 text-left border-b pb-3">
                                 {<TranslatedText text={currentPageData.pageTitle} />}
                             </h2>
 
@@ -899,7 +899,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     )}
 
                     {/* 導航按鈕 */}
-                    <div className="flex justify-between mt-10 pt-6 border-t">
+                    <div className="flex justify-between mt-10 pt-6 border-t px-4 sm:px-0">
 
                         <button
                             onClick={handlePrevious}
@@ -913,7 +913,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <button
                                 onClick={handleNext}
                                 disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
-                                className="py-2 px-6 bg-violet-600 text-white font-bold rounded-lg transition duration-150 hover:bg-violet-500 disabled:opacity-50"
+                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
                             >
                                 {t('Questionnaire.actions.next')}
                             </button>

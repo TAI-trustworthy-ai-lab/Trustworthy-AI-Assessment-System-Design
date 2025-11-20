@@ -5,7 +5,7 @@
     "login": "Login"
   },
   "preloginPage": {
-    "title": "I am the title",
+    "title": "Trustworthy AI Evaluation Test",
     "taiExplain": "What is TAI",
     "taiExplainContent": "Artificial Intelligence (AI) technology has gradually gained importance across various fields in society in recent years. To enhance the trustworthiness of AI technology in applications, the European Union released the Ethics Guidelines for Trustworthy AI in 2019. In 2023, Taiwan's Ministry of Digital Affairs established the AI Product and System Evaluation Center to develop evaluation projects for building a domestic AI product and system evaluation framework.",
     "questionnairePurpose": "Purpose of the Questionnaire",
@@ -31,7 +31,7 @@
     "fairness": "Fairness",
     "fairnessContent": "AI systems treat different groups equally when making judgments or decisions, avoiding unfair situations",
     "informationSecurity": "Information Security",
-    "informationSecurityContent": "Hello there"
+    "informationSecurityContent": "To prevent external environmental intrusion and damage to AI models, and to protect data security during training and testing"
   },
 
 

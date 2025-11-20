@@ -5,7 +5,7 @@
     "login": "登入"
   },
   "preloginPage": {
-    "title": "我是標題",
+    "title": "可信任AI評估測驗",
     "taiExplain": "甚麼是 TAI",
     "taiExplainContent": "人工智慧（AI）技術近年來逐漸在社會各領域受到重視，為了提升AI技術在應用上的可信任程度，歐盟於2019年釋出可信任的AI倫理準則（Ethics Guidelines for Trustworthy AI），我國行政院數位發展部亦於2023年成立AI 產品與系統評測中心，為建立國內AI產品與系統評測體系而擬發展評測項目。",
     "questionnairePurpose": "問卷目的",
@@ -31,7 +31,7 @@
     "fairness": "公平性",
     "fairnessContent": "AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
     "informationSecurity": "資訊安全性",
-    "informationSecurityContent": "這是你好"
+    "informationSecurityContent": "防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全"
   },
 
 
