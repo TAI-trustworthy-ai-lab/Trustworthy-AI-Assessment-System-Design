@@ -40,9 +40,9 @@ export default function PreLoginPage() {
             <div className="flex-col mb-16 w-full h-fit">
                 <div className="
                     flex justify-center items-end
-                    mt-25 md:mt-20
+                    mt-25 md:mt-30
                     text-center
-                    text-4xl sm:text-6xl md:text-7xl  
+                    text-3xl sm:text-5xl md:text-6xl  
                     text-gray-800 font-extrabold 
                     leading-tight
                 ">
