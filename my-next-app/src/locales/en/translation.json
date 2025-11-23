@@ -108,7 +108,8 @@
       "missingAuth": "Missing authentication information. Please log in again.",
       "addProjectFailed": "handleAddProject failed:",
       "authFailedTitle": "Authentication failed or user ID missing",
-      "authFailedMessage": "Unable to retrieve a valid userId or authToken from the browser's Local Storage. Please make sure you are logged in and the data is correctly stored."
+      "authFailedMessage": "Unable to retrieve a valid userId or authToken from the browser's Local Storage. Please make sure you are logged in and the data is correctly stored.",
+      "loginButton": "Go to Login Page"
     },
 
     "dashboard": {

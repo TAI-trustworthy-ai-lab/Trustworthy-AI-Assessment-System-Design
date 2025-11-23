@@ -714,16 +714,22 @@ const Home = () => {
 
     if (!userId || !authToken) {
         return (
-            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-                    <h1 className="text-2xl font-bold mb-4 text-red-700">
-                        {t("homePage.error.authFailedTitle")}
-                    </h1>
-                    <p className="text-red-600">
-                        {t("homePage.error.authFailedMessage")}
-                    </p>
-                </div>
+            <div className="p-8 bg-red-50 min-h-screen font-sans flex items-center justify-center">
+                <div className="max-w-md w-full p-8 bg-white rounded-3xl shadow-2xl border border-red-200">
+                <h1 className="text-3xl font-bold mb-4 text-red-600 leading-tight">
+                    {t("homePage.error.authFailedTitle")}
+                </h1>
+                <p className="text-red-500 text-lg mb-6 leading-relaxed">
+                    {t("homePage.error.authFailedMessage")}
+                </p>
+                <button
+                    onClick={() => router.push("/login")} 
+                    className="w-full bg-indigo-600 text-white py-3 px-4 rounded-xl font-bold text-lg hover:bg-indigo-700 transition duration-300 shadow-lg transform hover:scale-[1.01]"
+                >
+                    {t("homePage.error.loginButton")}
+                </button>
             </div>
+        </div>
         );
     }
 

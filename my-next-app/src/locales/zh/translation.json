@@ -109,7 +109,8 @@
       "missingAuth": "認證資訊缺失，請重新登入。",
       "addProjectFailed": "handleAddProject 失敗:",
       "authFailedTitle": "認證失敗或用戶 ID 缺失",
-      "authFailedMessage": "無法從瀏覽器的 Local Storage 獲取有效的 userId 或 authToken。請確保您已登入且資料已正確儲存。"
+      "authFailedMessage": "無法從瀏覽器的 Local Storage 獲取有效的 userId 或 authToken。請確保您已登入且資料已正確儲存。",
+      "loginButton": "返回登入頁面"
     },
     "dashboard": {
       "title": "我的專案儀表板",
