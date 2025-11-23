@@ -636,6 +636,7 @@ const Home = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
+    const [isInitialized, setIsInitialized] = useState(false);
     const router = useRouter();
     const { t } = useTranslation();
 
@@ -646,6 +647,7 @@ const Home = () => {
 
             setUserId(storedUserId);
             setAuthToken(storedAuthToken);
+            setIsInitialized(true);
         }
     }, []);
 
@@ -702,7 +704,30 @@ const Home = () => {
         router.push("/tai_sort");
     };
 
-    if (isLoading && userId && authToken) {
+    if (!isInitialized) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
+                {t("homePage.loading.initializing")}
+            </div>
+        ); 
+    }
+
+    if (!userId || !authToken) {
+        return (
+            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
+                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
+                    <h1 className="text-2xl font-bold mb-4 text-red-700">
+                        {t("homePage.error.authFailedTitle")}
+                    </h1>
+                    <p className="text-red-600">
+                        {t("homePage.error.authFailedMessage")}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
                 <svg
@@ -730,20 +755,7 @@ const Home = () => {
         );
     }
 
-    if (!userId || !authToken) {
-        return (
-            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-                    <h1 className="text-2xl font-bold mb-4 text-red-700">
-                        {t("homePage.error.authFailedTitle")}
-                    </h1>
-                    <p className="text-red-600">
-                        {t("homePage.error.authFailedMessage")}
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    
 
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">

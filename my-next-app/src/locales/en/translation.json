@@ -99,6 +99,7 @@
     "移除所有相關的評估報告": "remove all related evaluation reports",
 
     "loading": {
+      "initializing": "Loading project list...",
       "projects": "Loading project list..."
     },
 
