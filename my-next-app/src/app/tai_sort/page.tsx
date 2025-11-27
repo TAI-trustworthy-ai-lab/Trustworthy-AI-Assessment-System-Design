@@ -3,8 +3,12 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
+import { checkTaiStatus, saveTaiPriority } from '@/services/taiService';
+import { TAI_INDICATOR_MAP_ZH_EN } from '@/config/constants';
 import { useTranslation } from 'react-i18next';
-import translate from 'google-translate-api-x';
+import translate from 'google-translate-api-x'; 
+
+
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
 // ----------------------------------------------------
@@ -18,23 +22,6 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const data = await res.json();
     return data.translatedText;
 };
-
-
-const BASE_URL = "http://localhost:3001/api";
-const TAI_INDICATOR_MAP: { [key: string]: string } = {
-    "準確性": "ACCURACY",
-    "可靠性": "RELIABILITY",
-    "安全性": "SAFETY",
-    "韌性": "RESILIENCE",
-    "透明性": "TRANSPARENCY",
-    "當責性": "ACCOUNTABILITY",
-    "可解釋性": "EXPLAINABILITY",
-    "自主性": "AUTONOMY",
-    "隱私": "PRIVACY",
-    "公平性": "FAIRNESS",
-    "資訊安全": "SECURITY", 
-};
-
 
 export default function TAISorter() {
     const router = useRouter();
@@ -75,44 +62,23 @@ export default function TAISorter() {
                 return;
             }
 
-            // 使用 Date.now() 參數來防止瀏覽器快取 GET 請求
-            const url = `${BASE_URL}/project/${projectId}/tai-priority?t=${Date.now()}`; 
-
             try {
-                const response = await fetch(url, { 
-                    method: 'GET',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!response.ok) {
-                    console.error(`檢查 TAI 狀態失敗，狀態碼: ${response.status}`);
-                    setIsLoading(false); 
-                    return; 
-                }
-                let responseBody: any = {};
-                
-                // 成功的回應，嘗試解析 body
-                try {
-                    responseBody = await response.json();
-                } catch (e) {
-                    console.warn("API 回應成功但 body 無法解析為 JSON (可能是 204 No Content)。");
-                    setIsLoading(false);
-                    return;
-                }
-
+                const responseBody = await checkTaiStatus(projectId);
                 const taiSortData = responseBody.data || [];
 
-                // 檢查 taiSortData 是否為一個陣列，並且長度大於 0
                 if (Array.isArray(taiSortData) && taiSortData.length > 0) {
                     router.push('/choose_questionnaire'); 
                 } else {
                     setIsLoading(false);
                 }
 
-            } catch (error) {
-                console.error("檢查 TAI 排序狀態時發生網路或解析錯誤:", error);
+            } catch (error: any) {
+                try {
+                    const errorObj = JSON.parse(error.message);
+                    console.error(`檢查 TAI 狀態失敗 (${errorObj.status}):`, errorObj.message);
+                } catch (e) {
+                    console.error("檢查 TAI 排序狀態時發生網路或解析錯誤:", error);
+                }
                 setIsLoading(false); 
             }
         };
@@ -298,7 +264,7 @@ export default function TAISorter() {
         }
         // Assume indicators won't be outside the TAI_INDICATOR_MAP keys
         const payload = indicators.map((indicatorZh, index) => {
-            const indicatorEn = TAI_INDICATOR_MAP[indicatorZh];
+            const indicatorEn = TAI_INDICATOR_MAP_ZH_EN[indicatorZh];
 
             return {
                 indicator: indicatorEn,
@@ -324,28 +290,20 @@ export default function TAISorter() {
         const isConfirmed = confirm(confirmationMessage);
         
         
-        
-
-        const apiUrl = `${BASE_URL}/project/${projectId}/tai-priority`;
         if (isConfirmed) {
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        //'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-                    },
-                    body: JSON.stringify(payload),
-                });
+                await saveTaiPriority(projectId, payload);
+                router.push("/choose_questionnaire");
+                
+            } catch (error: any) {
+                let errorDetails = "網路錯誤或呼叫 API 失敗。";
+                try {
+                    const errorObj = JSON.parse(error.message);
+                    errorDetails = `儲存失敗 (${errorObj.status})：${errorObj.message}`;
+                } catch (e) {
 
-                if (response.ok) {
-                    router.push("/choose_questionnaire");
-                } else {
-                    const errorData = await response.json();
-                    alert(`儲存失敗 (${response.status})：${errorData.message || '請檢查後端日誌。'}`);
                 }
-            } catch (error) {
-                alert("網路錯誤或呼叫 API 失敗。");
+                alert(errorDetails);
             }
         }
     };
@@ -438,7 +396,7 @@ export default function TAISorter() {
                                     <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
                                 </div>
                             </div>
-                            <span className="flex-1 text-lg user-select-none">{(i18n.language == "zh") ? indicator : TAI_INDICATOR_MAP[indicator]}</span>
+                            <span className="flex-1 text-lg user-select-none">{(i18n.language == "zh") ? indicator : TAI_INDICATOR_MAP_ZH_EN[indicator]}</span>
                         </div>
                     ))}
                 </div>

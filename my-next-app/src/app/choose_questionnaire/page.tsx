@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import { useTranslation } from "react-i18next";
-
-const QUESTIONNAIRE_API_URL = `http://localhost:3001/api/questionnaire/group/latest`;
+import { fetchLatestQuestionnaires } from '@/services/questionnaireService';
 
 const STAGE_NAME_MAP: { [key: string]: 'before' | 'during' | 'after' } = {
     "建模前": 'before',
@@ -14,6 +13,9 @@ const STAGE_NAME_MAP: { [key: string]: 'before' | 'during' | 'after' } = {
     "建模後": 'after',
 };
 
+// ----------------------------------------------------
+//  CARD'S UI
+// ----------------------------------------------------
 const stages = (t: any) => ({
     before: {
         title: t("choosePage.stages.before.title"),
@@ -44,25 +46,6 @@ const stages = (t: any) => ({
     },
 });
 
-const fetchLatestQuestionnaires = async () => {
-    try {
-        const response = await fetch(QUESTIONNAIRE_API_URL, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || `HTTP error! Status: ${response.status}`);
-        }
-        return result.data;
-    } catch (error) {
-        console.error("獲取最新問卷列表失敗:", error);
-        throw error;
-    }
-};
 
 export default function ChooseQuestionnairePage() {
     const router = useRouter();

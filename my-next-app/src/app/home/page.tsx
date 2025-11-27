@@ -3,9 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
-import ProtectedLayout from '@/components/ProtectedLayout';
 import { useTranslation } from 'react-i18next';
-import translate from 'google-translate-api-x';
+import translate from 'google-translate-api-x'; // **************** cmt：應該可以刪掉？
 
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
@@ -24,115 +23,19 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
 // ----------------------------------------------------
 // 指標從後端英文翻成中文對照表
 // ----------------------------------------------------
-const TAI_INDICATOR_MAP_EN_ZH: { [key: string]: string } = {
-    "ACCURACY": "準確性",
-    "RELIABILITY": "可靠性",
-    "SAFETY": "安全性",
-    "RESILIENCE": "韌性",
-    "TRANSPARENCY": "透明性",
-    "ACCOUNTABILITY": "當責性",
-    "EXPLAINABILITY": "可解釋性",
-    "AUTONOMY": "自主性",
-    "PRIVACY": "隱私",
-    "FAIRNESS": "公平性",
-    "SECURITY": "資訊安全",
-};
+import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
 
 // ----------------------------------------------------
 // 後端回傳資料結構
 // ----------------------------------------------------
-interface TaiOrder {
-    indicator: string;
-    weight: number;
-    rank: number;
-}
-export interface ProjectData {
-    id: number;
-    name: string;
-    description: string;
-    taiOrders?: TaiOrder[];
-    createdAt: string;
-    updatedAt: string;
-}
-
-
-// ----------------------------------------------------
-// API 呼叫後端：假設 userId， authToken 一定存在且有效
-// ----------------------------------------------------
-const BASE_URL = "http://localhost:3001/api";
-
-// 1. 重複嘗試的 fetch 函式
-function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T> {
-    // 總共嘗試 2 次 (1 次初始請求 + 1 次重試)
-    const MAX_ATTEMPTS = 2;
-    const attemptFetch = (attempt: number): Promise<T> => {
-        // 假設 authToken 一定存在
-        return fetch(url, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-                ...(options.headers || {}),
-            },
-        })
-            // 取得 Response 並解析 JSON 
-            .then(response => response.json().then(result => ({ response, result })))
-            .then(({ response, result }) => {
-
-                if (!response.ok) {
-                    const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-                    if (attempt < MAX_ATTEMPTS) {
-                        console.warn(`API 請求失敗 (${url})，嘗試重試 ${attempt + 1}/${MAX_ATTEMPTS}。錯誤: ${errorMessage}`);
-                        throw new Error(`RETRY_NEEDED: ${errorMessage}`);
-                    }
-                    console.error(`API 請求最終失敗 (${url}):`, errorMessage);
-                    throw new Error(errorMessage);
-                }
-
-                return result.data as T;
-            })
-            .catch(error => {
-                if (attempt < MAX_ATTEMPTS && (error.message.includes('Failed to fetch') || error.message.includes('RETRY_NEEDED'))) {
-                    // 遞迴呼叫下一輪嘗試
-                    return attemptFetch(attempt + 1);
-                }
-                console.error(`API 請求最終失敗 (${url}):`, error.message);
-                throw error;
-            });
-    };
-
-    return attemptFetch(1);
-}
-
-// 1. GET 專案列表
-const fetchProjects = async (userId: string, authToken: string): Promise<ProjectData[]> => {
-    const url = `${BASE_URL}/project/user/${userId}`;
-    return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
-};
-
-// 2. POST 建立新專案 
-const createProject = async (name: string, userId: string, description: string, authToken: string): Promise<ProjectData> => {
-    const url = `${BASE_URL}/project/`;
-    const body = {
-        userId: parseInt(userId),
-        name: name,
-        description: description,
-    };
-
-    return fetchWithRetry<ProjectData>(url, {
-        method: 'POST',
-        body: JSON.stringify(body),
-    }, authToken);
-};
-
-// 3. DELETE 刪除專案
-const deleteProject = async (projectId: number, authToken: string): Promise<void> => {
-    const url = `${BASE_URL}/project/${projectId}`;
-    await fetchWithRetry<any>(url, {
-        method: 'DELETE',
-    }, authToken);
-};
+import { 
+    fetchProjects, 
+    createProject, 
+    deleteProject, 
+    ProjectData, 
+    TaiOrder 
+} from '@/services/projectService';
 
 
 // ----------------------------------------------------

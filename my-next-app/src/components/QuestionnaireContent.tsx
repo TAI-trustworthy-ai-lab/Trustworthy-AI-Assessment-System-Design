@@ -4,6 +4,18 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import translate from 'google-translate-api-x';
 
+// ----------------------------------------------------
+//  其他檔案資料
+// ----------------------------------------------------
+import { CATEGORY_MAP } from '@/config/constants'; 
+import { 
+    fetchQuestionnaire as fetchQuestionnaireService, 
+    saveDraft as saveDraftService,
+    loadDraft as loadDraftService,
+    submitQuestionnaire as submitQuestionnaireService,
+    generateReport as generateReportService,
+} from '@/services/responseService';
+
 
 // ----------------------------------------------------
 // 翻譯工具函式 (Google Translate API-X)
@@ -48,25 +60,6 @@ const useRouter = () => {
             }
         },
     };
-};
-
-
-// ----------------------------------------------------
-// 定义指標解釋映射表
-// ----------------------------------------------------
-const CATEGORY_MAP: Record<string, string> = {
-    "ACCURACY": "一、準確性（Accuracy）：AI判斷的結果與真實情況相近程度",
-    "RELIABILITY": "二、可靠性（Reliability)：AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定",
-    "SAFETY": "三、安全性（Safety）：AI系統若出錯，不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害",
-    "RESILIENCE": "四、韌性(Resilience)：AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰",
-    "TRANSPARENCY": "五、透明性(Transparency)：AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則",
-    "ACCOUNTABILITY": "六、當責性(Accountability)：當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人",
-    "EXPLAINABILITY": "七、可解釋性(Explanability)：AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由",
-    "AUTONOMY": "八、自主性(Autonomy)：AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策",
-    "PRIVACY": "九、隱私(Privacy)：在使用AI系統時，不會侵犯到個人隱私",
-    "FAIRNESS": "十、公平性(Fairness)：AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況",
-    "SECURITY": "十一、資訊安全性(Security)：防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全",
-    "UNKNOWN": "未知分類：{{category}}"
 };
 
 // ----------------------------------------------------
@@ -441,7 +434,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // 3. 總頁數與當前頁面資料
     const TOTAL_PAGES = allPages.length;
     const currentPageData = allPages[currentPage];
-    const API_BASE_URL = "http://localhost:3001/api";
 
     // =============
     //    後端API
@@ -450,41 +442,46 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const fetchQuestionnaire = useCallback(async () => {
         // 預設問卷 ID 無誤 & 後端截取資料結構一定正確！
         setLoadingStatus('loading');
-        try {
-            const response = await fetch(`${API_BASE_URL}/questionnaire/${questionnaireId}`, {
-                method: "GET",
-            });
+        if (!questionnaireId) { 
+             setLoadingStatus('error');
+             setSubmissionError("問卷 ID 缺失，無法加載。");
+             return;
+        }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `加載失敗，狀態碼: ${response.status}`);
-            }
-            const responseBody = await response.json();
-            const data = responseBody.data;
+        try {
+            const data = await fetchQuestionnaireService(questionnaireId); 
+            
             setQuestionnaire(data as QuestionnaireData);
             setLoadingStatus('success');
             setSubmissionError(null);
-        } catch (error) {
+        } catch (error: any) {
+            let message = `問卷加載失敗: ${t('Questionnaire.error.unknown')}`;
+            try {
+                const errorObj = JSON.parse(error.message);
+                message = `問卷加載失敗 (${errorObj.status}): ${errorObj.message}`;
+            } catch (e) {
+
+            }
+
             console.error('獲取問卷詳情失敗:', error);
-            setSubmissionError(`問卷加載失敗: ${error instanceof Error ? error.message : String(error)}`);
+            setSubmissionError(message);
             setLoadingStatus('error');
         }
     }, [questionnaireId]);
 
     // 2. 儲存草稿
     const saveDraft = useCallback(async (currentAnswers: Answers, currentDraftId: number | null) => {
-        const userToken = localStorage.getItem('authToken');
-        const currentUserId = localStorage.getItem('userId');
-        const currentProjectId = localStorage.getItem('currentProjectId');
-        
-        if (!userToken || !questionnaire || !currentUserId || !currentProjectId) return;
+        if (!questionnaire) return;
         
         setIsSavingDraft(true);
         setSubmissionError(null);
 
         const answersPayload = formatAnswersForSubmission(currentAnswers, questionnaire.questions);
-        const parsedUserId = parseInt(currentUserId, 10);
-        const parsedProjectId = parseInt(currentProjectId, 10);
+        const currentUserId = localStorage.getItem('userId');
+        const currentProjectId = localStorage.getItem('currentProjectId');
+
+        const parsedUserId = parseInt(currentUserId || '0', 10);
+        const parsedProjectId = parseInt(currentProjectId || '0', 10);
         const parsedVersionId = typeof questionnaireId === 'number' ? questionnaireId : parseInt(String(questionnaireId), 10);
 
         const basePayload = {
@@ -505,46 +502,23 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
 /* 後端 PATCH 有問題，暫時注解掉
         try {
-            const method = currentDraftId ? 'PATCH' : 'POST';
-            const url = currentDraftId 
-                ? `${API_BASE_URL}/response/${currentDraftId}` // PATCH: 更新現有草稿
-                : `${API_BASE_URL}/response`;               // POST: 創建新草稿
-                
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,
-                },
-                body: JSON.stringify(finalPayload),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                const newResponseId = data.data.id;
-                
-                if (!currentDraftId) {
-                    setDraftResponseId(newResponseId); // 設置新的草稿 ID
-                    localStorage.setItem('draftResponseId', newResponseId.toString()); // 儲存到 LocalStorage
-                }
-                console.log(`草稿儲存成功: ID ${newResponseId}`);
-            } else {
-                const status = response.status;
-                let errorData;
-                
-                try {
-                    // 嘗試解析 JSON。如果後端沒有傳送 JSON，這裡可能會失敗。
-                    errorData = await response.json();
-                } catch (e) {
-                    errorData = { message: `無法解析錯誤回應內容 (HTTP ${status})` };
-                }
-                console.error(
-                    `儲存草稿失敗 (HTTP ${status})`, 
-                    errorData
-                );
+            const data = await saveDraftService(finalPayload, currentDraftId);
+            const newResponseId = data.id;
+            
+            if (!currentDraftId) {
+                setDraftResponseId(newResponseId); // 設置新的草稿 ID
+                localStorage.setItem('draftResponseId', newResponseId.toString()); // 儲存到 LocalStorage
             }
-        } catch (error) {
-            console.error('儲存草稿時發生網路錯誤:', error);
+            console.log(`草稿儲存成功: ID ${newResponseId}`);
+        } catch (error: any) {
+            let errorMsg = `儲存草稿失敗`;
+            try {
+                const errorObj = JSON.parse(error.message);
+                console.error(`儲存草稿失敗 (${errorObj.status})`, errorObj);
+                errorMsg += ` (${errorObj.status}): ${errorObj.message}`;
+            } catch (e) {
+
+            }
         } finally {
             setIsSavingDraft(false);
         }
@@ -554,37 +528,36 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // 3. 載入草稿
     const loadDraft = useCallback(async (draftId: number, token: string) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/response/${draftId}`, {
-                method: "GET",
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const draftData = data.data;
+            const data = await loadDraftService(draftId);
+            const draftData = data;
 
-                const loadedAnswers: Answers = (draftData.answers || []).reduce((acc: Answers, ans: any) => {
-                    acc[ans.questionId] = {
-                        score: ans.value || undefined,
-                        optionIds: ans.optionIds || (ans.optionId ? [ans.optionId] : undefined),
-                        textValue: ans.textValue || undefined,
-                    };
-                    return acc;
-                }, {});
+            const loadedAnswers: Answers = (draftData.answers || []).reduce((acc: Answers, ans: any) => {
+                acc[ans.questionId] = {
+                    score: ans.value || undefined,
+                    optionIds: ans.optionIds || (ans.optionId ? [ans.optionId] : undefined),
+                    textValue: ans.textValue || undefined,
+                };
+                return acc;
+            }, {});
                 
-                setAnswers(loadedAnswers);
-            } else {
-                // ⭐️ 增加這一段：如果 GET 失敗，清除 LocalStorage 中的 ID
-                console.error(`載入草稿失敗 (HTTP ${response.status})，清除無效 ID。`, await response.json());
-                localStorage.removeItem('draftResponseId');
-                setDraftResponseId(null);
-            }
+            setAnswers(loadedAnswers);
         } catch (error) {
             console.error('載入草稿時發生網路錯誤:', error);
             localStorage.removeItem('draftResponseId');
             setDraftResponseId(null);
         }
     }, []);
+
+    // 4. 生成報告
+    const generateReport = async (responseId: number) => {
+        try {
+            await generateReportService(responseId);
+            return true;
+        } catch (error) {
+            console.error("報告生成過程中發生錯誤:", error);
+            return false;
+        }
+    };
 
 
     // =============
@@ -621,7 +594,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
         return () => clearInterval(intervalId); // 清除定時器
     }, [answers, draftResponseId, saveDraft, loadingStatus]);
-*/
+*/  
 
     // =============
     //   分頁進度
@@ -652,27 +625,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             }
         });
     }, [answers, currentPageData]);
-
-    // =============
-    // 後端POST報告
-    // =============
-    const generateReport = async (responseId: number, token: string) => {
-        const url = `${API_BASE_URL}/report/generate/${responseId}`;
-        // 假設後端一定會成功生成報告
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-            return true;
-        } catch (error) {
-            console.error("報告生成過程中發生網路錯誤:", error);
-            return false;
-        }
-    };
 
     // =============
     //  不同處理
@@ -744,31 +696,16 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
         // --- 提交問卷給後端 --- //
         try {
-            const response = await fetch(`${API_BASE_URL}/response`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${userToken}`,
-                },
-                body: JSON.stringify(finalPayload),
-            });
+            const data = await submitQuestionnaireService(finalPayload);
+            const responseId = data.id;
 
-            if (response.ok) {
-                const data = await response.json();
-                const responseId = data.data.id;
-
-                localStorage.setItem('responseId', responseId.toString());
-                localStorage.removeItem('draftResponseId');
-                setDraftResponseId(null);
-                setSubmittedResponseId(responseId);
-                setIsGeneratingReport(true);
-                await generateReport(responseId, userToken);
-                setShowSuccessModal(true);
-
-            } else {
-                let errorDetail = `伺服器錯誤 (${response.status})`;
-                setSubmissionError(`提交失敗: ${errorDetail}`);
-            }
+            localStorage.setItem('responseId', responseId.toString());
+            localStorage.removeItem('draftResponseId');
+            setDraftResponseId(null);
+            setSubmittedResponseId(responseId);
+            setIsGeneratingReport(true);
+            await generateReport(responseId);
+            setShowSuccessModal(true);
         } catch (error) {
             console.error('提交錯誤:', error);
             setSubmissionError("提交過程中發生網路錯誤。");

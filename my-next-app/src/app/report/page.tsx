@@ -18,23 +18,7 @@ const useRouter = () => {
     };
 };
 
-
-// ----------------------------------------------------
-// 定义指標解釋映射表
-// ----------------------------------------------------
-const CATEGORY_MAP: Record<string, string> = {
-    "Accuracy": "一、準確性（Accuracy）",
-    "Reliability": "二、可靠性（Reliability）",
-    "Safety": "三、安全性（Safety）",
-    "Resilience": "四、韌性（Resilience）",
-    "Transparency": "五、透明性（Transparency）",
-    "Accountability": "六、當責性（Accountability）",
-    "Explainability": "七、可解釋性（Explanability）",
-    "Autonomy": "八、自主性（Autonomy）",
-    "Privacy": "九、隱私（Privacy）",
-    "Fairness": "十、公平性（Fairness）",
-    "Security": "十一、資訊安全性（Security）",
-};
+import { REPORT_CATEGORY_MAP_EN } from '@/config/constants';
 
 // ----------------------------------------------------
 // 後端回傳資料結構定義
@@ -75,57 +59,7 @@ const getScoreColor = (score: number) => {
 };
 
 
-const API_BASE_URL = "http://localhost:3001/api";
-
-// ----------------------------------------------------
-// 後端 API 呼叫
-// ----------------------------------------------------
-// 1. GET 報告 - responseId from local storage
-const fetchReport = async (responseId: number, authToken: string): Promise<ReportData> => {
-    const url = `${API_BASE_URL}/report/response/${responseId}`; 
-    const response = await fetch(url, {
-        method: 'GET', 
-        headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-        },
-    });
-
-    const result = await response.json();
-
-    // 錯誤處理：應該不會使用到（不應該有錯誤發生！）
-    if (!response.ok) {
-        let errorMessage = `HTTP 錯誤! 狀態碼: ${response.status}`;
-        const errorDetail = result.error || result.message;
-
-        if (errorDetail) {
-            if (typeof errorDetail === 'string') {
-                errorMessage = errorDetail;
-            } else if (typeof errorDetail === 'object') {
-                errorMessage = JSON.stringify(errorDetail);
-            }
-        } else {
-            errorMessage = `${errorMessage}: ${JSON.stringify(result)}`;
-        }
-        
-        throw new Error(`獲取報告失敗: ${errorMessage}`);
-    }
-
-    const reportData = result.data as ReportData; 
-
-    // 將後端回傳的 0-1 數值轉換為 0-100
-    const convertedRadarData: Record<string, number> = {};
-    for (const key in reportData.radarData) {
-        if (reportData.radarData.hasOwnProperty(key)) {
-            convertedRadarData[key] = reportData.radarData[key] * 100;
-        }
-    }
-
-    reportData.radarData = convertedRadarData;
-    reportData.overallScore = reportData.overallScore * 100;
-
-    return reportData;
-};
+import { fetchReport as fetchReportService } from '@/services/reportService';
 
 
 // ----------------------------------------------------
@@ -167,7 +101,7 @@ export default function ReportPage() {
 
         setLoadingStatus('generating'); 
         try {
-            const reportData = await fetchReport(responseId, authToken); 
+            const reportData = await fetchReportService(responseId); 
             const projName = reportData.response?.project?.name ?? '專案名稱缺失';
             const verTitle = reportData.response?.version?.title ?? '問卷版本標題缺失';
             const uName = reportData.response?.user?.name ?? '使用者名稱缺失';
@@ -297,7 +231,7 @@ export default function ReportPage() {
                         <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">細項指標表現</h2>
                         <div className="space-y-4">
                             {/* ⭐️ 迭代 radarData */}
-                            {Object.entries(CATEGORY_MAP).map(([key, title]) => {
+                            {Object.entries(REPORT_CATEGORY_MAP_EN).map(([key, title]) => {
                                 const score = report.radarData[key];
                                 if (score === undefined) return null; 
 

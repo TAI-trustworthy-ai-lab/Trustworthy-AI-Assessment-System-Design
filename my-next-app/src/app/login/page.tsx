@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from '@/components/Header';
 import { useTranslation } from "react-i18next";
+import { login, register } from "@/services/userService";
 
 export default function LoginPage() {
     const [name, setName] = useState("");
@@ -17,44 +18,20 @@ export default function LoginPage() {
     const router = useRouter();
     const { t } = useTranslation();
 
-    const BASE_URL = "http://localhost:3001/api/user";
-
+    // ===================
+    //    登入 LOGIN
+    // ===================
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
         try {
-            const response = await fetch(`${BASE_URL}/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                let defaultMessage = t('loginPage.login.errorUnknown');
-                let errorMessageFromBackend = errorData?.error?.message;
-
-                if (response.status === 401) {
-                    defaultMessage = t('loginPage.login.error401');
-                } else if (response.status === 500) {
-                    defaultMessage = t('loginPage.login.error500');
-                } else if (response.status === 404) {
-                    if (errorMessageFromBackend === "User not found") {
-                        defaultMessage = t('loginPage.login.error404UserNotFound');
-                    } else {
-                        defaultMessage = t('loginPage.login.error404Path');
-                    }
-                }
-
-                throw new Error(defaultMessage);
-            }
-
-            const data = await response.json();
+            const data = await login({ email, password });
             const token = data?.data?.token;
             const user = data?.data?.user;
 
+            // If response.ok, save user info into local storage
             if (token && user && user.id && user.role) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('userId', user.id.toString());
@@ -64,59 +41,97 @@ export default function LoginPage() {
                 throw new Error(t('loginPage.login.errorIncomplete'));
             }
         } catch (err) {
-            console.error("登入失敗:", err);
-            setError(err instanceof Error ? err.message : t('loginPage.login.errorUnknown'));
+            // If !response.ok, output error (as bckend mostly return Obj:Obj , add-in more info in frontend)
+            let errorMessage = err instanceof Error ? err.message : t('loginPage.login.errorUnknown');
+            let statusCode = 0;
+            let backendMessage = '';
+
+            try {
+                const errorObj = JSON.parse(errorMessage);
+                statusCode = errorObj.status;
+                backendMessage = errorObj.message;
+
+                if (statusCode === 401) {
+                    errorMessage = t('loginPage.login.error401');
+                } else if (statusCode === 500) {
+                    errorMessage = t('loginPage.login.error500');
+                } else if (statusCode === 404) {
+                    if (backendMessage === "User not found") {
+                        errorMessage = t('loginPage.login.error404UserNotFound');
+                    } else {
+                        errorMessage = t('loginPage.login.error404Path');
+                    }
+                }
+            } catch (e) {
+
+            }
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
+
+    // ===================
+    //    注冊 REGISTER
+    // ===================
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         try {
-            const response = await fetch(`${BASE_URL}/signup`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                let defaultMessage = t('loginPage.register.errorUnknown');
-
-                if (response.status === 409) {
-                    defaultMessage = t('loginPage.register.error409');
-                } else if (response.status === 500) {
-                    defaultMessage = t('loginPage.register.error500');
-                }
-                throw new Error(defaultMessage);
-            }
-
-            const data = await response.json();
+            // If response.ok
+            await register({ name, email, password }); 
             setIsRegistering(false);
             setSuccess(t('loginPage.register.success'));
             setName("");
             setEmail("");
             setPassword("");
         } catch (err) {
+            // If !response.ok
+            let errorMessage = err instanceof Error ? err.message : t('loginPage.register.errorUnknown');
+            let statusCode = 0;
+            let backendMessage = '';
+
+            try {
+                const errorObj = JSON.parse(errorMessage);
+                statusCode = errorObj.status;
+                backendMessage = errorObj.message;
+                
+                if (statusCode === 409) { 
+                    errorMessage = t('loginPage.register.error409');
+                } else if (statusCode === 500) {
+                    errorMessage = t('loginPage.register.error500');
+                } else if (statusCode === 400) {
+                    errorMessage = backendMessage || t('loginPage.register.error400');
+                }
+            } catch (e) {
+            
+            }
+
             console.error("Registration Error:", err);
-            setError(err instanceof Error ? err.message : t('loginPage.register.errorUnknown'));
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
+
+    // ===================
+    //      UI
+    // ===================
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <Header titleHref="/" />
             <div className="max-w-md w-full p-8 space-y-8 bg-white border border-blue-200 rounded-xl shadow-xl">
+                {/* title */}
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
                         {isRegistering ? t('loginPage.register.title') : t('loginPage.login.title')}
                     </h2>
                 </div>
+
+                {/* error or success box */}
                 {error && (
                     <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
                         <strong>{t('loginPage.common.errorLabel')}</strong> {error}
@@ -127,6 +142,8 @@ export default function LoginPage() {
                         <strong>{t('loginPage.common.successLabel')}</strong> {success}
                     </div>
                 )}
+
+                {/* form handling */}
                 <form
                     className="mt-8 space-y-6"
                     onSubmit={isRegistering ? handleRegister : handleLogin}

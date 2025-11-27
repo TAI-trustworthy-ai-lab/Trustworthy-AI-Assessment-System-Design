@@ -1,0 +1,49 @@
+import { REPORT_API_BASE } from '@/config/apiConfig';
+
+async function fetchApi(url: string, options: RequestInit = {}) {
+    const userToken = localStorage.getItem('authToken');
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
+        ...options.headers,
+    };
+    
+    const response = await fetch(url, { ...options, headers });
+    
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText }));
+        // 拋出結構化錯誤
+        throw new Error(JSON.stringify({ 
+            status: response.status, 
+            message: errorData.message || 'API 請求失敗' 
+        }));
+    }
+    
+    return response.json();
+}
+
+// GET get the reoprt from bckend
+export const fetchReport = async (responseId: number): Promise<any> => {
+    const url = `${REPORT_API_BASE}/response/${responseId}`; 
+    const result = await fetchApi(url, { method: 'GET' });
+
+    const reportData = result.data; 
+
+    // backend would return 0-1 but we will show 0-100
+    if (reportData && reportData.radarData) {
+        const convertedRadarData: Record<string, number> = {};
+        for (const key in reportData.radarData) {
+            if (reportData.radarData.hasOwnProperty(key)) {
+                convertedRadarData[key] = reportData.radarData[key] * 100;
+            }
+        }
+        reportData.radarData = convertedRadarData;
+    }
+    
+    if (reportData && typeof reportData.overallScore === 'number') {
+        reportData.overallScore = reportData.overallScore * 100;
+    }
+
+    return reportData;
+};
