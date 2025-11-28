@@ -528,6 +528,7 @@ export function ContextMenuStrip({ size, position, children }: {
 }
 
 export function ComfirmWindow({ text, comfirm, cancel }: { text: string, comfirm: () => void, cancel: () => void }) {
+    const { t } = useTranslation();
     return (
         <div className='
       flex flex-col justify-center
@@ -551,7 +552,7 @@ export function ComfirmWindow({ text, comfirm, cancel }: { text: string, comfirm
           `}
                     onClick={comfirm}
                 >
-                    確認
+                    {t("historyPage.confirm")}
                 </button>
                 <button
                     className={`
@@ -560,7 +561,7 @@ export function ComfirmWindow({ text, comfirm, cancel }: { text: string, comfirm
           `}
                     onClick={cancel}
                 >
-                    取消
+                    {t("historyPage.cancel")}
                 </button>
             </div>
         </div>
