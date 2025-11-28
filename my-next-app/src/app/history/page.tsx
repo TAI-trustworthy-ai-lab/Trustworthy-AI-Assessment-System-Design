@@ -427,8 +427,8 @@ export default function HistoryPage() {
               ">
                 <div className="size-fit text-gray-600">{t('historyPage.projectName')}</div>
                 <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
-                <div className="size-fit text-gray-600">{t('historyPage.version')}</div>
-                <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.version')}</div>
+                <div className="size-fit text-gray-600">{t('historyPage.questionnaireName')}</div>
+                <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
               </div>
               
               {responseList.map((data) => {
@@ -530,7 +530,7 @@ export function ComfirmWindow({text, comfirm, cancel}: {text:string, comfirm: ()
       bg-white shadow-xl
     '>
       <div className='
-        flex justify-center items-end text-center h-[50vh]
+        flex justify-center items-end text-center h-[50vh] px-4
       '>
         {text}
       </div>
