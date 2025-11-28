@@ -4,81 +4,29 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
-import {ProjectData} from '@/app/home/page'
+import {
+  ProjectData,
+  fetchProjects
+} from '@/services/projectService'
 import ResponseViewer, {QuestionnaireData, styleSelected, styleUnselected} from './ResponseViewer';
 import { Info, Edit, FileText } from 'lucide-react'
+import {
+  PROJECT_API_BASE,
+  RESPONSE_API_BASE
+} from "@/config/apiConfig";
+import {
+  ResponseMeta, 
+  ResponseData, 
+  ViewerState,
+  deleteResponse,
+  fetchQuestionnaire,
+  fetchResponseList,
+  fetchResponse
+} from "@/services/responseService";
+
 
 // 後端 API 基礎 URL ************ 待更改API ************
-const BASE_URL = "http://localhost:3001/api";
-
-export interface AnswerData{
-  id: number,
-  responseId: number,
-  questionId: number,
-  optionId: number,
-  value?: number,
-  textValue?: string,
-  createdAt: string,
-  question: {
-    id: number,
-    text: string,
-    category: string,
-    type: string
-  },
-  option: {
-    id: number,
-    text?: string,
-    value?: number
-  }
-}
-
-export interface ResponseMeta{
-  id: number,
-  userId: number,
-  projectId: number,
-  versionId: number,
-  submittedAt: string,
-  label?: string,
-  project: {
-    id: number,
-    name: string
-  },
-  version: {
-    id: number,
-    title: string
-  }
-}
-
-export interface ResponseData{
-  id: number,
-  userId: number,
-  projectId: number,
-  versionId: number,
-  submittedAt: string,
-  label?: string,
-  user: {
-    id: number,
-    name: string,
-    email: string
-  },
-  project: {
-    id: number,
-    name: string
-  },
-  version: {
-    id: number,
-    title: string
-  },
-  answers: AnswerData[]
-}
-
-enum ViewerState{
-  loading,
-  editing,
-  detail,
-  success,
-  fail
-}
+const BASE_URL = PROJECT_API_BASE;
 
 export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null); 
@@ -164,7 +112,7 @@ export default function HistoryPage() {
         throw "fail to get response"
       }
 
-      if(r === null){
+      if(r === null || r === undefined){
         setViewerState(ViewerState.fail)
         throw "fail to get response"
       }
@@ -181,14 +129,14 @@ export default function HistoryPage() {
       }
 
       try{
-        q = await fetchQuestionnaire(userId, authToken, qId);
+        q = await fetchQuestionnaire(qId);
       } catch(e){
         setViewerState(ViewerState.fail)
         console.error("error while fetchResponse", e)
         throw "fail to get response"
       }
 
-      if(q === null){
+      if(q === null || q === undefined){
         setViewerState(ViewerState.fail)
         throw "fail to get questionnaire"
       }
@@ -197,6 +145,8 @@ export default function HistoryPage() {
       }
     }
     else q = fetchList[id].questionnaire
+
+    //console.log(r, q)
 
     setViewerState(finalState)
     setViewerData({response: r, questionnaire: q})
@@ -398,6 +348,7 @@ export default function HistoryPage() {
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             下載
           </div>
+          {/*}
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
@@ -407,7 +358,7 @@ export default function HistoryPage() {
             }}
           >
             編輯
-          </div>
+          </div>*/}
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
               if(curResponse){
@@ -742,31 +693,20 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
             whitespace-nowrap`}
         >
           <div>使用者:</div>
-          <div>{data.response?.user.name}</div>
-
-          <div>使用者 ID:</div>
-          <div>{data.response?.user.id}</div>
+          <div>{data.response?.user?.name}</div>
 
           <div>使用者帳號:</div>
-          <div>{data.response?.user.email}</div>
+          <div>{data.response?.user?.email}</div>
 
           <div>專案名稱:</div>
-          <div>{data.response?.project.name}</div>
-
-          <div>專案 ID:</div>
-          <div>{data.response?.project.id}</div>
+          <div>{data.response?.project?.name}</div>
 
           <div>問卷名稱:</div>
-          <div>{data.response?.version.title}</div>
+          <div>{data.response?.version?.title}</div>
 
-          <div>問卷 ID:</div>
-          <div>{data.response?.version.id}</div>
-
+          {/* 
           <div>標籤:</div>
-          <div>{data.response?.label}</div>
-
-          <div>回應 ID:</div>
-          <div>{data.response?.id}</div>
+          <div>{data.response?.label}</div>*/}
 
           <div>提交時間:</div>
           <div>{data.response?.submittedAt}</div>
@@ -783,6 +723,40 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
       <h2 className="text-red-600 text-lg font-semibold mb-4">獲取回應失敗</h2>
     </div>
   )
+
+  const toolComponent = (
+    text: string,
+    icon: React.JSX.Element,
+    color: string,
+    onClick: React.MouseEventHandler<HTMLDivElement> | undefined) =>
+  {
+    return(
+      <div
+        className={`
+          relative
+          flex justify-center items-center
+          size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
+          border-${color}-200
+
+          hover:overflow-visible cursor-pointer
+          shadow-black/20 border shadow-md active:shadow-sm
+          ${
+            curState === ViewerState.detail?
+            `bg-${color}-400 hover:bg-${color}-500 active:bg-${color}-600`:
+            `bg-${color}-400/50 hover:bg-${color}-500/50 active:bg-${color}-600/50`}
+        `}
+        onClick={onClick}
+      >
+        {icon}
+        <div className={`
+          absolute -top-8 w-fit px-1.5 py-1 z-55
+          text-center font-bold text-xs text-white whitespace-nowrap
+          bg-${color}-400 rounded-full shadow shadow-gray-500`}>
+          {text}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -801,82 +775,39 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
         <div
           className={`
             absolute z-[58] bottom-0 h-[12%] w-full
-            flex justify-evenly items-start 
-            sm:w-[50%]
+            flex justify-center items-start space-x-4
             `}
           onClick={(e)=>{
             if(curState === ViewerState.detail) e.stopPropagation()
           }}
         >
-          <div
-            className={`
-              relative
-              flex justify-center items-center
-              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
-              border-orange-200
-
-              hover:overflow-visible cursor-pointer
-              shadow-black/20 border shadow-md active:shadow-sm
-              ${
-                curState === ViewerState.detail?
-                "bg-orange-400 hover:bg-orange-500 active:bg-orange-600":
-                "bg-orange-400/50 hover:bg-orange-500/50 active:bg-orange-600/50"}
-            `}
-            onClick={(e)=>{
+          {/*toolComponent(
+            "編輯", 
+            (<Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
+            "orange",
+            (e)=>{
               e.stopPropagation()
               if(curState === ViewerState.detail)
                 setCurState(ViewerState.success)
               else setCurState(ViewerState.detail)
-            }}
-          >
-            <Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />
-            <div className='
-              absolute -top-8 w-fit px-1.5 py-1 z-55
-              text-center font-bold text-xs text-white whitespace-nowrap
-              bg-orange-400 rounded-full shadow shadow-gray-500'>
-              編輯
-            </div>
-          </div>
-          <div
-            className={`
-              relative
-              flex justify-center items-center
-              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
-              border-blue-200
-
-              hover:overflow-visible cursor-pointer
-              shadow-black/20 border shadow-md active:shadow-sm
-              ${
-                curState === ViewerState.detail?
-                "bg-blue-400 hover:bg-blue-500 active:bg-blue-600":
-                "bg-blue-400/50 hover:bg-blue-500/50 active:bg-blue-600/50"}
-            `}
-            onClick={(e)=>{
+            }
+          )*/}
+          {toolComponent(
+            "詳細資訊", 
+            (<Info size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
+            "blue",
+            (e)=>{
               e.stopPropagation()
               if(curState === ViewerState.detail)
                 setCurState(ViewerState.success)
               else setCurState(ViewerState.detail)
-            }}
-          >
-            <Info size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />
-            <div className='
-              absolute -top-8 w-fit px-1.5 py-1 z-55
-              text-center font-bold text-xs text-white whitespace-nowrap
-              bg-blue-400 rounded-full shadow shadow-gray-500'>
-              詳細資訊
-            </div>
-          </div>
-          <div
-            className='
-              relative
-              flex justify-center items-center
-              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
-              
-              hover:overflow-visible cursor-pointer
-              shadow-black/20 border shadow-md active:shadow-sm
-              
-              bg-green-400/50 border-green-200 hover:bg-green-500/50 active:bg-green-600/50'
-            onClick={(e)=>{
+            }
+          )}
+          {toolComponent(
+            "檢視報告", 
+            (<FileText size={30} color="#ffffff" />),
+            "green",
+            (e)=>{
               e.stopPropagation()
               if(data.response === null || data.response === undefined) return
 
@@ -885,15 +816,8 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
               localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
               
               window.open("/report", "_blank")
-            }}>
-            <FileText size={30} color="#ffffff" />
-            <div className='
-              absolute -top-8 w-fit px-1.5 py-1 z-55
-              text-center font-bold text-xs text-white whitespace-nowrap
-              bg-green-400 rounded-full shadow shadow-gray-500'>
-              檢視報告
-            </div>
-          </div>
+            }
+          )}
         </div>
 
         <div
@@ -934,103 +858,4 @@ export function LoadingComponent({message}: {message: string}){
       {message}
     </div>
   );
-}
-
-export async function deleteResponse(userId: string, authToken: string, id: number){
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取回覆。');
-    return;
-  }
-  if (!authToken || authToken === 'fallback-auth-token') {
-    throw new Error('認證失敗：未提供有效的 authToken。');
-  }
-  const url = `${BASE_URL}/response/${id}`;
-  const options = { method: 'DELETE' }
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const result: { error?: string, message?: string } = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-      throw errorMessage;
-    }
-  } catch (e) {
-    console.error(`API 請求最終失敗 (${url}):`, e); 
-    throw e
-  }
-};
-
-export function fetchQuestionnaire(userId: string, authToken: string, id: number){
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取回覆。');
-    return null;
-  }
-  const url = `${BASE_URL}/questionnaire/version/${id}`;
-  return fetchWithRetry<QuestionnaireData>(url, { method: 'GET' }, authToken);
-};
-
-export function fetchResponse(userId: string, authToken: string, id: number){
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取回覆。');
-    return null;
-  }
-  const url = `${BASE_URL}/response/id/${id}`;
-  return fetchWithRetry<ResponseData>(url, { method: 'GET' }, authToken);
-};
-
-export async function fetchResponseList(userId: string, authToken: string): Promise<ResponseMeta[]>{
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取回覆。');
-    return [];
-  }
-  const url = `${BASE_URL}/response/user/${userId}`;
-  return fetchWithRetry<ResponseMeta[]>(url, { method: 'GET' }, authToken);
-};
-
-export async function fetchProjects(userId: string, authToken: string): Promise<ProjectData[]>{
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取專案。');
-    return [];
-  }
-  const url = `${BASE_URL}/project/user/${userId}`;
-  return fetchWithRetry<ProjectData[]>(url, { method: 'GET' }, authToken);
-};
-
-export async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T>{
-  if (!authToken || authToken === 'fallback-auth-token') {
-    throw new Error('認證失敗：未提供有效的 authToken。');
-  }
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-
-    const result: { data?: T, error?: string, message?: string } = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-      throw new Error(errorMessage);
-    }
-
-    // 確保回傳的是 data 欄位
-    //console.error(result.data as T)
-    return result.data as T; 
-  } catch (error) {
-    console.error(`API 請求最終失敗 (${url}):`, error);
-    throw error; 
-  }
 }

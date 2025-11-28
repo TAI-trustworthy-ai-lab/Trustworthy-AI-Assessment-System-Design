@@ -4,6 +4,75 @@ import {
     REPORT_API_BASE 
 } from '@/config/apiConfig';
 
+export interface AnswerData{
+  id: number,
+  responseId: number,
+  questionId: number,
+  optionId: number,
+  value?: number,
+  textValue?: string,
+  createdAt: string,
+  question: {
+    id: number,
+    text: string,
+    category: string,
+    type: string
+  },
+  option: {
+    id: number,
+    text?: string,
+    value?: number
+  }
+}
+
+export interface ResponseMeta{
+  id: number,
+  userId: number,
+  projectId: number,
+  versionId: number,
+  submittedAt: string,
+  label?: string,
+  project: {
+    id: number,
+    name: string
+  },
+  version: {
+    id: number,
+    title: string
+  }
+}
+
+export interface ResponseData{
+  id: number,
+  userId: number,
+  projectId: number,
+  versionId: number,
+  submittedAt: string,
+  label?: string,
+  user: {
+    id: number,
+    name: string,
+    email: string
+  },
+  project: {
+    id: number,
+    name: string
+  },
+  version: {
+    id: number,
+    title: string
+  },
+  answers: AnswerData[]
+}
+
+export enum ViewerState{
+  loading,
+  editing,
+  detail,
+  success,
+  fail
+}
+
 // fetch 函數  FETCH FUNCTION
 async function fetchApi(url: string, options: RequestInit = {}) {
     const userToken = localStorage.getItem('authToken');
@@ -73,3 +142,84 @@ export const generateReport = async (responseId: number) => {
     await fetchApi(url, { method: 'POST' }); 
     return true;
 };
+
+export async function fetchResponseList(userId: string, authToken: string): Promise<ResponseMeta[]>{
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return [];
+  }
+  const url = `${RESPONSE_API_BASE}/user/${userId}`;
+  return fetchWithRetry<ResponseMeta[]>(url, { method: 'GET' }, authToken);
+};
+
+export async function deleteResponse(userId: string, authToken: string, id: number){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return;
+  }
+  if (!authToken || authToken === 'fallback-auth-token') {
+    throw new Error('認證失敗：未提供有效的 authToken。');
+  }
+  const url = `${RESPONSE_API_BASE}/${id}`;
+  const options = { method: 'DELETE' }
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const result: { error?: string, message?: string } = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+      throw errorMessage;
+    }
+  } catch (e) {
+    console.error(`API 請求最終失敗 (${url}):`, e); 
+    throw e
+  }
+};
+
+export function fetchResponse(userId: string, authToken: string, id: number){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return null;
+  }
+  const url = `${RESPONSE_API_BASE}/id/${id}`;
+  return fetchWithRetry<ResponseData>(url, { method: 'GET' }, authToken);
+};
+
+export async function fetchWithRetry<T>(url: string, options: RequestInit = {}, authToken: string | null = null): Promise<T>{
+  if (!authToken || authToken === 'fallback-auth-token') {
+    throw new Error('認證失敗：未提供有效的 authToken。');
+  }
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    const result: { data?: T, error?: string, message?: string } = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    // 確保回傳的是 data 欄位
+    //console.error(result.data as T)
+    return result.data as T; 
+  } catch (error) {
+    console.error(`API 請求最終失敗 (${url}):`, error);
+    throw error; 
+  }
+}

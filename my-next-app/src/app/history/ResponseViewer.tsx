@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {ResponseData} from '@/app/history/page'
+import {
+  ResponseMeta, 
+  ResponseData
+} from "@/services/responseService";
 
 const useRouter = () => {
     return {
@@ -133,6 +136,8 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
   const selectedOptionId = currentAnswer.optionIds?.[0];
+
+  //console.log("option length", options.length)
 
   return (
     <div className={`gap-3 w-full sm:w-fit ${options.length >= 4 ? "grid grid-cols-2" :`grid grid-cols-${options.length}`} `}>
