@@ -425,9 +425,9 @@ export default function HistoryPage() {
                 md:min-w-150
                 md:grid-cols-[1.5fr_60px_2fr_160px_35px]
               ">
-                <div className="size-fit text-gray-600">{t('historyPage.projectName')}</div>
+                <div className=" text-gray-600 truncate">{t('historyPage.projectName')}</div>
                 <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
-                <div className="size-fit text-gray-600">{t('historyPage.questionnaireName')}</div>
+                <div className=" text-gray-600 truncate">{t('historyPage.questionnaireName')}</div>
                 <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
               </div>
               
