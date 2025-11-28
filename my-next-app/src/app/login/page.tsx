@@ -6,6 +6,8 @@ import Header from '@/components/Header';
 import { useTranslation } from "react-i18next";
 import { login, register } from "@/services/userService";
 
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
 export default function LoginPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -30,12 +32,15 @@ export default function LoginPage() {
             const data = await login({ email, password });
             const token = data?.data?.token;
             const user = data?.data?.user;
+            const estimatedExpiryTimestampMs = Date.now() + ONE_HOUR_MS;
 
             // If response.ok, save user info into local storage
             if (token && user && user.id && user.role) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('userId', user.id.toString());
                 localStorage.setItem('userRole', user.role);
+                localStorage.setItem('userName', user.name);
+                localStorage.setItem('authExpiry', estimatedExpiryTimestampMs.toString());
                 router.push('/home');
             } else {
                 throw new Error(t('loginPage.login.errorIncomplete'));

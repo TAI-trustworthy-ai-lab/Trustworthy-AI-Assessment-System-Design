@@ -1,26 +1,85 @@
-// 正確登出
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react'; // 引入 useEffect
 import { useRouter } from 'next/navigation';
+import { USER_API_BASE } from '../config/apiConfig';
 
-const AUTH_TOKEN_KEY = 'authToken'; 
-const USER_ID_KEY = 'userId'; 
+const AUTH_TOKEN_KEY = 'authToken';
+const AUTH_EXPIRY_KEY = 'authExpiry'; 
+const USER_ID_KEY = 'userId';
 const USER_ROLE_KEY = 'userRole';
 const QUESTIONNAIRE_ID_KEY = 'QuestionnaireID';
 const CURRENT_PROJECT_ID_KEY = 'currentProjectId';
 const RESPONSE_ID_KEY = 'responseId';
 
-// 假設您的後端基礎 URL 和登出 API 端點
-const BASE_URL = 'http://localhost:3001/api/user'; 
+
+const formatTime = (seconds: number): string => {
+    const absSeconds = Math.max(0, seconds);
+    const h = Math.floor(absSeconds / 3600);
+    const m = Math.floor((absSeconds % 3600) / 60);
+    const s = Math.floor(absSeconds % 60);
+
+    return [h, m, s]
+        .map(v => v < 10 ? "0" + v : v)
+        .join(":");
+}
+
 
 export const useAuth = () => {
     const router = useRouter();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-    const handleLogout = useCallback(async () => {
-        if (isLoggingOut) return;
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [secondsUntilLogout, setSecondsUntilLogout] = useState<number | null>(null);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+
+        const checkAuthExpiry = () => {
+            if (typeof window === 'undefined') return;
+
+            // 1. 檢查 Token 和 Expiry 是否存在
+            const token = localStorage.getItem(AUTH_TOKEN_KEY);
+            const expiryString = localStorage.getItem(AUTH_EXPIRY_KEY);
+
+            if (!token || !expiryString) {
+                setSecondsUntilLogout(null);
+                return;
+            }
+            
+            // 2. 計算剩餘時間 (秒)
+            const expiryTime = parseInt(expiryString, 10); // 假設儲存的是 Unix Timestamp (毫秒)
+            const now = Date.now();
+            const remainingSeconds = Math.floor((expiryTime - now) / 1000);
+
+            setSecondsUntilLogout(remainingSeconds);
+
+            // 3. 如果時間到或已過期，則執行登出
+            if (remainingSeconds <= 0) {
+                console.log("Token 已過期，執行自動登出。");
+                handleLogout(true); // 傳入 true 表示是自動登出
+                return;
+            }
+            
+            // 4. 設定下一次檢查的時間
+            timer = setTimeout(checkAuthExpiry, 1000); 
+        };
+        
+        // 第一次檢查
+        checkAuthExpiry();
+
+        // 清理函數：組件卸載時清除定時器
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, []); 
+
+    // 修改 handleLogout 接受一個可選參數 isAutomatic
+    const handleLogout = useCallback(async (isAutomatic = false) => {
+        if (isLoggingOut && !isAutomatic) return; 
         setIsLoggingOut(true);
+        setSecondsUntilLogout(0); 
 
         // 1. 嘗試從 localStorage 獲取 Token
         let userToken: string | null = null;
@@ -30,8 +89,7 @@ export const useAuth = () => {
 
         try {
             if (userToken) {
-                // 2. 呼叫後端登出 API (如果您的後端需要此步驟)
-                const response = await fetch(`${BASE_URL}/logout`, { 
+                const response = await fetch(`${USER_API_BASE}/logout`, { 
                     method: "DELETE", 
                     headers: {
                         'Authorization': `Bearer ${userToken}`, 
@@ -42,26 +100,22 @@ export const useAuth = () => {
                 if (!response.ok) {
                     if (response.status === 401) {
                         console.log("後端登出 API 呼叫失敗，原因：Token 已過期 (401)。視為成功登出。");
-                        return; 
+                    } else {
+                        let errorDetails: any = { message: '無法解析錯誤細節' };
+                        try {
+                             const contentType = response.headers.get('content-type');
+                             if (contentType && contentType.includes('application/json')) {
+                                  errorDetails = await response.json();
+                             } else {
+                                  const errorText = await response.text();
+                                  errorDetails = { message: errorText.substring(0, 100) };
+                             }
+                        } catch (e) { }
+                        console.error(
+                            `登出 API 呼叫失敗 (HTTP 錯誤 ${response.status})`, 
+                            errorDetails
+                        );
                     }
-
-                    let errorDetails: any = { message: '無法解析錯誤細節' };
-                    try {
-                        const contentType = response.headers.get('content-type');
-                        if (contentType && contentType.includes('application/json')) {
-                             errorDetails = await response.json();
-                        } else {
-                            // 如果不是 JSON，嘗試讀取文本
-                            const errorText = await response.text();
-                            errorDetails = { message: errorText.substring(0, 100) };
-                        }
-                    } catch (e) {
-                         // 保持 errorDetails 為預設值
-                    }
-                    console.error(
-                        `登出 API 呼叫失敗 (HTTP 錯誤 ${response.status})`, 
-                        errorDetails
-                    );
                 } else {
                     console.log("後端登出成功");
                 }
@@ -69,26 +123,32 @@ export const useAuth = () => {
         } catch (error) {
             console.error("登出 API 呼叫時發生錯誤:", error);
         } finally {
-            // 3. 移除前端 Token
+            // 3. 移除前端 Token 和過期時間
             if (typeof window !== 'undefined') {
                 localStorage.removeItem(AUTH_TOKEN_KEY);
-                localStorage.removeItem(USER_ID_KEY);     
+                localStorage.removeItem(AUTH_EXPIRY_KEY); // 【新增】移除過期時間
+                localStorage.removeItem(USER_ID_KEY); 
                 localStorage.removeItem(USER_ROLE_KEY);
                 localStorage.removeItem(QUESTIONNAIRE_ID_KEY);
                 localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
                 localStorage.removeItem(RESPONSE_ID_KEY);
             }
 
-            // 4. 跳轉到登入頁面 (假設登入頁面是 '/')
+            // 4. 跳轉到登入頁面
             router.replace('/'); 
             setIsLoggingOut(false);
         }
     }, [isLoggingOut, router]);
 
+    // 返回剩餘時間字串
+    const timeUntilLogout = secondsUntilLogout !== null && secondsUntilLogout > 0
+        ? formatTime(secondsUntilLogout)
+        : null;
+
     return {
         isLoggingOut,
         handleLogout,
-        // 可選：方便檢查是否登入
+        timeUntilLogout, 
         isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem(AUTH_TOKEN_KEY) : false,
     };
 };

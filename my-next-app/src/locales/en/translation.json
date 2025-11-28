@@ -75,7 +75,9 @@
     "loggingOut": "Logging out...",
     "logoutTitle": "Logout",
     "loggingOutTitle": "Logging out...",
-    "verifying": "Verifying, please wait..."
+    "verifying": "Verifying, please wait...",
+    "autoLogoutPrefix": "Auto logout in",
+    "autoLogoutSuffix": " "
   },
 
   "homePage": {

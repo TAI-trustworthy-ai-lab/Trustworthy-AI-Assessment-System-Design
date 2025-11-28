@@ -77,7 +77,9 @@
     "loggingOut": "登出中...",
     "logoutTitle": "登出",
     "loggingOutTitle": "登出中...",
-    "verifying": "驗證中，請稍候..."
+    "verifying": "驗證中，請稍候...",
+    "autoLogoutPrefix": "系統將於",
+    "autoLogoutSuffix": "自動登出"
   },
 
   "homePage": {
