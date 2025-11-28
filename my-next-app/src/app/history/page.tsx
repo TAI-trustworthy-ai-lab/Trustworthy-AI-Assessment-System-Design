@@ -7,6 +7,43 @@ import ProtectedLayout from '@/components/ProtectedLayout';
 import {ProjectData} from '@/app/home/page'
 import ResponseViewer, {QuestionnaireData, styleSelected, styleUnselected} from './ResponseViewer';
 import { Info, Edit, FileText } from 'lucide-react'
+import { useTranslation } from 'react-i18next';
+
+// ----------------------------------------------------
+// 翻譯工具函式 (Google Translate API-X)
+// ----------------------------------------------------
+const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+const translateText = async (text: string, source = "zh-CN", target = "en", capitalize = false) => {
+    const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target })
+    });
+
+    const data = await res.json();
+    return data.translatedText;
+};
+//用於條件或迴圈時的翻譯
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
+    const { i18n } = useTranslation();
+    const [translated, setTranslated] = useState(text);
+
+    useEffect(() => {
+        if (i18n.language.startsWith("en")) {
+            translateText(text, "zh-CN", "en").then(result => {
+                setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+            });
+        } else {
+            setTranslated(text);
+        }
+    }, [text, i18n.language]);
+
+    return <>{translated}</>;
+};
+
 
 // 後端 API 基礎 URL ************ 待更改API ************
 const BASE_URL = "http://localhost:3001/api";
@@ -100,7 +137,7 @@ export default function HistoryPage() {
       questionnaire: QuestionnaireData | null
   }>>({})
   const [infoText, setInfoText] = useState<string>("")
-
+  const { i18n, t } = useTranslation();
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
@@ -231,9 +268,9 @@ export default function HistoryPage() {
     if(curResponse){
       try{
         delResponse(curResponse.id)
-        setInfoText("刪除成功")
+          setInfoText(t('historyPage.deleteSuccess'))
       } catch(e){
-        setInfoText("刪除失敗")
+          setInfoText(t('historyPage.deleteFail'))
         console.error("刪除回應時發生錯誤", e)
       }
     }
@@ -281,26 +318,25 @@ export default function HistoryPage() {
   }, [menuPosition]);
 
   // 載入中狀態顯示
-  if (isLoading) return (
-    <div className='h-screen items-center justify-center'>
-      <LoadingComponent message="載入回應列表中..." />
-    </div>
-  );
-  
-  // 認證失敗/ID 缺失狀態顯示
-  if (!userId || !authToken) {
-    return (
-      <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-        <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-          <h1 className="text-2xl font-bold mb-4 text-red-700">認證失敗或用戶 ID 缺失</h1>
-          <p className="text-red-600">
-            無法從瀏覽器的 Local Storage 獲取有效的 `userId` 或 `authToken`。<br />
-            請確保您已登入且資料已正確儲存。
-          </p>
+    if (isLoading) return (
+        <div className='h-screen items-center justify-center'>
+            <LoadingComponent message={t('historyPage.loadingResponses')} />
         </div>
-      </div>
     );
-  }
+  
+    // 認證失敗/ID 缺失狀態顯示
+    if (!userId || !authToken) {
+        return (
+            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
+                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
+                    <h1 className="text-2xl font-bold mb-4 text-red-700">{t('historyPage.authFailTitle')}</h1>
+                    <p className="text-red-600">
+                        {t('historyPage.authFailMessage')}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
   return (
     <ProtectedLayout>
@@ -347,7 +383,7 @@ export default function HistoryPage() {
               onClick={(e) => e.stopPropagation()} // avoid clicking background
             >
               <ComfirmWindow
-                text="刪除後無法復原，確認刪除？"
+                text={t('historyPage.deleteConfirm')}
                 comfirm={deleteResponseHandler}
                 cancel={()=>setIsDeleteWindowOpen(false)}/>
             </div>
@@ -374,7 +410,7 @@ export default function HistoryPage() {
                 }
             }}}
           >
-            開啟
+            {t('historyPage.open')}
           </div>
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
@@ -393,10 +429,10 @@ export default function HistoryPage() {
               //router.push('/report')
             }}
           >
-            檢視報告
+                      {t('historyPage.viewReport')}
           </div>
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
-            下載
+                      {t('historyPage.download')}
           </div>
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
@@ -406,7 +442,7 @@ export default function HistoryPage() {
               setIsOpen(true)
             }}
           >
-            編輯
+                      {t('historyPage.edit')}
           </div>
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
@@ -423,13 +459,13 @@ export default function HistoryPage() {
                 }
             }}}
           >
-            詳細資訊
+                      {t('historyPage.detailInfo')}
           </div>
           <div
             className="flex items-center size-full px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200"
             onClick={()=>{setShowMenu(false); setIsDeleteWindowOpen(true)}}
           >
-            刪除
+                      {t('historyPage.delete')}
           </div>
         </ContextMenuStrip>
       )}
@@ -440,7 +476,7 @@ export default function HistoryPage() {
       >
         <AuthHeader />
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
-          歷史紀錄
+                  {t('historyPage.historyTitle')}
         </h1>
         <div className="
             flex justify-center
@@ -459,7 +495,7 @@ export default function HistoryPage() {
                   mt-10 w-full
                   italic font-bold text-gray-400 text-center text-xl
                 '>
-                  - 目前沒有可供查閱的歷史記錄 -
+                  {t('historyPage.noHistory')}
                 </div>
               )
             }
@@ -478,10 +514,10 @@ export default function HistoryPage() {
                 md:min-w-150
                 md:grid-cols-[1.5fr_60px_2fr_160px_35px]
               ">
-                <div className="size-fit text-gray-600">專案名稱</div>
-                <div className="hidden size-fit text-gray-600 md:flex">版本</div>
-                <div className="size-fit text-gray-600">問卷名稱</div>
-                <div className="hidden size-fit text-gray-600 sm:flex md:flex">填寫日期</div>
+                <div className="size-fit text-gray-600">{t('historyPage.projectName')}</div>
+                <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
+                <div className="size-fit text-gray-600">{t('historyPage.version')}</div>
+                <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.version')}</div>
               </div>
               
               {responseList.map((data) => {
@@ -678,8 +714,8 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}:{
 
 export function formatRelativeTime(isoString: string): string {
   const date = new Date(isoString);
-  const now = new Date();
-
+    const now = new Date();
+    const { i18n, t } = useTranslation();
   const diff = now.getTime() - date.getTime();
   const sec = Math.floor(diff / 1000);
   const min = Math.floor(sec / 60);
@@ -687,31 +723,32 @@ export function formatRelativeTime(isoString: string): string {
   const day = Math.floor(hr / 24);
 
   // formated time difference
-  if (sec < 60) return "剛剛";
-  if (min < 60) return `${min} 分鐘前`;
-  if (hr < 24)  return `${hr} 小時前`;
+    if (sec < 60) return t('historyPage.justNow');
+    if (min < 60) return t('historyPage.minutesAgo', { count: min });
+    if (hr < 24) return t('historyPage.hoursAgo', { count: hr });
 
   // yesterday / the day before yesterday (or just "2 days ago")
-  if (day === 1) return "昨天";
-  if (day === 2) return "前天";
+    if (day === 1) return t('historyPage.yesterday');
+    if (day === 2) return t('historyPage.dayBeforeYesterday');
+   
 
   // xx days ago
-  if (day < 7) return `${day} 天前`;
+    if (day < 7) return t('historyPage.daysAgo', { count: day });
 
   // this year "MM/DD", or other format?
   const thisYear = now.getFullYear();
-  if (date.getFullYear() === thisYear) {
-    return `${date.getMonth() + 1} 月 ${date.getDate()} 日`;
-  }
+    if (date.getFullYear() === thisYear) {
+        return t('historyPage.thisYearDate', { month: date.getMonth() + 1, day: date.getDate() });
+    }
 
   // over one year "YYYY/MM/DD", or other format?
-  return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+    return t('historyPage.fullDate', { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() });
 }
 
 export function ResponseWindow({state, data}: {state: ViewerState, data:{response: ResponseData | null, questionnaire: QuestionnaireData | null}}){
   const [curState, setCurState] = useState(state)
   const [transDone, setTransDone] = useState(true)
-
+    const { i18n, t } = useTranslation();
   useEffect(()=>{
     setCurState(state)
   }, [state])
@@ -727,7 +764,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
   const detailPanel = (<div
       className="flex flex-col items-center justify-end w-full size-fit"
     >
-      <div className="text-black text-2xl font-semibold mb-7">詳細資訊</div>
+      <div className="text-black text-2xl font-semibold mb-7">{t('historyPage.detailInfo')}</div>
       <div 
         className={`
           w-full px-3 flex justify-center
@@ -738,37 +775,37 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
       >
         <div
           className={
-            `grid grid-cols-[135px_1fr] max-w-fit w-[100%] space-y-2
+            `grid grid-cols-[180px_1fr] max-w-fit w-[100%] space-y-2
             whitespace-nowrap`}
         >
-          <div>使用者:</div>
+          <div>{t('historyPage.user')}</div>
           <div>{data.response?.user.name}</div>
 
-          <div>使用者 ID:</div>
+          <div>{t('historyPage.userId')}</div>
           <div>{data.response?.user.id}</div>
 
-          <div>使用者帳號:</div>
+          <div>{t('historyPage.userEmail')}</div>
           <div>{data.response?.user.email}</div>
 
-          <div>專案名稱:</div>
+          <div>{t('historyPage.projectName')}</div>
           <div>{data.response?.project.name}</div>
 
-          <div>專案 ID:</div>
+          <div>{t('historyPage.projectId')}</div>
           <div>{data.response?.project.id}</div>
 
-          <div>問卷名稱:</div>
+          <div>{t('historyPage.questionnaireName')}</div>
           <div>{data.response?.version.title}</div>
 
-          <div>問卷 ID:</div>
+          <div>{t('historyPage.questionnaireId')}</div>
           <div>{data.response?.version.id}</div>
 
-          <div>標籤:</div>
+          <div>{t('historyPage.label')}</div>
           <div>{data.response?.label}</div>
 
-          <div>回應 ID:</div>
+          <div>{t('historyPage.responseId')}</div>
           <div>{data.response?.id}</div>
 
-          <div>提交時間:</div>
+          <div>{t('historyPage.submittedAt')}</div>
           <div>{data.response?.submittedAt}</div>
 
         </div>
@@ -780,7 +817,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
     || (data.response === null || data.questionnaire === null)
   ) return (
     <div className="flex items-center justify-center w-full h-full">
-      <h2 className="text-red-600 text-lg font-semibold mb-4">獲取回應失敗</h2>
+          <h2 className="text-red-600 text-lg font-semibold mb-4">{t('historyPage.fetchFail')}</h2>
     </div>
   )
 
@@ -834,7 +871,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
               absolute -top-8 w-fit px-1.5 py-1 z-55
               text-center font-bold text-xs text-white whitespace-nowrap
               bg-orange-400 rounded-full shadow shadow-gray-500'>
-              編輯
+                {t('historyPage.edit')}
             </div>
           </div>
           <div
@@ -863,7 +900,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
               absolute -top-8 w-fit px-1.5 py-1 z-55
               text-center font-bold text-xs text-white whitespace-nowrap
               bg-blue-400 rounded-full shadow shadow-gray-500'>
-              詳細資訊
+                {t('historyPage.detailInfo')}
             </div>
           </div>
           <div
@@ -891,7 +928,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
               absolute -top-8 w-fit px-1.5 py-1 z-55
               text-center font-bold text-xs text-white whitespace-nowrap
               bg-green-400 rounded-full shadow shadow-gray-500'>
-              檢視報告
+                {t('historyPage.viewReport')}
             </div>
           </div>
         </div>
