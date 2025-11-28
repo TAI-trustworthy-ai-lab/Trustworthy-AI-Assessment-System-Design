@@ -4,21 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
-import translate from 'google-translate-api-x'; // **************** cmt：應該可以刪掉？
-
-// ----------------------------------------------------
-// 翻譯工具函式 (Google Translate API-X)
-// ----------------------------------------------------
-const translateText = async (text: string, source = "zh-CN", target = "en") => {
-    const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: text, source, target })
-    });
-
-    const data = await res.json();
-    return data.translatedText;
-};
 
 // ----------------------------------------------------
 //  指標從後端英文翻成中文 TAI INDICATOR ENG TO CHI
