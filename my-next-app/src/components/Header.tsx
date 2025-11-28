@@ -41,14 +41,13 @@ export default function Header({ children, titleHref = '/' }: HeaderProps) {
                 flex space-x-2 sm:space-x-5 items-center
                 flex-shrink-0 
                 '>
-                    {/* 在這裏加上語言切換按鈕 */}
                     <select
                         value={i18nInstance.language}
                         onChange={changeLanguage}
                         className='
                             border border-gray-300 rounded 
                             px-1 sm:px-2 py-0.5 sm:py-1 text-sm sm:text-base 
-                            bg-blue-50 text-gray-700 /* <--- 修正點：使用淺藍色 bg-blue-50 */
+                            bg-blue-50 text-gray-700 
                         '
                     >
                         <option value=''>EN</option>
