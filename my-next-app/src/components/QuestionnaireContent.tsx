@@ -24,7 +24,7 @@ const capitalizeFirstLetter = (text: string) => {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
-const translateText = async (text: string, source = "zh-CN", target = "en", capitalize = false) => {
+const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,7 +45,9 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text
                 setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
             });
         } else {
-            setTranslated(text);
+            translateText(text, "en", "zh-TW").then(result => {
+                setTranslated(result);
+            });
         }
     }, [text, i18n.language]);
 
