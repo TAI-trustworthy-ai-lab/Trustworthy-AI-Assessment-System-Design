@@ -115,7 +115,7 @@ export default function ReportPage() {
             
         } catch (error) {
             const message = error instanceof Error ? error.message : "獲取報告時發生錯誤。";
-            setErrorMessage(`報告載入失敗: ${message}。也許登入時限已過期：請重新登入後至首頁查看您的報告記錄。`);
+            setErrorMessage(`報告載入失敗: ${message}。`);
             setLoadingStatus('error');
             console.error("Failed to fetch report:", error);
         }
