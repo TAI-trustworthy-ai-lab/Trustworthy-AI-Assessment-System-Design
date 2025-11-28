@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import translate from 'google-translate-api-x';
 
 // ----------------------------------------------------
-//  其他檔案資料
+//  其他檔案資料 IMPORT FROM OTHERS FOLDER
 // ----------------------------------------------------
 import { CATEGORY_MAP } from '@/config/constants'; 
 import { 
@@ -63,7 +63,7 @@ const useRouter = () => {
 };
 
 // ----------------------------------------------------
-// 後端回傳資料結構定義
+// 後端回傳資料結構定義 BACKEND DATA STRUCT. HANDLE
 // ----------------------------------------------------
 interface Option {
     id: number;
@@ -115,7 +115,7 @@ type PayloadAnswer = {
 
 type Answers = Record<number, AnswerValue>;
 // ----------------------------------------------------
-// 傳入後端 Answer 格式
+//  傳入後端 Answer 格式 FORMAT FOR ANS
 // ----------------------------------------------------
 const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Question[]): PayloadAnswer => {
     return Object.entries(currentAnswers).reduce<PayloadAnswer>((acc, [idString, answerValue]) => {
@@ -125,7 +125,7 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
         if (!question) return acc;
         const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
 
-        // 處理不同類型的答案
+        // handle different type of questions
         if (question.type === 'SCALE' || question.type === 'SINGLE_CHOICE') {
             const optionId = answerValue.optionIds?.[0] ?? null;
             acc.push({
@@ -150,7 +150,7 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
                 optionId: null,
                 optionIds: null,
                 value: null,
-                textValue: answerValue.textValue ?? null, // 文字回答或 null
+                textValue: answerValue.textValue ?? null, 
             });
         }
         return acc;
@@ -184,7 +184,6 @@ const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
     return (
         <div className="fixed inset-0 z-[100] bg-gray-800/40 bg-opacity-70 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
             <div className="flex flex-col items-center p-6 bg-white rounded-xl shadow-2xl">
-                {/* 這裡使用一個旋轉的齒輪圖標，或替換成其他有趣的 SVG/動畫 */}
                 <svg
                     className="w-16 h-16 text-indigo-600 animate-spin mb-4"
                     viewBox="0 0 24 24"
@@ -194,7 +193,6 @@ const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 >
-                    {/* 旋轉齒輪或類似圖案 */}
                     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
                 </svg>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{message}</h3>
@@ -205,7 +203,7 @@ const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 };
 
 // ----------------------------------------------------
-// 錯誤提示組件
+// 錯誤提示組件 ERROR COMPONENT
 // ----------------------------------------------------
 const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
     if (!message) return null;
@@ -227,7 +225,7 @@ const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({
 
 
 // ----------------------------------------------------
-// 根據 Type 渲染不同 UI
+// 根據 Type 渲染不同 UI  QUESTION TYPE UI
 // ----------------------------------------------------
 interface QuestionRendererProps {
     question: Question;
@@ -235,9 +233,8 @@ interface QuestionRendererProps {
     onAnswer: (answer: AnswerValue) => void;
 }
 
-// 1. SCALE 題型
+// 1. SCALE type
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    // 假設選項已經按 order 排序 + options 存在
     const options = question.options || [];
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
@@ -268,7 +265,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
     );
 };
 
-// 2. SINGLE_CHOICE 題型
+// 2. SINGLE_CHOICE
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
     const selectedOptionId = currentAnswer.optionIds?.[0];
@@ -292,7 +289,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
     );
 };
 
-// 3. MULTIPLE_CHOICE 題型
+// 3. MULTIPLE_CHOICE 
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
     const selectedOptionIds = currentAnswer.optionIds || [];
@@ -300,10 +297,10 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
     const handleOptionClick = (optionId: number) => {
         let newSelectedOptionIds;
         if (selectedOptionIds.includes(optionId)) {
-            // 如果已經選中，則取消選中
+            // If selected, remove previous selection
             newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
         } else {
-            // 如果未選中，則選中
+            // If didn't select, select
             newSelectedOptionIds = [...selectedOptionIds, optionId];
         }
 
@@ -337,7 +334,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
     );
 };
 
-// 4. TEXT 題型
+// 4. TEXT
 const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const textValue = currentAnswer.textValue || '';
     const { t } = useTranslation();
@@ -375,7 +372,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 
 // ----------------------------------------------------
-// 問卷內容主組件
+// 問卷內容主組件 QUESTIONNAIRE INFO CONTENT
 // ----------------------------------------------------
 
 export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
@@ -397,16 +394,16 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // =============
     //     分頁
     // =============
-        // 1. 根據指標映射表獲取分頁標題
+        // 1. Using TAI MAP for description of every TAI
     const getPageTitle = (category: string): string => {
         return CATEGORY_MAP[category.toUpperCase()] || category;
     };
 
-        // 2. 分頁資料結果處理
+        // 2. Data result handling for every page
     const allPages: PageData[] = useMemo(() => {
         if (!questionnaire) return [];
 
-        // 按 category 分組
+        // Reorder category, by TAI indicators
         const grouped = questionnaire.questions.reduce((acc, question) => {
             const category = question.category;
             if (!acc[category]) {
@@ -416,7 +413,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             return acc;
         }, {} as Record<string, PageData & { category: string }>);
 
-        // 每個頁面的問題按 order 排序
+        // Order sequences for pages
         return Object.values(grouped)
             .sort((a, b) => {
                 const keys = Object.keys(CATEGORY_MAP);
@@ -436,7 +433,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const currentPageData = allPages[currentPage];
 
     // =============
-    //    後端API
+    //  BCKEND API
     // =============
     // 1. 取問卷内容
     const fetchQuestionnaire = useCallback(async () => {

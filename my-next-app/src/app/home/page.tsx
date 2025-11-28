@@ -21,13 +21,13 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
 };
 
 // ----------------------------------------------------
-// 指標從後端英文翻成中文對照表
+//  指標從後端英文翻成中文 TAI INDICATOR ENG TO CHI
 // ----------------------------------------------------
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
 
 // ----------------------------------------------------
-// 後端回傳資料結構
+//   資料結構 DATA STRUCTURE FROM SERVICES
 // ----------------------------------------------------
 import { 
     fetchProjects, 
@@ -39,7 +39,7 @@ import {
 
 
 // ----------------------------------------------------
-// 專案卡片元件處理
+//  專案卡片元件處理 CARD UI
 // ----------------------------------------------------
 
 interface ProjectCardProps {
@@ -52,7 +52,7 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({ index, projectName, projectDescription, onClick }) => {
     const { t } = useTranslation();
 
-    // 循環使用顏色
+    // Cards' color
     const colors = [
         "bg-sky-400", "bg-cyan-400", "bg-blue-400", "bg-indigo-400",
         "bg-sky-500", "bg-cyan-500", "bg-blue-500", "bg-indigo-500",
@@ -92,7 +92,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ index, projectName, projectDe
 
 
 // ----------------------------------------------------
-// 新增專案處理
+//  新增專案處理 CREATE PROJECT
 // ----------------------------------------------------
 
 interface AddProjectModalProps {
@@ -115,7 +115,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // 當 Modal 打開時重置狀態
+    // When Modal is open, load
     useEffect(() => {
         if (isModalOpen) {
             setProjectName('');
@@ -128,7 +128,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         }
     }, [isModalOpen, currentProjectCount]);
 
-
+    // When create, 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -140,8 +140,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
         setIsLoading(true);
         try {
+            // Create successfully
             await onAddProject(projectName.trim(), projectDescription.trim());
-            // 成功後關閉
             closeModal();
         } catch (error: any) {
             console.error('新增專案失敗 (Modal 捕獲):', error.message);
@@ -159,23 +159,21 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-            {/* Modal 內容框 */}
+            {/* Modal Iinformation box */}
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 sm:mx-0 animate-in fade-in zoom-in duration-300">
                 <h2 className="text-center text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
 
-                {/* 提示訊息優化區塊 */}
+                {/* hint / info for user */}
                 <div className="mb-6 space-y-2">
                     <p className={`text-sm ${limitTextColor} border-l-4 ${limitBorderColor} pl-2`}>
-                        {/*<b>系統限制：</b> 最多可新增 <b>{MAX_PROJECTS}</b> 個專案 (當前: <b>{currentProjectCount}</b> 個)*/}
                         <b>{t('homePage.系統限制')}：</b> {t('homePage.最多可新增')} <b>{MAX_PROJECTS}</b> {t('homePage.個專案')} ({t('homePage.當前')}: <b>{currentProjectCount}</b> {t('homePage.個')})
                     </p>
                     <p className="text-sm text-amber-600 border-l-4 border-amber-400 pl-2">
-                        {/*<b>重要提醒：</b> 專案名稱與描述在建立後將無法變更*/}
                         <b>{t('homePage.重要提醒')}：</b> {t('homePage.專案名稱與描述在建立後將無法變更')}
                     </p>
                 </div>
 
-                {/* 錯誤提示 */}
+                {/* error box */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                         <span className="block sm:inline">{error}</span>
@@ -183,7 +181,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    {/* 專案名稱輸入 */}
+                    {/* Project name */}
                     <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">{t("homePage.專案名稱")}<span className="text-red-500"> *</span></label>
                     <input
                         id="projectName"
@@ -196,7 +194,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         required
                     />
 
-                    {/* 專案描述輸入 */}
+                    {/* Project description */}
                     <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">{t("homePage.專案描述")}</label>
                     <textarea
                         id="projectDescription"
@@ -208,6 +206,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         disabled={isLoading}
                     />
 
+                    {/* Buttons */}
                     <div className="flex justify-end space-x-3">
                         <button
                             type="button"
@@ -238,12 +237,8 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 };
 
 
-
-
-
-
 // ----------------------------------------------------
-// 顯示專案内容處理
+//  顯示專案内容處理 PROJECT MODAL
 // ----------------------------------------------------
 
 interface ViewProjectModalProps {
@@ -310,8 +305,9 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             return dateString;
         }
     };
+
     // ----------------------------------------------------
-    // 刪除專案處理
+    //  刪除專案處理 DELETE PROJECT
     // ----------------------------------------------------
 
     interface ConfirmDeleteModalProps {
@@ -335,13 +331,15 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
         return (
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in duration-300 border-t-4 border-red-500">
+                    {/* Titles */}
                     <h2 className="text-xl font-bold mb-4 text-red-700">
                         {t("homePage.confirmDelete.title")}
                     </h2>
                     <p className="text-gray-700 mb-6">
                         {t("homePage.confirmDelete.message", { projectName })}
                     </p>
-
+                    
+                    {/* Buttons */}
                     <div className="flex justify-end space-x-3">
                         <button
                             type="button"
@@ -387,6 +385,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
         );
     };
 
+    // cont.
     const renderTaiOrders = (taiOrders: TaiOrder[] | undefined) => {
         if (!taiOrders || taiOrders.length === 0) {
             return (
@@ -528,7 +527,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
 
 
 // ----------------------------------------------------
-// 主頁元件 XD
+//  主頁元件  MAIN UI  XD
 // ----------------------------------------------------
 
 const Home = () => {
