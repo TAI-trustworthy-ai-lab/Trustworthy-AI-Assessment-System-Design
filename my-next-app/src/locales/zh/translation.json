@@ -103,7 +103,7 @@
       "initializing": "載入專案列表...",
       "projects": "載入專案列表..."
     },
-    
+
     "error": {
       "loadProjects": "載入專案失敗:",
       "missingAuth": "認證資訊缺失，請重新登入。",
@@ -233,7 +233,48 @@
     "progress": {
       "page": "第 {{current}} / {{total}} 頁"
     }
+  },
+  "historyPage": {
+    "loadingResponses": "載入回應列表中...",
+    "authFailTitle": "認證失敗或用戶 ID 缺失",
+    "authFailMessage": "無法從瀏覽器的 Local Storage 獲取有效的 userId 或 authToken。請確保您已登入且資料已正確儲存。",
+    "deleteSuccess": "刪除成功",
+    "deleteFail": "刪除失敗",
+    "deleteConfirm": "刪除後無法復原，確認刪除？",
+    "historyTitle": "歷史紀錄",
+    "noHistory": "- 目前沒有可供查閱的歷史記錄 -",
+    "open": "開啟",
+    "viewReport": "檢視報告",
+    "download": "下載",
+    "edit": "編輯",
+    "detailInfo": "詳細資訊",
+    "delete": "刪除",
+    "confirm": "確認",
+    "cancel": "取消",
+    "projectName": "專案名稱",
+    "version": "版本",
+    "questionnaireName": "問卷名稱",
+    "submitDate": "填寫日期",
+    "user": "使用者:",
+    "userId": "使用者 ID:",
+    "userEmail": "使用者帳號:",
+    "projectId": "專案 ID:",
+    "questionnaireTitle": "問卷名稱:",
+    "questionnaireId": "問卷 ID:",
+    "label": "標籤:",
+    "responseId": "回應 ID:",
+    "submittedAt": "提交時間:",
+    "fetchFail": "獲取回應失敗",
+    "loading": "載入中...",
+    "justNow": "剛剛",
+    "minutesAgo": "{{count}} 分鐘前",
+    "hoursAgo": "{{count}} 小時前",
+    "yesterday": "昨天",
+    "dayBeforeYesterday": "前天",
+    "daysAgo": "{{count}} 天前",
+    "thisYearDate": "{{month}} 月 {{day}} 日",
+    "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日"
   }
-  
+
 
 }
