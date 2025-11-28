@@ -323,7 +323,7 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
   }
 
   return (
-    <div className="size-full bg-white px-6 pt-26 pb-20 overflow-y-scroll">
+    <div className="size-full bg-white px-6 pt-13 pb-20 overflow-y-scroll">
       {/* 問卷題目 titleA */}
       <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
         {q.title}

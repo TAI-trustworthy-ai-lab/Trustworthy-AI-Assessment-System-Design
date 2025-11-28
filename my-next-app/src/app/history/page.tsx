@@ -788,121 +788,135 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
     <>
       <div
         className="relative flex items-center justify-center w-full h-full"
-        onClick={() => setCurState(ViewerState.success)}
+        onClick={() => {setCurState(ViewerState.success)}}
       >
+        <div className={`
+          absolute bottom-0 z-52 w-[100%] h-[12%]
+          bg-gradient-to-t from-black/10 to-transparent pointer-events-none
+
+          ${curState === ViewerState.detail ? 
+          "translate-y-0" :
+          "translate-y-0"}
+        `}/>
         <div
           className={`
-            absolute -top-[70%] z-52
-            w-[100%] h-[83%]
-            flex flex-col justify-end items-center
-            rounded-b-2xl border border-white
-            transform transition duration-200 ease-out
-
-            sm:rounded-b-md
-            sm:w-[80%]
-            ${curState === ViewerState.detail ? 
-              `translate-y-[83%] bg-white/80 backdrop-blur-md shadow-xl shadow-black/13
-                overflow-hidden` :
-              `translate-y-0 bg-gray-100/58 backdrop-blur-sm shadow-md shadow-black/10
-                ${transDone? "overflow-visible": "overflow-hidden"}` }
-          `}
+            absolute z-[58] bottom-0 h-[12%] w-full
+            flex justify-evenly items-start 
+            sm:w-[50%]
+            `}
           onClick={(e)=>{
-            if(curState === ViewerState.detail) setCurState(ViewerState.success)
-            else setCurState(ViewerState.detail)
-            e.stopPropagation()
-          }}
-          onTransitionStart={()=>setTransDone(false)}
-          onTransitionEnd={()=>{
-            if(curState === ViewerState.detail) setTransDone(false)
-            else setTransDone(true)
+            if(curState === ViewerState.detail) e.stopPropagation()
           }}
         >
-          {detailPanel}
-          <div className={`
-            relative
-            flex justify-center items-center]
-            w-[100%]
-            ${curState === ViewerState.detail? "h-[11%]": "h-[16%]"}
-          `}>
-            <div className={`
-              absolute bottom-0 h-[100%] w-full
-              flex justify-evenly items-center
-              transform transition-transform duration-200 ease-out
+          <div
+            className={`
+              relative
+              flex justify-center items-center
+              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
+              border-orange-200
 
-              sm:w-[50%]
-
-              ${curState === ViewerState.detail ? 
-              "translate-y-[120%]" :
-              "translate-y-0"}
-            `}>
-              <div
-                className='
-                  relative
-                  flex justify-center items-center
-                  size-13 rounded-full overflow-hidden select-none
-                  
-                  bg-orange-400/50 shadow shadow-black/50 border border-orange-200
-                  hover:bg-orange-500/50 active:bg-orange-600/50
-                  hover:overflow-visible cursor-pointer'
-                onClick={(e)=>{
-                  e.stopPropagation()
-                }}
-              >
-                <Edit size={30} color="#ffffff" />
-                <div className='
-                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
-                  text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-orange-400 rounded-full shadow shadow-gray-500'>
-                  編輯
-                </div>
-              </div>
-              <div
-                className='
-                  relative
-                  flex justify-center items-center
-                  size-13 rounded-full overflow-hidden select-none
-                  
-                  bg-blue-400/50 shadow shadow-black/50 border border-blue-200
-                  hover:bg-blue-500/50 active:bg-blue-600/50
-                  hover:overflow-visible cursor-pointer'
-                onClick={()=>setCurState(ViewerState.detail)}>
-                <Info size={30} color="#ffffff" />
-                <div className='
-                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
-                  text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-blue-400 rounded-full shadow shadow-gray-500'>
-                  詳細資訊
-                </div>
-              </div>
-              <div
-                className='
-                  relative
-                  flex justify-center items-center
-                  size-13 rounded-full overflow-hidden select-none
-                  
-                  bg-green-400/50 shadow shadow-black/50 border border-green-200
-                  hover:bg-green-500/50 active:bg-green-600/50
-                  hover:overflow-visible cursor-pointer'
-                onClick={(e)=>{
-                  e.stopPropagation()
-                  if(data.response === null || data.response === undefined) return
-
-                  localStorage.setItem('responseId', (data.response.id).toString());
-                  localStorage.setItem('currentProjectId', (data.response.projectId).toString());
-                  localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
-                  
-                  window.open("/report", "_blank")
-                }}>
-                <FileText size={30} color="#ffffff" />
-                <div className='
-                  absolute -bottom-8 w-fit px-1.5 py-1 z-55
-                  text-center font-bold text-xs text-white whitespace-nowrap
-                  bg-green-400 rounded-full shadow shadow-gray-500'>
-                  檢視報告
-                </div>
-              </div>
+              hover:overflow-visible cursor-pointer
+              shadow-black/20 border shadow-md active:shadow-sm
+              ${
+                curState === ViewerState.detail?
+                "bg-orange-400 hover:bg-orange-500 active:bg-orange-600":
+                "bg-orange-400/50 hover:bg-orange-500/50 active:bg-orange-600/50"}
+            `}
+            onClick={(e)=>{
+              e.stopPropagation()
+              if(curState === ViewerState.detail)
+                setCurState(ViewerState.success)
+              else setCurState(ViewerState.detail)
+            }}
+          >
+            <Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />
+            <div className='
+              absolute -top-8 w-fit px-1.5 py-1 z-55
+              text-center font-bold text-xs text-white whitespace-nowrap
+              bg-orange-400 rounded-full shadow shadow-gray-500'>
+              編輯
             </div>
           </div>
+          <div
+            className={`
+              relative
+              flex justify-center items-center
+              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
+              border-blue-200
+
+              hover:overflow-visible cursor-pointer
+              shadow-black/20 border shadow-md active:shadow-sm
+              ${
+                curState === ViewerState.detail?
+                "bg-blue-400 hover:bg-blue-500 active:bg-blue-600":
+                "bg-blue-400/50 hover:bg-blue-500/50 active:bg-blue-600/50"}
+            `}
+            onClick={(e)=>{
+              e.stopPropagation()
+              if(curState === ViewerState.detail)
+                setCurState(ViewerState.success)
+              else setCurState(ViewerState.detail)
+            }}
+          >
+            <Info size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />
+            <div className='
+              absolute -top-8 w-fit px-1.5 py-1 z-55
+              text-center font-bold text-xs text-white whitespace-nowrap
+              bg-blue-400 rounded-full shadow shadow-gray-500'>
+              詳細資訊
+            </div>
+          </div>
+          <div
+            className='
+              relative
+              flex justify-center items-center
+              size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
+              
+              hover:overflow-visible cursor-pointer
+              shadow-black/20 border shadow-md active:shadow-sm
+              
+              bg-green-400/50 border-green-200 hover:bg-green-500/50 active:bg-green-600/50'
+            onClick={(e)=>{
+              e.stopPropagation()
+              if(data.response === null || data.response === undefined) return
+
+              localStorage.setItem('responseId', (data.response.id).toString());
+              localStorage.setItem('currentProjectId', (data.response.projectId).toString());
+              localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
+              
+              window.open("/report", "_blank")
+            }}>
+            <FileText size={30} color="#ffffff" />
+            <div className='
+              absolute -top-8 w-fit px-1.5 py-1 z-55
+              text-center font-bold text-xs text-white whitespace-nowrap
+              bg-green-400 rounded-full shadow shadow-gray-500'>
+              檢視報告
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`
+            absolute -bottom-[90%] z-[52]
+            w-[100%] h-[87%]
+            flex flex-col justify-start items-center
+            rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
+            transform transition duration-200 ease-out
+
+            sm:rounded-t-md
+            sm:w-[80%]
+            ${curState === ViewerState.detail ? 
+              `-translate-y-[100%] bg-white/70
+                overflow-hidden` : `translate-y-0` } `}
+          onClick={(e)=>e.stopPropagation()}
+        >
+          <div className={`
+            relative
+            flex justify-center items-center
+            w-[100%] h-[6%]
+          `}/>
+          {detailPanel}
         </div>
         <ResponseViewer data={{response:data.response, questionnaire:data.questionnaire}} />
       </div>
