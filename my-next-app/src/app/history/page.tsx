@@ -344,7 +344,7 @@ export default function HistoryPage() {
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
                       {t('historyPage.download')}
           </div>
-          
+          {/*
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
@@ -354,7 +354,7 @@ export default function HistoryPage() {
             }}
           >
             編輯
-          </div>
+          </div>*/}
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
               if(curResponse){
@@ -625,8 +625,8 @@ export function ResponseItem({meta, selected, setCurResponse, showMenu}:{
 
 export function formatRelativeTime(isoString: string): string {
   const date = new Date(isoString);
-    const now = new Date();
-    const { i18n, t } = useTranslation();
+  const now = new Date();
+  const { i18n, t } = useTranslation();
   const diff = now.getTime() - date.getTime();
   const sec = Math.floor(diff / 1000);
   const min = Math.floor(sec / 60);
@@ -790,7 +790,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
             }
           )*/}
           {toolComponent(
-            {t('historyPage.edit')}, 
+            t('historyPage.detailInfo'), 
             (<Info size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
             "blue",
             (e)=>{
@@ -801,7 +801,7 @@ export function ResponseWindow({state, data}: {state: ViewerState, data:{respons
             }
           )}
           {toolComponent(
-            {t('historyPage.detailInfo')}, 
+            t('historyPage.viewReport'), 
             (<FileText size={30} color="#ffffff" />),
             "green",
             (e)=>{
