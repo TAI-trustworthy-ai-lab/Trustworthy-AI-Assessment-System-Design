@@ -232,6 +232,47 @@
     "progress": {
       "page": "Page {{current}} of {{total}}"
     }
+  },
+  "historyPage": {
+    "loadingResponses": "Loading responses...",
+    "authFailTitle": "Authentication failed or user ID missing",
+    "authFailMessage": "Unable to retrieve valid userId or authToken from browser Local Storage. Please ensure you are logged in and data is stored correctly.",
+    "deleteSuccess": "Delete successful",
+    "deleteFail": "Delete failed",
+    "deleteConfirm": "Deletion cannot be undone. Confirm delete?",
+    "historyTitle": "History Records",
+    "noHistory": "- No history records available -",
+    "open": "Open",
+    "viewReport": "View Report",
+    "download": "Download",
+    "edit": "Edit",
+    "detailInfo": "Details",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "projectName": "Project Name",
+    "version": "Version",
+    "questionnaireName": "Questionnaire Name:",
+    "submitDate": "Submitted Date",
+    "user": "User:",
+    "userId": "User ID:",
+    "userEmail": "User Email:",
+    "projectId": "Project ID:",
+    "questionnaireTitle": "Questionnaire Title:",
+    "questionnaireId": "Questionnaire ID:",
+    "label": "Label:",
+    "responseId": "Response ID:",
+    "submittedAt": "Submitted At:",
+    "fetchFail": "Failed to fetch response",
+    "loading": "Loading...",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "yesterday": "Yesterday",
+    "dayBeforeYesterday": "The day before yesterday",
+    "daysAgo": "{{count}} days ago",
+    "thisYearDate": "{{month}}/{{day}}",
+    "fullDate": "{{year}}/{{month}}/{{day}}"
   }
 }
 
