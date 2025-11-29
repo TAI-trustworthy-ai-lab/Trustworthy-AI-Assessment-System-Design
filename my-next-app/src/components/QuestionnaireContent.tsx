@@ -18,36 +18,78 @@ import {
 
 
 // ----------------------------------------------------
-// 翻譯工具函式 (Google Translate API-X)
+// 暫存結構：中文原文 & 英文翻譯
+// ----------------------------------------------------
+const translationCache: {
+    zh: Record<string, string>;
+    en: Record<string, string>;
+} = {
+    zh: {},
+    en: {},
+};
+
+// ----------------------------------------------------
+// 翻譯工具函式
 // ----------------------------------------------------
 const capitalizeFirstLetter = (text: string) => {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
+
 const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const res = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: text, source, target })
+        body: JSON.stringify({ q: text, source, target }),
     });
 
     const data = await res.json();
     return data.translatedText;
 };
-//用於條件或迴圈時的翻譯
-const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text, capitalize = false }) => {
+
+// ----------------------------------------------------
+// TranslatedText Component with cache
+// ----------------------------------------------------
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
+    text,
+    capitalize = false,
+}) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
-
+    
     useEffect(() => {
-        if (i18n.language.startsWith("en")) {
-            translateText(text, "zh-CN", "en").then(result => {
-                setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
-            });
-        } else {
-            setTranslated(text);
+        let isActive = true; // 標記當前 effect 是否仍有效
+
+        // 中文暫存：始終存原文
+        if (!translationCache.zh[text]) {
+            translationCache.zh[text] = text;
         }
-    }, [text, i18n.language]);
+
+        if (i18n.language.startsWith("en")) {
+            // 英文情境：先檢查暫存
+            if (translationCache.en[text]) {
+                setTranslated(
+                    capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
+                );
+            } else {
+                // 沒有暫存 → 呼叫翻譯 API
+                translateText(text, "zh-CN", "en").then((result) => {
+                    if (isActive) { // 只有當前 effect 還有效才更新
+                        result = result || translationCache.zh[text];//如果翻譯未成功，顯示中文。
+                        translationCache.en[text] = result;
+                        setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+                    }
+                });
+            }
+        } else {
+            // 中文情境：直接用中文暫存
+            setTranslated(translationCache.zh[text]);
+        }
+        // cleanup：切語言時舊的請求結果不再生效
+        return () => {
+            isActive = false;
+        };
+    }, [text, i18n.language, capitalize]);
 
     return <>{translated}</>;
 };
