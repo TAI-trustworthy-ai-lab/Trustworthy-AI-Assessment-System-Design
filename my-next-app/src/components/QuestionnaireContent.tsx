@@ -830,7 +830,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     </h1>
 
                     {/* 问卷描述 description */}
-                    {questionnaire.description /> && (
+                    {questionnaire.description && (
                         <p className="text-left text-gray-500 mb-8">{<TranslatedText text={questionnaire.description} />}</p>
                     )}
 

@@ -528,15 +528,16 @@ export default function HistoryPage() {
               <>
                 <div className="
                   w-full h-[50]
-                  grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+                  grid grid-cols-[35px_1fr_1.5fr_35px] gap-4 items-center
                   mb-2 py-2 px-2
                   bg-gray-100 rounded-t-lg
 
-                  sm:grid-cols-[1fr_1.5fr_160px_35px]
+                  sm:grid-cols-[35px_1fr_1.5fr_160px_35px]
 
                   md:min-w-150
-                  md:grid-cols-[1.5fr_60px_2fr_160px_35px]
+                  md:grid-cols-[35px_1.5fr_60px_2fr_160px_35px]
                 ">
+                  <div/>
                   <div className=" text-gray-600 truncate">{t('historyPage.projectName')}</div>
                   <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
                   <div className=" text-gray-600 truncate">{t('historyPage.questionnaireName')}</div>
@@ -554,6 +555,7 @@ export default function HistoryPage() {
                   return (
                     <div
                       key={data.id}
+                      className='flex justify-end gap-4'
                       onClick={(e) => { setCurResponse(data); e.stopPropagation(); setShowMenu(false) }}
                       onDoubleClick={() => {
                         setViewerState(ViewerState.loading)
@@ -572,7 +574,8 @@ export default function HistoryPage() {
                         handleContextMenu(e)
                       }}
                     >
-                        {item}
+                      <div className='w-[35px]'></div>
+                      {item}
                     </div>
                   )
                 })}
@@ -808,40 +811,40 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
         md:min-w-150
         md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
         >
-            {/* project name */}
-            <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
+          {/* project name */}
+          <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
 
-            {/* response ver */}
-            <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
+          {/* response ver */}
+          <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
 
-            {/* response title */}
-            <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
+          {/* response title */}
+          <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
 
-            {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
-            <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
+          {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
+          <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
 
-            {/* ... i copy the icon from google drive */}
-            <div ref={myRef}
-                className={`
-          flex justify-center items-center
-          size-[35]  rounded-full
-          ${selected ? "hover:bg-blue-200 active:bg-blue-300" : "hover:bg-gray-200 active:bg-gray-300"}`}
-                onClick={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    if (myRef.current) {
-                        e.clientX = myRef.current.getBoundingClientRect().left
-                        e.clientY = myRef.current.getBoundingClientRect().bottom
-                    }
-                    setCurResponse()
-                    showMenu(e)
-                }}
-                onContextMenu={(e) => {
-                    e.preventDefault()
-                }}
-            >
-                <svg width="20" height="20" viewBox="0 0 20 20" focusable="false"><path d="M10 6c.82 0 1.5-.68 1.5-1.5S10.82 3 10 3s-1.5.67-1.5 1.5S9.18 6 10 6zm0 5.5c.82 0 1.5-.68 1.5-1.5s-.68-1.5-1.5-1.5-1.5.68-1.5 1.5.68 1.5 1.5 1.5zm0 5.5c.82 0 1.5-.67 1.5-1.5 0-.82-.68-1.5-1.5-1.5s-1.5.68-1.5 1.5c0 .83.68 1.5 1.5 1.5z"></path></svg>
-            </div>
+          {/* ... i copy the icon from google drive */}
+          <div ref={myRef}
+            className={`
+              flex justify-center items-center
+              size-[35]  rounded-full
+              ${selected ? "hover:bg-blue-200 active:bg-blue-300" : "hover:bg-gray-200 active:bg-gray-300"}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              if (myRef.current) {
+                  e.clientX = myRef.current.getBoundingClientRect().left
+                  e.clientY = myRef.current.getBoundingClientRect().bottom
+              }
+              setCurResponse()
+              showMenu(e)
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault()
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" focusable="false"><path d="M10 6c.82 0 1.5-.68 1.5-1.5S10.82 3 10 3s-1.5.67-1.5 1.5S9.18 6 10 6zm0 5.5c.82 0 1.5-.68 1.5-1.5s-.68-1.5-1.5-1.5-1.5.68-1.5 1.5.68 1.5 1.5 1.5zm0 5.5c.82 0 1.5-.67 1.5-1.5 0-.82-.68-1.5-1.5-1.5s-1.5.68-1.5 1.5c0 .83.68 1.5 1.5 1.5z"></path></svg>
+          </div>
         </div>
     )
 }
@@ -904,7 +907,7 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
     const router = useRouter();
     const { i18n, t } = useTranslation();
     useEffect(() => {
-        setCurState(state)
+      setCurState(state)
     }, [state])
 
     // loading
@@ -1081,8 +1084,8 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
                 localStorage.setItem('currentProjectId', (data.response.projectId).toString());
                 localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
 
-                router.push('/report')
-                //window.open("/report", "_blank")
+                //router.push('/report')
+                window.open("/report", "_blank")
               }
             )}
           </div>
