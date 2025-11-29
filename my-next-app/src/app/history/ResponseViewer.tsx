@@ -72,8 +72,10 @@ type AnswerValue = {
   textValue?: string; 
 };
 
-export const styleSelected   = 'bg-indigo-500 text-white border border-transparent hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]' 
-export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]'
+export const editableSelected   = "cursor-pointer hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]"
+export const editableUnselected = "cursor-pointer hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]"
+export const styleSelected   = 'bg-indigo-500 text-white border border-transparent ' 
+export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 '
 
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
@@ -95,13 +97,21 @@ const SubmissionLoadingIndicator: React.FC = () => (
 // ----------------------------------------------------
 
 interface QuestionRendererProps {
+    editable: boolean,
     question: Question;
     currentAnswer: AnswerValue;
     onAnswer: (answer: AnswerValue) => void;
 }
 
+const gridColNum = [
+  "grid-cols-0",
+  "grid-cols-1",
+  "grid-cols-2",
+  "grid-cols-3",
+]
+
 // 1. SCALE 題型
-const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
+const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   // 假設選項已經按 order 排序 + options 存在
   const options = question.options || [];
   const selectedOptionId = currentAnswer.optionIds?.[0];
@@ -119,9 +129,9 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
               onAnswer({ optionIds: [opt.id], score: opt.value }) 
             }
             className={`
-              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold cursor-pointer 
-              ${selectedOptionId === opt.id ? styleSelected: styleUnselected
-              }
+              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold  
+              ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
+              ${selectedOptionId === opt.id ? styleSelected: styleUnselected}
             `}
           >
             {displayScore}
@@ -132,15 +142,10 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
   );
 };
 
-const gridColNum = [
-  "grid-cols-0",
-  "grid-cols-1",
-  "grid-cols-2",
-  "grid-cols-3",
-]
+
 
 // 2. SINGLE_CHOICE 題型
-const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
+const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
   const selectedOptionId = currentAnswer.optionIds?.[0];
 
@@ -154,10 +159,11 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
           onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
           className={`
             py-2 px-2 max-w-[300px] rounded-lg
-            font-medium cursor-pointer 
+            font-medium
 
             sm:px-4
             sm:min-w-[80px]
+            ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
             ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
         >
           {opt.text}
@@ -168,7 +174,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
 };
 
 // 3. MULTIPLE_CHOICE 題型
-const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
+const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
   const selectedOptionIds = currentAnswer.optionIds || [];
 
@@ -199,10 +205,12 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
           onClick={() => handleOptionClick(opt.id)}
           className={`
             py-2 px-2 max-w-[300px] rounded-lg
-            font-medium cursor-pointer 
+            font-medium
 
             sm:px-4
             sm:min-w-[80px]
+
+            ${editable ? (selectedOptionIds.includes(opt.id) ? editableSelected : editableUnselected): ""}
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
           }`}
         >
@@ -214,23 +222,23 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
 };
 
 // 4. TEXT 題型
-const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
-    const textValue = currentAnswer.textValue || '';
-    
-    return (
-      <textarea
-        rows={3}
-        value={textValue}
-        onChange={(e) => onAnswer({ textValue: e.target.value })}
-        placeholder="請在此輸入您的回答..."
-        className="
-          w-full p-3
-          rounded-lg resize-none
-          border border-gray-300 text-gray-700 bg-[#fcfcfc]
-          focus:outline-none 
-          focus:ring-1 focus:ring-indigo-300 focus:bg-white"
-      />
-    );
+const TextQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
+  const textValue = currentAnswer.textValue || '';
+  
+  return (
+    <textarea
+      rows={3}
+      value={textValue}
+      onChange={(e) => onAnswer({ textValue: e.target.value })}
+      placeholder="請在此輸入您的回答..."
+      className={`
+        w-full p-3
+        rounded-lg resize-none
+        border border-gray-300 text-gray-700 bg-[#fcfcfc]
+
+        ${editable? "focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:bg-white": ""}`}
+    />
+  );
 };
 
 
@@ -240,15 +248,15 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
 const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
   switch (props.question.type) {
     case 'SCALE':
-        return <ScaleQuestion {...props} />;
+      return <ScaleQuestion {...props} />;
     case 'SINGLE_CHOICE':
-        return <SingleChoiceQuestion {...props} />;
+      return <SingleChoiceQuestion {...props} />;
     case 'MULTIPLE_CHOICE':
-        return <MultipleChoiceQuestion {...props} />; // Placeholder
+      return <MultipleChoiceQuestion {...props} />; // Placeholder
     case 'TEXT':
-        return <TextQuestion {...props} />;
+      return <TextQuestion {...props} />;
     default:
-        return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
+      return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
   }
 };
 
@@ -257,7 +265,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 // 問卷內容主組件
 // ----------------------------------------------------
 
-export default function ResponseViewer({ data }: { data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
+export default function ResponseViewer({editable, data }: { editable: boolean, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
   const q = data.questionnaire
   const r = data.response
 
@@ -390,9 +398,12 @@ export default function ResponseViewer({ data }: { data:{response: ResponseData,
                     {/* 根據 type 渲染不同 UI */}
                     <div className="flex justify-start">
                       <QuestionRenderer
+                        editable={editable}
                         question={question}
                         currentAnswer={a[question.id] || {}}
-                        onAnswer={(answer) => handleAnswer(question.id, answer)}
+                        onAnswer={(answer) => {
+                          if(editable) handleAnswer(question.id, answer)
+                        }}
                       />
                     </div>
                   </div>
