@@ -604,33 +604,33 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
   return (
     <div className="flex flex-wrap gap-4">
       <ClickAwaySelect
-        label="Sort Way"
+        label="排序"
         value={sortWay}
         options={[
-          { label: "Accend", value: SortWay.Accend },
-          { label: "Deccend", value: SortWay.Deccend },
+          { label: "遞增", value: SortWay.Accend },
+          { label: "遞減", value: SortWay.Deccend },
         ]}
         onChange={onSortWayChange}
       />
 
       <ClickAwaySelect
-        label="Sort Type"
+        label="排序依據"
         value={sortType}
         options={[
-          { label: "Name", value: SortType.Name },
-          { label: "Date", value: SortType.Date },
+          { label: "時間", value: SortType.Date },
+          { label: "名稱", value: SortType.Name },
         ]}
         onChange={onSortTypeChange}
       />
 
       <ClickAwaySelect
-        label="Group Type"
+        label="群組類型"
         value={groupType}
         options={[
-          { label: "Project", value: GroupType.Project },
-          { label: "None", value: GroupType.None },
-          { label: "Date", value: GroupType.Date },
-          { label: "Questionnaire", value: GroupType.Questionnaire },
+          { label: "無", value: GroupType.None },
+          { label: "專案", value: GroupType.Project },
+          { label: "時間", value: GroupType.Date },
+          { label: "問卷", value: GroupType.Questionnaire },
         ]}
         onChange={onGroupTypeChange}
       />
@@ -794,59 +794,59 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
     setCurResponse: () => void,
     showMenu: (e: React.MouseEvent) => void
 }) {
-    const myRef = useRef<HTMLDivElement>(null);
+  const myRef = useRef<HTMLDivElement>(null);
 
-    return (
-        <div
-            className={`
-        w-full h-[50]
-        grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
-        select-none
-        py-2 px-2
-        ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200" : "hover:bg-gray-100 active:bg-gray-200"}
-        cursor-pointer rounded-lg
+  return (
+    <div
+        className={`
+    w-full h-[50]
+    grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+    select-none
+    py-2 px-2
+    ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200" : "hover:bg-gray-100 active:bg-gray-200"}
+    cursor-pointer rounded-lg
 
-        sm:grid-cols-[1fr_1.5fr_160px_35px]
+    sm:grid-cols-[1fr_1.5fr_160px_35px]
 
-        md:min-w-150
-        md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
-        >
-          {/* project name */}
-          <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
+    md:min-w-150
+    md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
+    >
+      {/* project name */}
+      <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
 
-          {/* response ver */}
-          <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
+      {/* response ver */}
+      <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
 
-          {/* response title */}
-          <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
+      {/* response title */}
+      <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
 
-          {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
-          <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
+      {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
+      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
 
-          {/* ... i copy the icon from google drive */}
-          <div ref={myRef}
-            className={`
-              flex justify-center items-center
-              size-[35]  rounded-full
-              ${selected ? "hover:bg-blue-200 active:bg-blue-300" : "hover:bg-gray-200 active:bg-gray-300"}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              if (myRef.current) {
-                  e.clientX = myRef.current.getBoundingClientRect().left
-                  e.clientY = myRef.current.getBoundingClientRect().bottom
-              }
-              setCurResponse()
-              showMenu(e)
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault()
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" focusable="false"><path d="M10 6c.82 0 1.5-.68 1.5-1.5S10.82 3 10 3s-1.5.67-1.5 1.5S9.18 6 10 6zm0 5.5c.82 0 1.5-.68 1.5-1.5s-.68-1.5-1.5-1.5-1.5.68-1.5 1.5.68 1.5 1.5 1.5zm0 5.5c.82 0 1.5-.67 1.5-1.5 0-.82-.68-1.5-1.5-1.5s-1.5.68-1.5 1.5c0 .83.68 1.5 1.5 1.5z"></path></svg>
-          </div>
-        </div>
-    )
+      {/* ... i copy the icon from google drive */}
+      <div ref={myRef}
+        className={`
+          flex justify-center items-center
+          size-[35]  rounded-full
+          ${selected ? "hover:bg-blue-200 active:bg-blue-300" : "hover:bg-gray-200 active:bg-gray-300"}`}
+        onClick={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          if (myRef.current) {
+              e.clientX = myRef.current.getBoundingClientRect().left
+              e.clientY = myRef.current.getBoundingClientRect().bottom
+          }
+          setCurResponse()
+          showMenu(e)
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" focusable="false"><path d="M10 6c.82 0 1.5-.68 1.5-1.5S10.82 3 10 3s-1.5.67-1.5 1.5S9.18 6 10 6zm0 5.5c.82 0 1.5-.68 1.5-1.5s-.68-1.5-1.5-1.5-1.5.68-1.5 1.5.68 1.5 1.5 1.5zm0 5.5c.82 0 1.5-.67 1.5-1.5 0-.82-.68-1.5-1.5-1.5s-1.5.68-1.5 1.5c0 .83.68 1.5 1.5 1.5z"></path></svg>
+      </div>
+    </div>
+  )
 }
 
 export function formatRelativeTime(isoString: string): string {
