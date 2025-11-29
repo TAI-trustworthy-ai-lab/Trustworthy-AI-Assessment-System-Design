@@ -193,7 +193,7 @@ export default function ReportPage() {
                         onClick={() => router.push('/home')} 
                         className="py-2 px-4 bg-purple-800 text-white rounded-lg transition duration-150 hover:bg-purple-700"
                     >
-                        <button>{t('reportPage.button.backHome')}</button>
+                        {t('reportPage.button.backHome')}
                     </button>
                 </div>
             </div>
