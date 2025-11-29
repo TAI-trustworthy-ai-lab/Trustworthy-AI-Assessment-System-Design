@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ResponseMeta, 
-  ResponseData
+  ResponseData,
+  ViewerState
 } from "@/services/responseService";
+import { LoadingComponent } from "@/app/history/page"
 
 const useRouter = () => {
     return {
@@ -404,11 +406,12 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 // 問卷內容主組件
 // ----------------------------------------------------
 
-export default function ResponseViewer({editable, data }: { editable: boolean, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
+export default function ResponseViewer({curState, data }: { curState: ViewerState, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
   const { i18n, t } = useTranslation()
   
   const q = data.questionnaire
   const r = data.response
+  const editable = curState === ViewerState.editing
 
    // 1. 根據指標映射表獲取分頁標題
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
@@ -549,11 +552,19 @@ export default function ResponseViewer({editable, data }: { editable: boolean, d
                     </div>
                   </div>
                 ))}
+                
               </div>
             </div>
           )
         })
       }
+      <div className='h-20 w-full'>
+        {
+          curState === ViewerState.translating && (
+            <LoadingComponent message='翻譯中...' />
+          )
+        }
+      </div>
     </div>
   )
 }

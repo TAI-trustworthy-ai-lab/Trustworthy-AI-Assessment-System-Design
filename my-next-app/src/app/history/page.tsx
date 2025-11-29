@@ -41,6 +41,8 @@ export default function HistoryPage() {
   }>({ response: null, questionnaire: null });
 
   // reminder: key is response id
+  // to do: store response/ questionaaire in local (seperated)
+  const fetchListString = localStorage.getItem("myFetchList");
   const [fetchList, setFetchList] = useState<Record<
     number,
     {
@@ -103,6 +105,40 @@ export default function HistoryPage() {
     return data.translatedText;
   }
 
+  const gradualTranslate = async(r:ResponseData, q: QuestionnaireData) => {
+    const tanslatedQuestionnaire: QuestionnaireData = {
+      id: q.id,
+      title: await translateText(q.title),
+      description: await translateText(q.description),
+      questions: [],
+      group: q.group
+    }
+    for(let i = 0; i < q.questions.length; i++){
+      const oldQ = q.questions[i]
+      const newQ: Question = {
+        id: oldQ.id,
+        text: await translateText(oldQ.text),
+        category: oldQ.category,
+        order: oldQ.order,
+        type: oldQ.type, 
+        required: oldQ.required,
+        options: oldQ.options? await Promise.all(
+          oldQ.options.map(async (o) => {
+            const newO: Option = {
+              id: o.id,
+              text: await translateText(o.text),
+              value: o.value,
+              order: o.order,
+            };
+          return newO;
+        })) : undefined,
+      }
+      tanslatedQuestionnaire.questions.push(newQ)
+      setViewerData({ response: r, questionnaire: tanslatedQuestionnaire })
+    }
+    return tanslatedQuestionnaire
+  }
+
   // open
   // get response and questionnair from response id and qId (GET API)
   const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => {
@@ -159,65 +195,35 @@ export default function HistoryPage() {
       }
       else {
         fetchList[id].questionnaire = q
-
-        //translate en only
-        
         try{
-          const tanslatedQuestionnaire: QuestionnaireData = {
-            id: q.id,
-            title: await translateText(q.title),
-            description: await translateText(q.description),
-            questions: await Promise.all( q.questions.map(async (q) => {
-              const newQ: Question = {
-                id: q.id,
-                text: await translateText(q.text),
-                category: q.category,
-                order: q.order,
-                type: q.type, 
-                required: q.required,
-                options: q.options? await Promise.all(
-                  q.options.map(async (o) => {
-                    const newO: Option = {
-                      id: o.id,
-                      text: await translateText(o.text),
-                      value: o.value,
-                      order: o.order,
-                    };
-                    return newO;
-                  })) : undefined,
-                }
-              return newQ
-            })),
-            group: q.group
-          }
-
-          fetchList[id].locale = {
-            ...fetchList[id].locale,
-            "en": tanslatedQuestionnaire
-          }
+          
         } catch (e){
           console.error("fail to translate:", e)
         }
       }
     }
-    if(fetchList[id].locale)
+    else q = fetchList[id].questionnaire
 
     //console.log(locale)
+    setViewerState(ViewerState.translating)
     if(locale){
       switch(locale){
         case "en":
-          q = fetchList[id].locale?.en? fetchList[id].locale.en: fetchList[id].questionnaire
+          if(fetchList[id].locale?.en){
+            q = fetchList[id].locale.en
+          } else {
+            q = await gradualTranslate(r, q)
+            fetchList[id].locale = {
+              ...fetchList[id].locale,
+              "en": q
+            }
+          }
           break
         default:
           q = fetchList[id].questionnaire
           break
       }
-    } else {
-      q = fetchList[id].questionnaire
     }
-
-    //console.log(r, q)
-
     setViewerState(finalState)
     setViewerData({ response: r, questionnaire: q })
   }
@@ -341,7 +347,7 @@ export default function HistoryPage() {
             onClick={(e) => e.stopPropagation()} // avoid clicking background
           >
             <div className="
-              relative h-full w-full
+              relative h-full w-full 
               bg-gray-50 
               rounded overflow-hidden
             ">
@@ -880,7 +886,7 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
     return (
       <>
         <div
-          className="relative flex items-center justify-center w-full h-full"
+          className="relative flex flex-col items-center justify-center w-full h-full"
           onClick={() => { setCurState(ViewerState.success) }}
         >
           <div className={`
@@ -893,7 +899,7 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
           `} />
           <div
             className={`
-              absolute z-[58] bottom-0 h-[12%] w-full
+              absolute z-[58] bottom-0 h-[12%] w-fit
               flex justify-center items-start space-x-4
             `}
             onClick={(e) => {
@@ -965,20 +971,20 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
             `} />
               {detailPanel}
             </div>
-          <ResponseViewer editable={curState === ViewerState.editing} data={{ response: data.response, questionnaire: data.questionnaire }} />
+          <ResponseViewer curState={curState} data={{ response: data.response, questionnaire: data.questionnaire }} />
         </div>
       </>
     )
 }
 
 export function LoadingComponent({ message }: { message: string }) {
-    return (
-        <div className="flex items-center justify-center h-full bg-gray-50 text-gray-600">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {message}
-        </div>
-    );
+  return (
+    <div className="flex items-center justify-center h-full text-gray-600">
+      <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      {message}
+    </div>
+  )
 }
