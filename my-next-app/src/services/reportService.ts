@@ -23,10 +23,11 @@ async function fetchApi(url: string, options: RequestInit = {}) {
     return response.json();
 }
 
-// GET get the reoprt from bckend
+// GET get the report from bckend
 export const fetchReport = async (responseId: number): Promise<any> => {
     const url = `${REPORT_API_BASE}/response/${responseId}`; 
     const result = await fetchApi(url, { method: 'GET' });
+    console.log(result)
 
     const reportData = result.data; 
 
@@ -44,6 +45,32 @@ export const fetchReport = async (responseId: number): Promise<any> => {
     if (reportData && typeof reportData.overallScore === 'number') {
         reportData.overallScore = reportData.overallScore * 100;
     }
+    reportData.overallScore = reportData.overallScore || 0;
 
     return reportData;
+};
+
+// GET get report from bckend
+export const generatePdf = async (responseId: number): Promise<Blob> => {
+    const userToken = localStorage.getItem('authToken');
+    const url = `${REPORT_API_BASE}/generate-pdf/${responseId}`; 
+
+    const headers = {
+        ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
+    };
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: headers,
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(JSON.stringify({
+            status: response.status,
+            message: errorText || `PDF API 呼叫失敗: ${response.statusText}`,
+        }));
+    }
+
+    return response.blob();
 };

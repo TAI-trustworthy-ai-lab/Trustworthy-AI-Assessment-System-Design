@@ -23,17 +23,17 @@ ChartJS.register(
 
 // 從您的 ReportPage 複製過來的映射表
 const CATEGORY_MAP: Record<string, string> = {
-    "Accuracy": "準確性",
-    "Reliability": "可靠性",
-    "Safety": "安全性",
-    "Resilience": "韌性",
-    "Transparency": "透明性",
-    "Accountability": "當責性",
-    "Explainability": "可解釋性",
-    "Autonomy": "自主性",
-    "Privacy": "隱私",
-    "Fairness": "公平性",
-    "Security": "資訊安全性",
+    "ACCURANCY": "準確性",
+    "RELIABILITY": "可靠性",
+    "SAFETY": "安全性",
+    "RESILIENCE": "韌性",
+    "TRANSPARENCY": "透明性",
+    "ACCOUNTABILITY": "當責性",
+    "EXPLAINABILITY": "可解釋性",
+    "AUTONOMY": "自主性",
+    "PRIVACY": "隱私",
+    "FAIRNESS": "公平性",
+    "SECURITY": "資訊安全性",
 };
 
 interface ReportRadarChartProps {

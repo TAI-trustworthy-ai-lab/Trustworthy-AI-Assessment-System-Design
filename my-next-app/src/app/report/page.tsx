@@ -7,6 +7,7 @@ import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
 import { ResponseMeta } from '@/services/responseService'
 import { ReportRadarChart } from '@/components/ReportRadarChart';
+import { Loader2, Download } from 'lucide-react';
 
 const useRouter = () => {
     return {
@@ -18,6 +19,8 @@ const useRouter = () => {
     };
 };
 
+import { fetchReport as fetchReportService } from '@/services/reportService';
+import { generatePdf } from '@/services/reportService';
 import { REPORT_CATEGORY_MAP_EN } from '@/config/constants';
 
 // ----------------------------------------------------
@@ -57,9 +60,6 @@ const getScoreColor = (score: number) => {
     if (score >= 60) return 'bg-orange-300';
     return 'bg-red-400';
 };
-
-
-import { fetchReport as fetchReportService } from '@/services/reportService';
 
 
 // ----------------------------------------------------
@@ -122,42 +122,43 @@ export default function ReportPage() {
         }
     }, [responseId, authToken]);
 
-    const handleGeneratePdf = useCallback(async () => {
-        if (!report || isGeneratingPdf || !responseId) return;
-        setIsGeneratingPdf(true);
+    const handleDownloadPdf = useCallback(async () => {
+        if (!responseId || isGeneratingPdf) return;
 
+        setIsGeneratingPdf(true); // 開始下載
         try {
-            // 假設您的後端 API 位於 /api/generate-pdf
-            const response = await fetch(`/api/generate-pdf?responseId=${responseId}`, {
-                method: 'GET',
-            });
+            // 1. 呼叫新的 service 函數獲取 Blob
+            const pdfBlob = await generatePdf(responseId);
 
-            if (!response.ok) {
-                throw new Error(`PDF API 呼叫失敗: ${response.statusText}`);
-            }
+            // 2. 創建一個 URL 來指向這個 Blob
+            const url = window.URL.createObjectURL(pdfBlob);
 
-            // 處理檔案下載
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
+            // 3. 創建一個隱藏的 A 標籤並觸發下載
+            const a = document.createElement('a');
+            a.href = url;
             
-            const filename = `${projectName || 'AI_Assessment'}_Report_${report.id}.pdf`;
-
-            link.href = url;
-            link.setAttribute('download', filename);
-            document.body.appendChild(link);
-            link.click();
-            link.parentNode?.removeChild(link); 
-
-            window.URL.revokeObjectURL(url); 
+            // 使用專案名稱和 ID 命名檔案，更具體
+            const filename = projectName ? 
+                `${projectName.replace(/\s/g, '_')}-Report-${responseId}.pdf` : 
+                `report-${responseId}.pdf`;
+                
+            a.download = filename; 
+            document.body.appendChild(a);
+            a.click();
+            
+            // 4. 清理
+            window.URL.revokeObjectURL(url);
+            a.remove();
 
         } catch (error) {
-            console.error("後端 PDF 生成請求失敗:", error);
-            alert('生成 PDF 失敗，請檢查後端服務。');
+            console.error("下載 PDF 失敗:", error);
+            // TODO: 在此處顯示一個 Toast 或 Alert 錯誤通知給用戶
+            const errMsg = error instanceof Error ? JSON.parse(error.message).message : "下載失敗，請聯繫管理員。";
+            alert(`PDF 生成失敗: ${errMsg}`); // 暫時使用 alert
         } finally {
-            setIsGeneratingPdf(false);
+            setIsGeneratingPdf(false); // 結束下載
         }
-    }, [report, isGeneratingPdf, responseId, projectName]);
+    }, [responseId, isGeneratingPdf, projectName]); // 依賴於 responseId 和 projectName
 
 
     useEffect(() => {
@@ -297,7 +298,7 @@ export default function ReportPage() {
             </main>
             <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
                 <button
-                    onClick={handleGeneratePdf}
+                    onClick={handleDownloadPdf}
                     disabled={isGeneratingPdf}
                     className={`
                         w-auto py-3 px-6 text-lg font-semibold rounded-full 
