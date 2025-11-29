@@ -871,7 +871,7 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
             `} />
               {detailPanel}
             </div>
-          <ResponseViewer data={{ response: data.response, questionnaire: data.questionnaire }} />
+          <ResponseViewer editable={curState === ViewerState.editing} data={{ response: data.response, questionnaire: data.questionnaire }} />
         </div>
       </>
     )
