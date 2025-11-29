@@ -727,125 +727,153 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
         </div>
     )
 
-    const toolComponent = (
-        text: string,
-        icon: React.JSX.Element,
-        color: string,
-        onClick: React.MouseEventHandler<HTMLDivElement> | undefined) => {
-        return (
-            <div
-                className={`
-          relative
-          flex justify-center items-center
-          size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
-          border-${color}-200
+    const style = {
+      orange:{
+        border: `border-orange-200`,
+        enable: `bg-orange-400 hover:bg-orange-500 active:bg-orange-600`,
+        disable: `bg-orange-400/50 hover:bg-orange-500/50 active:bg-orange-600/50`,
+        tip: "bg-orange-400"
+      },
+      blue:{
+        border: `border-blue-200`,
+        enable: `bg-blue-400 hover:bg-blue-500 active:bg-blue-600`,
+        disable: `bg-blue-400/50 hover:bg-blue-500/50 active:bg-blue-600/50`,
+        tip: "bg-blue-400"
+      },
+      green:{
+        border: `border-green-200`,
+        enable: `bg-green-400 hover:bg-green-500 active:bg-green-600`,
+        disable: `bg-green-400/50 hover:bg-green-500/50 active:bg-green-600/50`,
+        tip: "bg-green-400"
+      }
+    }
 
-          hover:overflow-visible cursor-pointer
-          shadow-black/20 border shadow-md active:shadow-sm
-          ${curState === ViewerState.detail ?
-                        `bg-${color}-400 hover:bg-${color}-500 active:bg-${color}-600` :
-                        `bg-${color}-400/50 hover:bg-${color}-500/50 active:bg-${color}-600/50`}
-        `}
-                onClick={onClick}
-            >
-                {icon}
-                <div className={`
-          absolute -top-8 w-fit px-1.5 py-1 z-55
-          text-center font-bold text-xs text-white whitespace-nowrap
-          bg-${color}-400 rounded-full shadow shadow-gray-500`}>
-                    {text}
-                </div>
-            </div>
-        )
+    const toolComponent = (
+      text: string,
+      icon: React.JSX.Element,
+      color: {border: string, enable: string, disable: string, tip: string},
+      state: ViewerState,
+      onClick: React.MouseEventHandler<HTMLDivElement> | undefined) => 
+    {
+
+      return (
+        <div
+          className={`
+            relative
+            flex justify-center items-center
+            size-13 rounded-full backdrop-blur-xs overflow-hidden select-none
+
+            hover:overflow-visible cursor-pointer
+            shadow-black/20 border shadow-md active:shadow-sm
+
+            ${color.border}
+            ${curState === state ? color.enable: color.disable}
+          `}
+          onClick={onClick}
+        >
+          {icon}
+          <div className={`
+            absolute -top-8 w-fit px-1.5 py-1 z-55
+            text-center font-bold text-xs text-white whitespace-nowrap
+            rounded-full shadow shadow-gray-500
+            ${color.tip}`}
+          >
+            {text}
+          </div>
+        </div>
+      )
     }
 
     return (
-        <>
-            <div
-                className="relative flex items-center justify-center w-full h-full"
-                onClick={() => { setCurState(ViewerState.success) }}
-            >
-                <div className={`
-          absolute bottom-0 z-52 w-[100%] h-[12%]
-          bg-gradient-to-t from-black/10 to-transparent pointer-events-none
+      <>
+        <div
+          className="relative flex items-center justify-center w-full h-full"
+          onClick={() => { setCurState(ViewerState.success) }}
+        >
+          <div className={`
+            absolute bottom-0 z-52 w-[100%] h-[12%]
+            bg-gradient-to-t from-black/10 to-transparent pointer-events-none
 
-          ${curState === ViewerState.detail ?
-                        "translate-y-0" :
-                        "translate-y-0"}
-        `} />
-                <div
-                    className={`
-            absolute z-[58] bottom-0 h-[12%] w-full
-            flex justify-center items-start space-x-4
-            `}
-                    onClick={(e) => {
-                        if (curState === ViewerState.detail) e.stopPropagation()
-                    }}
-                >
-                    {/*toolComponent(
-            "編輯", 
-            (<Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
-            "orange",
-            (e)=>{
-              e.stopPropagation()
-              if(curState === ViewerState.detail)
-                setCurState(ViewerState.success)
-              else setCurState(ViewerState.detail)
-            }
-          )*/}
-                    {toolComponent(
-                        t('historyPage.detailInfo'),
-                        (<Info size={30} color={`${curState === ViewerState.detail ? "#fff085" : "#ffffff"}`} />),
-                        "blue",
-                        (e) => {
-                            e.stopPropagation()
-                            if (curState === ViewerState.detail)
-                                setCurState(ViewerState.success)
-                            else setCurState(ViewerState.detail)
-                        }
-                    )}
-                    {toolComponent(
-                        t('historyPage.viewReport'),
-                        (<FileText size={30} color="#ffffff" />),
-                        "green",
-                        (e) => {
-                            e.stopPropagation()
-                            if (data.response === null || data.response === undefined) return
-
-                            localStorage.setItem('responseId', (data.response.id).toString());
-                            localStorage.setItem('currentProjectId', (data.response.projectId).toString());
-                            localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
-
-                            window.open("/report", "_blank")
-                        }
-                    )}
-                </div>
-
-                <div
-                    className={`
-            absolute -bottom-[90%] z-[52]
-            w-[100%] h-[87%]
-            flex flex-col justify-start items-center
-            rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
-            transform transition duration-200 ease-out
-
-            sm:rounded-t-md
-            sm:w-[80%]
             ${curState === ViewerState.detail ?
-                            `-translate-y-[100%] bg-white/70
-                overflow-hidden` : `translate-y-0`} `}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className={`
-            relative
-            flex justify-center items-center
-            w-[100%] h-[6%]
+              "translate-y-0" :
+              "translate-y-0"}
           `} />
-                    {detailPanel}
-                </div>
-                <ResponseViewer data={{ response: data.response, questionnaire: data.questionnaire }} />
+          <div
+            className={`
+              absolute z-[58] bottom-0 h-[12%] w-full
+              flex justify-center items-start space-x-4
+            `}
+            onClick={(e) => {
+                if (curState === ViewerState.detail) e.stopPropagation()
+            }}
+          >
+            {/*toolComponent(
+              "編輯", 
+              (<Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
+              style.orange,
+              ViewerState.editing,
+              (e)=>{
+                e.stopPropagation()
+                if(curState === ViewerState.detail)
+                  setCurState(ViewerState.success)
+                else setCurState(ViewerState.detail)
+              }
+            )*/}
+            {toolComponent(
+              t('historyPage.detailInfo'),
+              (<Info size={30} color={`${curState === ViewerState.detail ? "#fff085" : "#ffffff"}`} />),
+              style.blue,
+              ViewerState.detail,
+              (e) => {
+                e.stopPropagation()
+                if (curState === ViewerState.detail)
+                  setCurState(ViewerState.success)
+                else setCurState(ViewerState.detail)
+              }
+            )}
+            {toolComponent(
+              t('historyPage.viewReport'),
+              (<FileText size={30} color="#ffffff" />),
+              style.green,
+              ViewerState.editing,
+              (e) => {
+                e.stopPropagation()
+                if (data.response === null || data.response === undefined) return
+
+                localStorage.setItem('responseId', (data.response.id).toString());
+                localStorage.setItem('currentProjectId', (data.response.projectId).toString());
+                localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
+
+                window.open("/report", "_blank")
+              }
+            )}
+          </div>
+
+          <div
+            className={`
+              absolute -bottom-[90%] z-[52]
+              w-[100%] h-[87%]
+              flex flex-col justify-start items-center
+              rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
+              transform transition duration-200 ease-out
+
+              sm:rounded-t-md
+              sm:w-[80%]
+              ${curState === ViewerState.detail ?
+                `-translate-y-[100%] bg-white/70
+                overflow-hidden` : `translate-y-0`} `}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`
+              relative
+              flex justify-center items-center
+              w-[100%] h-[6%]
+            `} />
+              {detailPanel}
             </div>
-        </>
+          <ResponseViewer data={{ response: data.response, questionnaire: data.questionnaire }} />
+        </div>
+      </>
     )
 }
 
