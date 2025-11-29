@@ -26,7 +26,22 @@ import ResponseViewer, {
 import { Info, FileText } from 'lucide-react'
 //import { Info, Edit, FileText } from 'lucide-react'
 
-// 後端 API 基礎 URL ************ 待更改API ************
+enum SortWay{
+  Accend,
+  Deccend
+}
+
+enum SortType{
+  Name,
+  Date
+}
+
+enum GroupType{
+  Project,
+  None,
+  Date,
+  Questionnaire,
+}
 
 export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -61,6 +76,10 @@ export default function HistoryPage() {
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
+  const [sortWay, setSortWay] = useState(SortWay.Accend)
+  const [sortType, setSortType] = useState(SortType.Name)
+  const [groupType, setGroupType] = useState(GroupType.Project)
+
   const router = useRouter();
   const menuSize = { x: 200, y: 270 }
 
@@ -92,17 +111,18 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  const translateText = async (text: string | null, source = "zh-TW", target = "en") => {
+  const translateText = (text: string | null, source = "zh-TW", target = "en") => {
     if(text === null) return ""
 
-    const res = await fetch("/api/translate", {
+    /*const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q: text, source, target })
     });
 
     const data = await res.json();
-    return data.translatedText;
+    return data.translatedText;*/
+    return "我是英文"
   }
 
   const gradualTranslate = async(r:ResponseData, q: QuestionnaireData) => {
@@ -471,6 +491,7 @@ export default function HistoryPage() {
         <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
             {t('historyPage.historyTitle')}
         </h1>
+        
         <div className="
           flex justify-center
           w-full mb-14
@@ -479,6 +500,16 @@ export default function HistoryPage() {
             w-full
             md:max-w-250
           ">
+            <div className='flex justify-end items-end w-full my-3'>
+              <SortControls
+                sortWay={sortWay}
+                sortType={sortType}
+                groupType={groupType}
+                onSortWayChange={setSortWay}
+                onSortTypeChange={setSortType}
+                onGroupTypeChange={setGroupType}
+              />
+            </div>
             {
                 // no history
               responseList.length <= 0 && (
@@ -556,6 +587,112 @@ export default function HistoryPage() {
 
 export function Notification() {
 
+}
+
+export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortTypeChange,onGroupTypeChange}: {
+  sortWay: SortWay;
+  sortType: SortType;
+  groupType: GroupType;
+  onSortWayChange: (v: SortWay) => void;
+  onSortTypeChange: (v: SortType) => void;
+  onGroupTypeChange: (v: GroupType) => void;
+}) 
+{
+  return (
+    <div className="flex flex-wrap gap-4">
+      <ClickAwaySelect
+        label="Sort Way"
+        value={sortWay}
+        options={[
+          { label: "Accend", value: SortWay.Accend },
+          { label: "Deccend", value: SortWay.Deccend },
+        ]}
+        onChange={onSortWayChange}
+      />
+
+      <ClickAwaySelect
+        label="Sort Type"
+        value={sortType}
+        options={[
+          { label: "Name", value: SortType.Name },
+          { label: "Date", value: SortType.Date },
+        ]}
+        onChange={onSortTypeChange}
+      />
+
+      <ClickAwaySelect
+        label="Group Type"
+        value={groupType}
+        options={[
+          { label: "Project", value: GroupType.Project },
+          { label: "None", value: GroupType.None },
+          { label: "Date", value: GroupType.Date },
+          { label: "Questionnaire", value: GroupType.Questionnaire },
+        ]}
+        onChange={onGroupTypeChange}
+      />
+    </div>
+  );
+}
+
+function ClickAwaySelect<T>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { label: string; value: T }[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // 點擊畫面空白收起
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-40 select-none">
+      <label className="block text-sm font-medium mb-1 text-gray-600">
+        {label}
+      </label>
+      <div
+        className="cursor-pointer px-3 py-2 rounded-lg border border-gray-300 bg-white shadow-sm flex justify-between items-center"
+        onClick={() => setOpen(!open)}
+      >
+        <span>{options.find((o) => o.value === value)?.label}</span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▼</span>
+      </div>
+
+      {open && (
+        <ul className="absolute mt-1 w-full rounded-lg bg-white backdrop-blur-sm border border-gray-200 shadow-lg z-50 dark:bg-gray-800/60 dark:border-gray-700">
+          {options.map((o) => (
+            <li
+              key={String(o.value)}
+              className="px-3 py-2 cursor-pointer hover:bg-blue-500"
+              onClick={() => {
+                onChange(o.value);
+                setOpen(false);
+              }}
+            >
+              {o.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export function ContextMenuStrip({ size, position, children }: {
