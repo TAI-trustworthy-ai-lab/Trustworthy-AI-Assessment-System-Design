@@ -45,9 +45,7 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({ text
                 setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
             });
         } else {
-            translateText(text, "en", "zh-TW").then(result => {
-                setTranslated(result);
-            });
+            setTranslated(text);
         }
     }, [text, i18n.language]);
 

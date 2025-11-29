@@ -276,6 +276,39 @@
     "daysAgo": "{{count}} 天前",
     "thisYearDate": "{{month}} 月 {{day}} 日",
     "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日"
+  },
+  "reportPage": {
+    "report": {
+      "title": "可信任AI評估測驗報告",
+      "projectName": "專案名稱",
+      "userName": "評估人員",
+      "generatedAt": "生成時間",
+      "result": "評估結果",
+      "overallScore": "總體分數 (滿分 100)",
+      "grade": "評級",
+      "radarChart": "指標分佈雷達圖",
+      "detailIndicators": "細項指標表現",
+      "pdfFailure": "PDF 生成失敗"
+    },
+    "error": {
+      "title": "報告載入失敗",
+      "missingAuthOrId": "認證資訊或 ID 缺失。請從問卷頁面重新提交。",
+      "missingProjectName": "專案名稱缺失",
+      "missingVersionTitle": "問卷版本標題缺失",
+      "missingUserName": "使用者名稱缺失",
+      "fetchReport": "獲取報告時發生錯誤。",
+      "loadFail": "報告載入失敗",
+      "downloadPdf": "下載失敗，請聯繫管理員。",
+      "pdfFail": "PDF 生成失敗"
+    },
+    "loading": {
+      "report": "正在載入報告，請稍候..."
+    },
+    "button": {
+      "backHome": "返回主頁",
+      "generatePdf": "生成 PDF",
+      "preparingPdf": "正在準備 PDF..."
+    }
   }
 
 

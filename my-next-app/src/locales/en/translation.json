@@ -275,6 +275,39 @@
     "daysAgo": "{{count}} days ago",
     "thisYearDate": "{{month}}/{{day}}",
     "fullDate": "{{year}}/{{month}}/{{day}}"
+  },
+  "reportPage": {
+    "report": {
+      "title": "Trusted AI Evaluation Report",
+      "projectName": "Project Name",
+      "userName": "Evaluator",
+      "generatedAt": "Generated At",
+      "result": "Evaluation Result",
+      "overallScore": "Overall Score (out of 100)",
+      "grade": "Grade",
+      "radarChart": "Radar Chart of Indicators",
+      "detailIndicators": "Detailed Indicator Performance",
+      "pdfFailure": "PDF build failed"
+    },
+    "error": {
+      "title": "Report Load Failed",
+      "missingAuthOrId": "Authentication info or ID missing. Please resubmit from the questionnaire page.",
+      "missingProjectName": "Project name missing",
+      "missingVersionTitle": "Questionnaire version title missing",
+      "missingUserName": "User name missing",
+      "fetchReport": "Error occurred while fetching report.",
+      "loadFail": "Failed to load report",
+      "downloadPdf": "Download failed, please contact administrator.",
+      "pdfFail": "PDF generation failed"
+    },
+    "loading": {
+      "report": "Loading report, please wait..."
+    },
+    "button": {
+      "backHome": "Back to Home",
+      "generatePdf": "Generate PDF",
+      "preparingPdf": "Preparing PDF..."
+    }
   }
 }
 

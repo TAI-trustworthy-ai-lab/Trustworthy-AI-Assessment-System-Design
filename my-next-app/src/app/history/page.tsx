@@ -4,260 +4,333 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
+import {} from '@/services/projectService'
 import {
-    ProjectData,
-    fetchProjects
-} from '@/services/projectService'
-import {
-    AnswerData,
     ResponseMeta,
     ResponseData,
     ViewerState,
     fetchResponseList,
     deleteResponse,
     fetchResponse,
-    fetchWithRetry,
     fetchQuestionnaire
 } from '@/services/responseService'
+
 import { useTranslation } from 'react-i18next';
-import ResponseViewer, { QuestionnaireData, styleSelected, styleUnselected } from './ResponseViewer';
-import { Info, Edit, FileText } from 'lucide-react'
+import ResponseViewer, {
+  Option,
+  Question,
+  QuestionnaireData,
+  styleSelected,
+  styleUnselected
+} from './ResponseViewer';
+import { Info, FileText } from 'lucide-react'
+//import { Info, Edit, FileText } from 'lucide-react'
 
 // 後端 API 基礎 URL ************ 待更改API ************
 
 export default function HistoryPage() {
-    const [userId, setUserId] = useState<string | null>(null);
-    const [authToken, setAuthToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
-    const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
-    const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null);
-    const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
-    const [viewerData, setViewerData] = useState<{
-        response: ResponseData | null,
-        questionnaire: QuestionnaireData | null
-    }>({ response: null, questionnaire: null });
+  const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
+  const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null);
+  const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
+  const [viewerData, setViewerData] = useState<{
+    response: ResponseData | null,
+    questionnaire: QuestionnaireData | null
+  }>({ response: null, questionnaire: null });
 
-    // reminder: key is response id
-    const [fetchList, setFetchList] = useState<Record<
-        number,
-        {
-            response: ResponseData | null,
-            questionnaire: QuestionnaireData | null
-        }>>({})
-    const [infoText, setInfoText] = useState<string>("")
-    const { i18n, t } = useTranslation();
-    const [isLoading, setIsLoading] = useState(true);
-    const [isOpen, setIsOpen] = useState(false);
-    const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
-    const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
-    const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  // reminder: key is response id
+  const [fetchList, setFetchList] = useState<Record<
+    number,
+    {
+      response: ResponseData | null,
+      questionnaire: QuestionnaireData | null
+      locale: Record<string, QuestionnaireData> | null
+    }
+  >>({})
+  const [infoText, setInfoText] = useState<string>("")
+  const { i18n, t } = useTranslation();
 
-    const router = useRouter();
-    const menuSize = { x: 200, y: 270 }
+  const [isLoading, setIsLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
-    // get userId authToken from localStorage
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedUserId = localStorage.getItem('userId');
-            const storedAuthToken = localStorage.getItem('authToken');
+  const router = useRouter();
+  const menuSize = { x: 200, y: 270 }
 
-            setUserId(storedUserId);
-            setAuthToken(storedAuthToken);
-        }
-    }, []);
+  // get userId authToken from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      const storedAuthToken = localStorage.getItem('authToken');
 
-    // load all response from user id (GET API)
-    const loadResponses = useCallback(async () => {
-        if (!userId || userId === 'fallback-user-id' || !authToken) {
-            return;
-        }
-        setIsLoading(true);
-        try {
-            const data = await fetchResponseList(userId, authToken);
-            //const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
-            setResponseList(data);
-        } catch (error) {
-            console.error("載入回應列表失敗:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId, authToken]);
+      setUserId(storedUserId);
+      setAuthToken(storedAuthToken);
+    }
+  }, []);
 
-    // open
-    // get response and questionnair from response id and qId (GET API)
-    const getResponseAndQuestionnaire = async (id: number, qId: number, finalState: ViewerState) => {
-        fetchList[id] = fetchList[id] || {
-            response: null,
-            questionnaire: null
-        }
+  // load all response from user id (GET API)
+  const loadResponses = useCallback(async () => {
+    if (!userId || userId === 'fallback-user-id' || !authToken) {
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const data = await fetchResponseList(userId, authToken);
+      //const sortedData = (data as ResponseData[]).sort((a, b) => b.id - a.id);
+      setResponseList(data);
+    } catch (error) {
+      console.error("載入回應列表失敗:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, authToken]);
 
-        let r: ResponseData | null = null
-        let q: QuestionnaireData | null = null
+  const translateText = async (text: string | null, source = "zh-TW", target = "en") => {
+    if(text === null) return ""
 
-        // response
-        if (fetchList[id].response === null) {
-            if (!userId || userId === 'fallback-user-id' || !authToken) {
-                return;
-            }
+    const res = await fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: text, source, target })
+    });
 
-            try {
-                r = await fetchResponse(userId, authToken, id)
-            } catch (e) {
-                setViewerState(ViewerState.fail)
-                console.error("error while fetchResponse", e)
-                throw "fail to get response"
-            }
+    const data = await res.json();
+    return data.translatedText;
+  }
 
-            if (r === null || r === undefined) {
-                setViewerState(ViewerState.fail)
-                throw "fail to get response"
-            }
-            else {
-                fetchList[id].response = r
-            }
-        }
-        else r = fetchList[id].response
-
-        // questionnaire
-        if (fetchList[id].questionnaire === null) {
-            if (!userId || userId === 'fallback-user-id' || !authToken) {
-                return;
-            }
-
-            try {
-                q = await fetchQuestionnaire(qId);
-            } catch (e) {
-                setViewerState(ViewerState.fail)
-                console.error("error while fetchResponse", e)
-                throw "fail to get response"
-            }
-
-            if (q === null || q === undefined) {
-                setViewerState(ViewerState.fail)
-                throw "fail to get questionnaire"
-            }
-            else {
-                fetchList[id].questionnaire = q
-            }
-        }
-        else q = fetchList[id].questionnaire
-
-        //console.log(r, q)
-
-        setViewerState(finalState)
-        setViewerData({ response: r, questionnaire: q })
+  // open
+  // get response and questionnair from response id and qId (GET API)
+  const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => {
+    fetchList[id] = fetchList[id] || {
+      response: null,
+      questionnaire: null,
+      locale: null
     }
 
-    // delete
-    const delResponse = async (id: number) => {
-        const r = responseList.find(value => value.id === id)
+    let r: ResponseData | null = null
+    let q: QuestionnaireData | null = null
 
-        if (r === null || r === undefined) return
+    // response
+    if (fetchList[id].response === null) {
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
 
-        const index = responseList.indexOf(r)
-        setResponseList(prev => prev.filter(value => value !== r))
+      try {
+        r = await fetchResponse(userId, authToken, id)
+      } catch (e) {
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchResponse", e)
+        throw "fail to get response"
+      }
 
-        if (!userId || userId === 'fallback-user-id' || !authToken) {
-            return;
+      if (r === null || r === undefined) {
+        setViewerState(ViewerState.fail)
+        throw "fail to get response"
+      }
+      else {
+        fetchList[id].response = r
+      }
+    }
+    else r = fetchList[id].response
+
+    // questionnaire
+    if (fetchList[id].questionnaire === null) {
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
+
+      try {
+        q = await fetchQuestionnaire(qId);
+      } catch (e) {
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchResponse", e)
+        throw "fail to get response"
+      }
+
+      if (q === null || q === undefined) {
+        setViewerState(ViewerState.fail)
+        throw "fail to get questionnaire"
+      }
+      else {
+        fetchList[id].questionnaire = q
+
+        //translate en only
+        
+        try{
+          const tanslatedQuestionnaire: QuestionnaireData = {
+            id: q.id,
+            title: await translateText(q.title),
+            description: await translateText(q.description),
+            questions: await Promise.all( q.questions.map(async (q) => {
+              const newQ: Question = {
+                id: q.id,
+                text: await translateText(q.text),
+                category: q.category,
+                order: q.order,
+                type: q.type, 
+                required: q.required,
+                options: q.options? await Promise.all(
+                  q.options.map(async (o) => {
+                    const newO: Option = {
+                      id: o.id,
+                      text: await translateText(o.text),
+                      value: o.value,
+                      order: o.order,
+                    };
+                    return newO;
+                  })) : undefined,
+                }
+              return newQ
+            })),
+            group: q.group
+          }
+
+          fetchList[id].locale = {
+            ...fetchList[id].locale,
+            "en": tanslatedQuestionnaire
+          }
+        } catch (e){
+          console.error("fail to translate:", e)
         }
-        try {
-            await deleteResponse(userId, authToken, id);
-        } catch (e) {
-            setResponseList(prev => {
-                const newList = [...prev]
-                newList.splice(index, 0, r)
-                return newList
-            })
-            console.error("fail to del response", e)
-        }
+      }
+    }
+    if(fetchList[id].locale)
+
+    //console.log(locale)
+    if(locale){
+      switch(locale){
+        case "en":
+          q = fetchList[id].locale?.en? fetchList[id].locale.en: fetchList[id].questionnaire
+          break
+        default:
+          q = fetchList[id].questionnaire
+          break
+      }
+    } else {
+      q = fetchList[id].questionnaire
     }
 
-    const deleteResponseHandler = () => {
-        setIsDeleteWindowOpen(false)
-        if (curResponse) {
-            try {
-                delResponse(curResponse.id)
-                setInfoText(t('historyPage.deleteSuccess'))
-            } catch (e) {
-                setInfoText(t('historyPage.deleteFail'))
-                console.error("刪除回應時發生錯誤", e)
-            }
-        }
+    //console.log(r, q)
+
+    setViewerState(finalState)
+    setViewerData({ response: r, questionnaire: q })
+  }
+
+  // delete
+  const delResponse = async (id: number) => {
+    const r = responseList.find(value => value.id === id)
+
+    if (r === null || r === undefined) return
+
+    const index = responseList.indexOf(r)
+    setResponseList(prev => prev.filter(value => value !== r))
+
+    if (!userId || userId === 'fallback-user-id' || !authToken) {
+      return;
     }
-
-    // 2. 當 userId 或 authToken 改變時載入專案
-    useEffect(() => {
-        if (userId && authToken) {
-            console.debug("loadResponses()")
-            //setIsLoading(false)
-            loadResponses()
-        } else if (userId !== null && authToken !== null) {
-            setIsLoading(false)
-        }
-    }, [userId, authToken])
-
-    const handleContextMenu = (e: React.MouseEvent) => {
-        const { innerWidth, innerHeight } = window;
-
-        let x = e.clientX;
-        let y = e.clientY;
-
-        if (x + menuSize.x > innerWidth) x -= menuSize.x;
-        if (y + menuSize.y > innerHeight) y -= menuSize.y;
-
-        setMenuPosition({ x, y });
-        setMenuPositionOriginal({ x, y });
-        setShowMenu(true);
+    try {
+        await deleteResponse(userId, authToken, id);
+    } catch (e) {
+      setResponseList(prev => {
+        const newList = [...prev]
+        newList.splice(index, 0, r)
+        return newList
+      })
+      console.error("fail to del response", e)
     }
+  }
 
-    useEffect(() => {
-        if (!showMenu) return
-        const handleResize = () => {
-            let x = menuPositionOriginal.x;
-            let y = menuPositionOriginal.y;
-
-            if (x + menuSize.x > window.innerWidth) x = window.innerWidth - menuSize.x - 8;
-            if (y + menuSize.y > window.innerHeight) y = window.innerHeight - menuSize.y - 8;
-
-            setMenuPosition({ x, y });
-        };
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, [menuPosition]);
-
-    // 載入中狀態顯示
-    if (isLoading) return (
-        <div className='h-screen items-center justify-center'>
-            <LoadingComponent message={t('historyPage.loadingResponses')} />
-        </div>
-    );
-
-    // 認證失敗/ID 缺失狀態顯示
-    if (!userId || !authToken) {
-        return (
-            <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
-                <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
-                    <h1 className="text-2xl font-bold mb-4 text-red-700">{t('historyPage.authFailTitle')}</h1>
-                    <p className="text-red-600">
-                        {t('historyPage.authFailMessage')}
-                    </p>
-                </div>
-            </div>
-        );
+  const deleteResponseHandler = () => {
+    setIsDeleteWindowOpen(false)
+    if (curResponse) {
+      try {
+        delResponse(curResponse.id)
+        setInfoText(t('historyPage.deleteSuccess'))
+      } catch (e) {
+        setInfoText(t('historyPage.deleteFail'))
+        console.error("刪除回應時發生錯誤", e)
+      }
     }
+  }
 
+  // 2. 當 userId 或 authToken 改變時載入專案
+  useEffect(() => {
+    if (userId && authToken) {
+      console.debug("loadResponses()")
+      //setIsLoading(false)
+      loadResponses()
+    } else if (userId !== null && authToken !== null) {
+      setIsLoading(false)
+    }
+  }, [userId, authToken])
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    const { innerWidth, innerHeight } = window;
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    if (x + menuSize.x > innerWidth) x -= menuSize.x;
+    if (y + menuSize.y > innerHeight) y -= menuSize.y;
+
+    setMenuPosition({ x, y });
+    setMenuPositionOriginal({ x, y });
+    setShowMenu(true);
+  }
+
+  useEffect(() => {
+    if (!showMenu) return
+    const handleResize = () => {
+      let x = menuPositionOriginal.x;
+      let y = menuPositionOriginal.y;
+
+      if (x + menuSize.x > window.innerWidth) x = window.innerWidth - menuSize.x - 8;
+      if (y + menuSize.y > window.innerHeight) y = window.innerHeight - menuSize.y - 8;
+
+      setMenuPosition({ x, y });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [menuPosition]);
+
+  // 載入中狀態顯示
+  if (isLoading) return (
+    <div className='h-screen items-center justify-center'>
+      <LoadingComponent message={t('historyPage.loadingResponses')} />
+    </div>
+  );
+
+  // 認證失敗/ID 缺失狀態顯示
+  if (!userId || !authToken) {
     return (
-        <ProtectedLayout>
+      <div className="p-8 bg-red-100 min-h-screen font-sans flex items-center justify-center">
+        <div className="max-w-md p-6 bg-white rounded-xl shadow-xl border border-red-400">
+          <h1 className="text-2xl font-bold mb-4 text-red-700">{t('historyPage.authFailTitle')}</h1>
+          <p className="text-red-600">
+            {t('historyPage.authFailMessage')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-            {/* response window */}
-            {isOpen && (
-                <div
-                    className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
-                    onClick={() => { setIsOpen(false) }}
-                >
-                    <div className=" 
+  return (
+    <ProtectedLayout>
+
+      {/* response window */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
+          onClick={() => { setIsOpen(false) }}
+        >
+          <div className=" 
             absolute flex flex-col top-[3vh]
             w-full h-[90vh] max-h-[680]
             mx-0 p-5
@@ -265,87 +338,87 @@ export default function HistoryPage() {
             
             md:mx-20
             md:max-w-[800]"
-                        onClick={(e) => e.stopPropagation()} // avoid clicking background
-                    >
-                        <div className="
+            onClick={(e) => e.stopPropagation()} // avoid clicking background
+          >
+            <div className="
               relative h-full w-full
               bg-gray-50 
               rounded overflow-hidden
             ">
-                            <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
-                            <ResponseWindow state={viewerState} data={viewerData} />
-                        </div>
-                    </div>
-                </div>
-            )}
+              <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
+              <ResponseWindow state={viewerState} data={viewerData} />
+            </div>
+          </div>
+        </div>
+      )}
 
-            {
-                isDeleteWindowOpen && (
-                    <div
-                        className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
-                        onClick={() => setIsDeleteWindowOpen(false)}
-                    >
-                        <div className="
+      {
+        isDeleteWindowOpen && (
+          <div
+              className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
+              onClick={() => setIsDeleteWindowOpen(false)}
+          >
+            <div className="
               flex flex-col
               w-full max-w-[315] h-[45vh] max-h-[170]
               overflow-hidden rounded-xl"
 
-                            onClick={(e) => e.stopPropagation()} // avoid clicking background
-                        >
-                            <ComfirmWindow
-                                text={t('historyPage.deleteConfirm')}
-                                comfirm={deleteResponseHandler}
-                                cancel={() => setIsDeleteWindowOpen(false)} />
-                        </div>
-                    </div>
-                )
-            }
+              onClick={(e) => e.stopPropagation()} // avoid clicking background
+            >
+              <ComfirmWindow
+                text={t('historyPage.deleteConfirm')}
+                comfirm={deleteResponseHandler}
+                cancel={() => setIsDeleteWindowOpen(false)} />
+            </div>
+          </div>
+        )
+      }
 
-            {/* right click menu */}
-            {showMenu && (
-                <ContextMenuStrip size={menuSize} position={menuPosition}>
-                    <div
-                        className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
-                        onClick={() => {
-                            if (curResponse) {
-                                setViewerState(ViewerState.loading)
-                                setIsOpen(true)
-                                setShowMenu(false)
+      {/* right click menu */}
+      {showMenu && (
+        <ContextMenuStrip size={menuSize} position={menuPosition}>
+          <div
+            className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={() => {
+              if (curResponse) {
+                setViewerState(ViewerState.loading)
+                setIsOpen(true)
+                setShowMenu(false)
 
-                                try {
-                                    getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, ViewerState.success)
-                                }
-                                catch (e) {
-                                    console.error("取得回應時發生錯誤", e)
-                                }
-                            }
-                        }}
-                    >
-                        {t('historyPage.open')}
-                    </div>
-                    <div
-                        className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
-                        onClick={() => {
-                            setShowMenu(false)
-                            if (curResponse === null || curResponse === undefined) return
+                try {
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.success)
+                }
+                catch (e) {
+                  console.error("取得回應時發生錯誤", e)
+                }
+              }
+            }}
+          >
+            {t('historyPage.open')}
+          </div>
+          <div
+            className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={() => {
+              setShowMenu(false)
+              if (curResponse === null || curResponse === undefined) return
 
-                            //localStorage.setItem('userId', (userId).toString());
-                            //localStorage.setItem('authToken', (authToken).toString());
+              //localStorage.setItem('userId', (userId).toString());
+              //localStorage.setItem('authToken', (authToken).toString());
 
-                            localStorage.setItem('responseId', (curResponse.id).toString());
-                            localStorage.setItem('currentProjectId', (curResponse.projectId).toString());
-                            localStorage.setItem('QuestionnaireID', (curResponse.versionId).toString());
+              localStorage.setItem('responseId', (curResponse.id).toString());
+              localStorage.setItem('currentProjectId', (curResponse.projectId).toString());
+              localStorage.setItem('QuestionnaireID', (curResponse.versionId).toString());
 
-                            window.open("/report", "_blank")
-                            //router.push('/report')
-                        }}
-                    >
-                        {t('historyPage.viewReport')}
-                    </div>
-                    <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
-                        {t('historyPage.download')}
-                    </div>
-                    {/*
+              window.open("/report", "_blank")
+              //router.push('/report')
+            }}
+          >
+            {t('historyPage.viewReport')}
+          </div>
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
+            {t('historyPage.download')}
+          </div>
+          {/*
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
@@ -356,123 +429,123 @@ export default function HistoryPage() {
           >
             編輯
           </div>*/}
-                    <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
-                        onClick={() => {
-                            if (curResponse) {
-                                setViewerState(ViewerState.loading)
-                                setIsOpen(true)
-                                setShowMenu(false)
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
+            onClick={() => {
+              if (curResponse) {
+                setViewerState(ViewerState.loading)
+                setIsOpen(true)
+                setShowMenu(false)
 
-                                try {
-                                    getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, ViewerState.detail)
-                                }
-                                catch (e) {
-                                    console.error("取得回應時發生錯誤", e)
-                                }
-                            }
-                        }}
-                    >
-                        {t('historyPage.detailInfo')}
-                    </div>
-                    <div
-                        className="flex items-center size-full px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200"
-                        onClick={() => { setShowMenu(false); setIsDeleteWindowOpen(true) }}
-                    >
-                        {t('historyPage.delete')}
-                    </div>
-                </ContextMenuStrip>
-            )}
+                try {
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.detail)
+                }
+                catch (e) {
+                  console.error("取得回應時發生錯誤", e)
+                }
+              }
+            }}
+          >
+            {t('historyPage.detailInfo')}
+          </div>
+          <div
+            className="flex items-center size-full px-4 py-2 text-red-600 hover:bg-red-100 cursor-pointer active:bg-red-200"
+            onClick={() => { setShowMenu(false); setIsDeleteWindowOpen(true) }}
+          >
+            {t('historyPage.delete')}
+          </div>
+        </ContextMenuStrip>
+      )}
 
-            <div className="
-        p-8 bg-gray-50 min-h-screen font-sans"
-                onClick={() => { setShowMenu(false); setCurResponse(null) }}
-            >
-                <AuthHeader />
-                <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
-                    {t('historyPage.historyTitle')}
-                </h1>
-                <div className="
-            flex justify-center
-            w-full mb-14
+      <div
+        className="
+          p-8 bg-gray-50 min-h-screen font-sans"
+        onClick={() => { setShowMenu(false); setCurResponse(null) }}
+      >
+        <AuthHeader />
+        <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
+            {t('historyPage.historyTitle')}
+        </h1>
+        <div className="
+          flex justify-center
+          w-full mb-14
         ">
-                    <div className="
+          <div className="
             w-full
             md:max-w-250
           ">
-
-                        {
-                            // no history
-                            responseList.length <= 0 && (
-                                <div className='
+            {
+                // no history
+              responseList.length <= 0 && (
+                <div className='
                   flex justify-center
                   mt-10 w-full
                   italic font-bold text-gray-400 text-center text-xl
                 '>
-                                    {t('historyPage.noHistory')}
-                                </div>
-                            )
-                        }
-                        {
-                            // sorting type?
-                            responseList.length > 0 &&
-                            <>
-                                <div className="
-                w-full h-[50]
-                grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
-                mb-2 py-2 px-2
-                bg-gray-100 rounded-t-lg
-
-                sm:grid-cols-[1fr_1.5fr_160px_35px]
-
-                md:min-w-150
-                md:grid-cols-[1.5fr_60px_2fr_160px_35px]
-              ">
-                                    <div className=" text-gray-600 truncate">{t('historyPage.projectName')}</div>
-                                    <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
-                                    <div className=" text-gray-600 truncate">{t('historyPage.questionnaireName')}</div>
-                                    <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
-                                </div>
-
-                                {responseList.map((data) => {
-                                    const item = <ResponseItem
-                                        meta={data}
-                                        selected={data === curResponse}
-                                        setCurResponse={() => setCurResponse(data)}
-                                        showMenu={(e) => {
-                                            handleContextMenu(e)
-                                        }} />
-                                    return (
-                                        <div
-                                            key={data.id}
-                                            onClick={(e) => { setCurResponse(data); e.stopPropagation(); setShowMenu(false) }}
-                                            onDoubleClick={() => {
-                                                setViewerState(ViewerState.loading)
-                                                setIsOpen(true)
-
-                                                try {
-                                                    getResponseAndQuestionnaire(data.id, data.versionId, ViewerState.success)
-                                                }
-                                                catch (e) {
-                                                    console.error("取得回應時發生錯誤", e)
-                                                }
-                                            }}
-                                            onContextMenu={(e) => {
-                                                e.preventDefault()
-                                                setCurResponse(data)
-                                                handleContextMenu(e)
-                                            }}
-                                        >
-                                            {item}
-                                        </div>
-                                    )
-                                })}
-                            </>
-                        }
-                    </div>
+                  {t('historyPage.noHistory')}
                 </div>
-            </div>
-        </ProtectedLayout>
-    );
+              )
+            }
+            {
+              // sorting type?
+              responseList.length > 0 &&
+              <>
+                <div className="
+                  w-full h-[50]
+                  grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+                  mb-2 py-2 px-2
+                  bg-gray-100 rounded-t-lg
+
+                  sm:grid-cols-[1fr_1.5fr_160px_35px]
+
+                  md:min-w-150
+                  md:grid-cols-[1.5fr_60px_2fr_160px_35px]
+                ">
+                  <div className=" text-gray-600 truncate">{t('historyPage.projectName')}</div>
+                  <div className="hidden size-fit text-gray-600 md:flex">{t('historyPage.version')}</div>
+                  <div className=" text-gray-600 truncate">{t('historyPage.questionnaireName')}</div>
+                  <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
+                </div>
+
+                {responseList.map((data) => {
+                  const item = <ResponseItem
+                    meta={data}
+                    selected={data === curResponse}
+                    setCurResponse={() => setCurResponse(data)}
+                    showMenu={(e) => {
+                        handleContextMenu(e)
+                  }} />
+                  return (
+                    <div
+                      key={data.id}
+                      onClick={(e) => { setCurResponse(data); e.stopPropagation(); setShowMenu(false) }}
+                      onDoubleClick={() => {
+                        setViewerState(ViewerState.loading)
+                        setIsOpen(true)
+
+                        try {
+                          getResponseAndQuestionnaire(data.id, data.versionId, i18n.language, ViewerState.success)
+                        }
+                        catch (e) {
+                          console.error("取得回應時發生錯誤", e)
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        setCurResponse(data)
+                        handleContextMenu(e)
+                      }}
+                    >
+                        {item}
+                    </div>
+                  )
+                })}
+              </>
+            }
+          </div>
+        </div>
+      </div>
+    </ProtectedLayout>
+  );
 }
 
 export function Notification() {
@@ -485,46 +558,46 @@ export function ContextMenuStrip({ size, position, children }: {
     children: React.JSX.Element[]
 }) {
 
-    const childCount = children.length
-    const commonStyle = "flex items-center h-full overflow-hidden"
+  const childCount = children.length
+  const commonStyle = "flex items-center h-full overflow-hidden"
 
-    return (
-        <div
-            style={{
-                top: position.y,
-                left: position.x,
-                width: `${size.x}px`,
-                height: `${size.y}px`
-            }}
-            className={`
+  return (
+    <div
+      style={{
+          top: position.y,
+          left: position.x,
+          width: `${size.x}px`,
+          height: `${size.y}px`
+      }}
+      className={`
         fixed z-40 select-none
         flex flex-col justify-evenly
         bg-white rounded shadow-[0_0_15px_rgba(0,0,0,0.35)]`}
-        >
-            {
-                children.map((c, index) => {
-                    if (index <= 0) {
-                        return (
-                            <div key={index} className={`${commonStyle} rounded-t`}>
-                                {c}
-                            </div>
-                        )
-                    } else if (index >= childCount - 1) {
-                        return (
-                            <div key={index} className={`${commonStyle} rounded-b`}>
-                                {c}
-                            </div>
-                        )
-                    } else {
-                        return (
-                            <div key={index} className={`${commonStyle}`}>
-                                {c}
-                            </div>
-                        )
-                    }
-                })}
-        </div>
-    )
+      >
+        {
+          children.map((c, index) => {
+            if (index <= 0) {
+              return (
+                <div key={index} className={`${commonStyle} rounded-t`}>
+                  {c}
+                </div>
+              )
+            } else if (index >= childCount - 1) {
+              return (
+                <div key={index} className={`${commonStyle} rounded-b`}>
+                  {c}
+                </div>
+              )
+            } else {
+              return (
+                <div key={index} className={`${commonStyle}`}>
+                  {c}
+                </div>
+              )
+            }
+        })}
+    </div>
+  )
 }
 
 export function ComfirmWindow({ text, comfirm, cancel }: { text: string, comfirm: () => void, cancel: () => void }) {
@@ -662,9 +735,29 @@ export function formatRelativeTime(isoString: string): string {
     return t('historyPage.fullDate', { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() });
 }
 
+export function formatTime(isoString: string | undefined): string {
+  if(isoString === undefined) return "未知時間"
+
+  const d = new Date(isoString);
+  return `
+    ${
+      d.getFullYear()
+    }/${
+      String(d.getMonth() + 1).padStart(2, '0')
+    }/${
+      String(d.getDate()).padStart(2, '0')
+    } ${
+      String(d.getHours()).padStart(2, '0')
+    }:${
+      String(d.getMinutes()).padStart(2, '0')
+    }:${
+      String(d.getSeconds()).padStart(2, '0')
+    }`
+}
+
 export function ResponseWindow({ state, data }: { state: ViewerState, data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } }) {
     const [curState, setCurState] = useState(state)
-    const [transDone, setTransDone] = useState(true)
+    const router = useRouter();
     const { i18n, t } = useTranslation();
     useEffect(() => {
         setCurState(state)
@@ -674,6 +767,15 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
     if (curState === ViewerState.loading) return (
         <div className="flex items-center justify-center w-full h-full">
             <LoadingComponent message={t("historyPage.loading")} />
+        </div>
+    )
+
+    // fail
+    if (curState === ViewerState.fail
+        || (data.response === null || data.questionnaire === null)
+    ) return (
+        <div className="flex items-center justify-center w-full h-full">
+            <h2 className="text-red-600 text-lg font-semibold mb-4">{t('historyPage.fetchFail')}</h2>
         </div>
     )
 
@@ -712,20 +814,11 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
           <div>{data.response?.label}</div>*/}
 
                 <div>{t('historyPage.submittedAt')}</div>
-                <div>{data.response?.submittedAt}</div>
+                <div>{formatTime(data.response?.submittedAt)}</div>
 
             </div>
         </div>
     </div>)
-
-    // fail
-    if (curState === ViewerState.fail
-        || (data.response === null || data.questionnaire === null)
-    ) return (
-        <div className="flex items-center justify-center w-full h-full">
-            <h2 className="text-red-600 text-lg font-semibold mb-4">{t('historyPage.fetchFail')}</h2>
-        </div>
-    )
 
     const style = {
       orange:{
@@ -844,7 +937,8 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
                 localStorage.setItem('currentProjectId', (data.response.projectId).toString());
                 localStorage.setItem('QuestionnaireID', (data.response.versionId).toString());
 
-                window.open("/report", "_blank")
+                router.push('/report')
+                //window.open("/report", "_blank")
               }
             )}
           </div>
