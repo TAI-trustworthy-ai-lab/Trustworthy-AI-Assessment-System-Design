@@ -75,6 +75,7 @@ export default function HistoryPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const isOpenRef = useRef(isOpen);
   const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
@@ -86,6 +87,10 @@ export default function HistoryPage() {
 
   const router = useRouter();
   const menuSize = { x: 200, y: 270 }
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // get userId authToken from localStorage
   useEffect(() => {
@@ -120,15 +125,17 @@ export default function HistoryPage() {
 
   const translateText = async(text: string | null, source = "zh-TW", target = "en") => {
     if(text === null) return ""
+    await new Promise(resolve => setTimeout(resolve, 430))
 
+    /*
     const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q: text, source, target })
     })
     const data = await res.json()
-    return data.translatedText;
-    // return "this is English, cancel the comment in translateText() to use api"
+    return data.translatedText;*/
+    return "this is English, cancel the comment in translateText() to use api"
   }
 
   const gradualTranslate = async(r:ResponseData, q: QuestionnaireData) => {
@@ -139,7 +146,8 @@ export default function HistoryPage() {
       questions: [],
       group: q.group
     }
-    for(let i = 0; i < q.questions.length; i++){
+
+    for(let i = 0; i < q.questions.length && isOpenRef.current; i++){
       const oldQ = q.questions[i]
       const newQ: Question = {
         id: oldQ.id,
@@ -270,8 +278,8 @@ export default function HistoryPage() {
     }
 
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
-    setViewerState(finalState)
     setViewerData({ response: r, questionnaire: q })
+    setViewerState(finalState)
   }
 
   // delete
