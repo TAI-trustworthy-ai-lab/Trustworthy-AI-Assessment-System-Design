@@ -43,15 +43,15 @@ export const CATEGORY_MAP: Record<string, string> = {
 };
 
 export const REPORT_CATEGORY_MAP_EN: Record<string, string> = {
-    "Accuracy": "一、準確性（Accuracy）",
-    "Reliability": "二、可靠性（Reliability）",
-    "Safety": "三、安全性（Safety）",
-    "Resilience": "四、韌性（Resilience）",
-    "Transparency": "五、透明性（Transparency）",
-    "Accountability": "六、當責性（Accountability）",
-    "Explainability": "七、可解釋性（Explanability）",
-    "Autonomy": "八、自主性（Autonomy）",
-    "Privacy": "九、隱私（Privacy）",
-    "Fairness": "十、公平性（Fairness）",
-    "Security": "十一、資訊安全性（Security）",
+    "ACCURANCY": "一、準確性（Accuracy）",
+    "RELIABILITY": "二、可靠性（Reliability）",
+    "SAFETY": "三、安全性（Safety）",
+    "RESILIENCE": "四、韌性（Resilience）",
+    "TRANSPARENCY": "五、透明性（Transparency）",
+    "ACCOUNTABILITY": "六、當責性（Accountability）",
+    "EXPLAINABILITY": "七、可解釋性（Explanability）",
+    "AUTONOMY": "八、自主性（Autonomy）",
+    "PRIVACY": "九、隱私（Privacy）",
+    "FAIRNESS": "十、公平性（Fairness）",
+    "SECURITY": "十一、資訊安全性（Security）",
 };
