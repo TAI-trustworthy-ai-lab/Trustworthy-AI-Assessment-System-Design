@@ -132,6 +132,13 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
   );
 };
 
+const gridColNum = [
+  "grid-cols-0",
+  "grid-cols-1",
+  "grid-cols-2",
+  "grid-cols-3",
+]
+
 // 2. SINGLE_CHOICE 題型
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
@@ -140,7 +147,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
   //console.log("option length", options.length)
 
   return (
-    <div className={`gap-3 w-full sm:w-fit ${options.length >= 4 ? "grid grid-cols-2" :`grid grid-cols-${options.length}`} `}>
+    <div className={`gap-3 w-full sm:w-fit grid ${options.length >= 4 ? " grid-cols-2" :`${gridColNum[options.length]}`} `}>
       {options.map(opt => (
         <button
           key={opt.id}
@@ -185,7 +192,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
   };
 
   return (
-    <div className={`gap-3 w-full sm:w-fit ${options.length >= 4 ? "grid grid-cols-2 " :"flex"}`}>
+    <div className={`gap-3 w-full grid sm:w-fit ${options.length >= 4 ? "grid-cols-2 " : `${gridColNum[options.length]}`}`}>
       {options.map(opt => (
         <button
           key={opt.id}
