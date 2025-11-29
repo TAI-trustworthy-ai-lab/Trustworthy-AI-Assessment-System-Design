@@ -15,7 +15,7 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
     const changeLanguage = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const lang = e.target.value;
         i18nInstance.changeLanguage(lang);
-        //alert(JSON.stringify(i18nInstance.store.data, null, 2));
+        localStorage.setItem("preferredLanguage", lang);
     };
 
     return (
