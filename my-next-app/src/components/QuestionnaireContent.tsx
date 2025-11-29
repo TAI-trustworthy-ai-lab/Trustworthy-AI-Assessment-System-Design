@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import translate from 'google-translate-api-x';
 
 // ----------------------------------------------------
 //  其他檔案資料 IMPORT FROM OTHERS FOLDER
