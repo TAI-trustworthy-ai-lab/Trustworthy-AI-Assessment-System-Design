@@ -4,9 +4,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {ResponseMeta} from '@/app/history/page'
+import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
+import { ResponseMeta } from '@/app/history/page'
 import { ReportRadarChart } from '@/components/ReportRadarChart';
+import { Chart as ChartType } from 'chart.js';
 
 const useRouter = () => {
     return {
@@ -73,6 +74,7 @@ export default function ReportPage() {
     const [versionTitle, setVersionTitle] = useState<string | null>(null);
     const [projectName, setProjectName] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const { responseId, authToken } = useMemo(() => {
         if (typeof window === 'undefined') return { responseId: null, authToken: null };
@@ -120,6 +122,44 @@ export default function ReportPage() {
             console.error("Failed to fetch report:", error);
         }
     }, [responseId, authToken]);
+
+    const handleGeneratePdf = useCallback(async () => {
+        if (!report || isGeneratingPdf || !responseId) return;
+        setIsGeneratingPdf(true);
+
+        try {
+            // 假設您的後端 API 位於 /api/generate-pdf
+            const response = await fetch(`/api/generate-pdf?responseId=${responseId}`, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                throw new Error(`PDF API 呼叫失敗: ${response.statusText}`);
+            }
+
+            // 處理檔案下載
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            const filename = `${projectName || 'AI_Assessment'}_Report_${report.id}.pdf`;
+
+            link.href = url;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link); 
+
+            window.URL.revokeObjectURL(url); 
+
+        } catch (error) {
+            console.error("後端 PDF 生成請求失敗:", error);
+            alert('生成 PDF 失敗，請檢查後端服務。');
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    }, [report, isGeneratingPdf, responseId, projectName]);
+
 
     useEffect(() => {
         loadData();
@@ -170,8 +210,8 @@ export default function ReportPage() {
     const markdownContent = report.analysisText;
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
-            <AuthHeader />
-            <main className="max-w-4xl mx-auto pt-8 mt-7"> 
+            <AuthHeader className="no-print" />
+            <main id="report-content" className="max-w-4xl mx-auto pt-8 mt-7"> 
                 <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl">
                     <header className="border-b pb-4 mb-6">
                         <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-2">
@@ -216,7 +256,7 @@ export default function ReportPage() {
                             </div>
                         </div>
 
-                        <div className="markdown-content text-left mt-6 overflow-x-auto">
+                        <div className="markdown-content not-prose text-left mt-6 overflow-x-auto">
                             <ReactMarkdown 
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeRaw]}
@@ -256,7 +296,24 @@ export default function ReportPage() {
                     </section>
                 </div>
             </main>
-            <div className="flex justify-center mt-10 mb-20"> 
+            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
+                <button
+                    onClick={handleGeneratePdf}
+                    disabled={isGeneratingPdf}
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-purple-800 text-white shadow-2xl hover:bg-purple-700
+                        transition duration-150 ease-in-out 
+                        focus:outline-none focus:ring-4 focus:ring-purple-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    <span> {isGeneratingPdf ? '正在準備 PDF...' : '生成 PDF'} </span>
+                </button>
+
                 <button
                     onClick={() => router.push('/home')}
                     className={`

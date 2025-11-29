@@ -9,7 +9,7 @@ interface HeaderProps {
     titleHref?: string;
 }
 
-export default function Header({ children, titleHref = '/' }: HeaderProps) {
+export default function Header({ children, titleHref = '/'}: HeaderProps) {
     const { i18n: i18nInstance } = useTranslation();
     const { t } = useTranslation();
     const changeLanguage = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -19,12 +19,12 @@ export default function Header({ children, titleHref = '/' }: HeaderProps) {
     };
 
     return (
-        <header className='
+        <header className={`
       bg-blue-100/85
       fixed top-0 left-0 w-full 
       z-50
       h-20
-    '>
+    `}>
             <div className='
           flex justify-between items-center
           h-full 
