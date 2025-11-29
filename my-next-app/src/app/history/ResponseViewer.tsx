@@ -38,14 +38,14 @@ const CATEGORY_MAP: Record<string, {title:string, content:string}> = {
 // ----------------------------------------------------
 // 後端回傳資料結構定義
 // ----------------------------------------------------
-interface Option {
+export interface Option {
   id: number;
   text: string;
   value: number;
   order: number;
 }
 
-interface Question {
+export interface Question {
   id: number;
   text: string;
   category: string;

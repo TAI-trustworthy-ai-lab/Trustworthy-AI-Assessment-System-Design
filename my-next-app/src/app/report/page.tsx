@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
-import { ResponseMeta } from '@/app/history/page'
+import { ResponseMeta } from '@/services/responseService'
 import { ReportRadarChart } from '@/components/ReportRadarChart';
 
 const useRouter = () => {

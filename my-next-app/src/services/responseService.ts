@@ -70,7 +70,8 @@ export enum ViewerState{
   editing,
   detail,
   success,
-  fail
+  fail,
+  report
 }
 
 // fetch 函數  FETCH FUNCTION
