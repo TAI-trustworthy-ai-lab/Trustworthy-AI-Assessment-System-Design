@@ -24,6 +24,7 @@ import ResponseViewer, {
   styleUnselected
 } from './ResponseViewer';
 import { Info, FileText } from 'lucide-react'
+import { TFunction } from 'i18next';
 //import { Info, Edit, FileText } from 'lucide-react'
 
 enum SortWay{
@@ -77,7 +78,7 @@ export default function HistoryPage() {
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
-  const [sortWay, setSortWay] = useState(SortWay.Deccend)
+  const [sortWay, setSortWay] = useState(SortWay.Accend)
   const [sortType, setSortType] = useState(SortType.Date)
   const [groupType, setGroupType] = useState(GroupType.Project)
 
@@ -287,7 +288,7 @@ export default function HistoryPage() {
   }
 
   const sortList = (list: ResponseMeta[], type: SortType, way: SortWay) => {
-    const factor = way === SortWay.Accend ? 1 : -1;
+    const factor = way === SortWay.Accend ? -1 : 1;
 
     return list.sort((a, b) => {
       if (sortType === SortType.Name)
@@ -328,7 +329,7 @@ export default function HistoryPage() {
       return groupBy(list, (item: ResponseMeta)=>item.project.name )
 
     if (groupType === GroupType.Date)
-      return groupBy(list, (item: ResponseMeta)=>item.submittedAt );
+      return groupBy(list, (item: ResponseMeta)=>formatRelativeTime(item.submittedAt, t) );
 
     if (groupType === GroupType.Questionnaire)
       return groupBy(list, (item: ResponseMeta)=>item.versionId.toString() );
@@ -346,10 +347,13 @@ export default function HistoryPage() {
   }, [userId, authToken])
 
   useEffect(()=>{
-    const sortedList = sortList(responseList, sortType, sortWay)
-    const newGroupList = groupList(sortedList, groupType)
+    const newGroupList = groupList(responseList, groupType)
+    newGroupList?.forEach((group, id)=>
+    {
+      group.items = sortList(group.items, sortType, sortWay)
+    })
     if(newGroupList) setResponseGroup(newGroupList)
-  },[sortWay, sortType, groupType, responseList])
+  },[sortWay, sortType, groupType, responseList, t])
 
   const handleContextMenu = (e: React.MouseEvent) => {
     const { innerWidth, innerHeight } = window;
@@ -606,23 +610,30 @@ export default function HistoryPage() {
                           flex flex-col w-full'
                         key={responseGroup.indexOf(group)}
                       >
-                        <div
-                          className='
-                            flex justify-start items-center
-                            h-[53] p-2 pl-4
-                            text-white text-lg font-bold bg-blue-300
-                            rounded-lg'
-                        >
-                          {group.groupName}
-                        </div>
+                        {
+                          groupType!==GroupType.None && (
+                            <div
+                              className='
+                                flex justify-start items-center
+                                h-[53] p-2 pl-4
+                                text-white text-lg font-bold bg-blue-300
+                                rounded-lg'
+                            >
+                              {group.groupName}
+                            </div>
+                          )
+                        }
+                        
                         {group.items.map((data) => {
                           const item = <ResponseItem
                             meta={data}
                             selected={data === curResponse}
                             setCurResponse={() => setCurResponse(data)}
                             showMenu={(e) => {
-                                handleContextMenu(e)
-                          }} />
+                              handleContextMenu(e)
+                            }}
+                            t={t}
+                          />
                           return (
                             <div
                               key={data.id}
@@ -683,8 +694,8 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
         label="排序"
         value={sortWay}
         options={[
-          { label: "遞減", value: SortWay.Deccend },
           { label: "遞增", value: SortWay.Accend },
+          { label: "遞減", value: SortWay.Deccend },
         ]}
         onChange={onSortWayChange}
       />
@@ -694,7 +705,7 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
         value={sortType}
         options={[
           { label: "時間", value: SortType.Date },
-          { label: "名稱", value: SortType.Name },
+          { label: "專案名稱", value: SortType.Name },
         ]}
         onChange={onSortTypeChange}
       />
@@ -704,9 +715,9 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
         value={groupType}
         options={[
           { label: "專案", value: GroupType.Project },
-          { label: "無", value: GroupType.None },
           { label: "時間", value: GroupType.Date },
           { label: "問卷", value: GroupType.Questionnaire },
+          { label: "無", value: GroupType.None },
         ]}
         onChange={onGroupTypeChange}
       />
@@ -864,11 +875,12 @@ export function ComfirmWindow({ text, comfirm, cancel }: { text: string, comfirm
     )
 }
 
-export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
+export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
     meta: ResponseMeta,
     selected: boolean,
     setCurResponse: () => void,
     showMenu: (e: React.MouseEvent) => void
+    t: TFunction<"translation", undefined>
 }) {
   const myRef = useRef<HTMLDivElement>(null);
 
@@ -897,7 +909,7 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
       <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
 
       {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
-      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt)}</div>
+      <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt, t)}</div>
 
       {/* ... i copy the icon from google drive */}
       <div ref={myRef}
@@ -925,10 +937,9 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
   )
 }
 
-export function formatRelativeTime(isoString: string): string {
+export function formatRelativeTime(isoString: string, t: TFunction<"translation", undefined>): string {
     const date = new Date(isoString);
     const now = new Date();
-    const { i18n, t } = useTranslation();
     const diff = now.getTime() - date.getTime();
     const sec = Math.floor(diff / 1000);
     const min = Math.floor(sec / 60);
