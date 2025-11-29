@@ -218,10 +218,10 @@ export default function ReportPage() {
                 <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl">
                     <header className="border-b pb-4 mb-6">
                         <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-2">
-                            <h1>{t('reportPage.report.title')}</h1>
+                            {t('reportPage.report.title')}
                         </h1>
                         <p className="text-center text-xl font-medium text-indigo-700">
-                            {versionTitle || '問卷版本標題缺失'}
+                            {versionTitle || t('reportPage.error.missingVersionTitle')}
                         </p>
                     </header>
 
