@@ -676,19 +676,20 @@ function ClickAwaySelect<T>({
       </div>
 
       {open && (
-        <ul className="absolute mt-1 w-full rounded-lg bg-white backdrop-blur-sm border border-gray-200 shadow-lg z-50 dark:bg-gray-800/60 dark:border-gray-700">
-          {options.map((o) => (
-            <li
+        <ul className="absolute mt-1 w-full rounded-lg bg-white border border-gray-200 shadow-lg z-50 overflow-hidden">
+          {options.map((o) => {
+            const isSelected = o.value === value;
+            return (<li
               key={String(o.value)}
-              className="px-3 py-2 cursor-pointer hover:bg-blue-500"
+              className={`px-3 py-2 cursor-pointer ${isSelected? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200":"bg-white hover:bg-gray-50 active:bg-gray-100"}`}
               onClick={() => {
                 onChange(o.value);
                 setOpen(false);
               }}
             >
               {o.label}
-            </li>
-          ))}
+            </li>)
+          })}
         </ul>
       )}
     </div>
