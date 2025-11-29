@@ -47,6 +47,7 @@ export default function HistoryPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
 
+  const [responseGroup, setResponseGroup] = useState<{groupName: string, items: ResponseMeta[]}[]>([]);
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null);
   const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
@@ -57,7 +58,7 @@ export default function HistoryPage() {
 
   // reminder: key is response id
   // to do: store response/ questionaaire in local (seperated)
-  const fetchListString = localStorage.getItem("myFetchList");
+  //const fetchListString = localStorage.getItem("myFetchList");
   const [fetchList, setFetchList] = useState<Record<
     number,
     {
@@ -76,8 +77,8 @@ export default function HistoryPage() {
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
-  const [sortWay, setSortWay] = useState(SortWay.Accend)
-  const [sortType, setSortType] = useState(SortType.Name)
+  const [sortWay, setSortWay] = useState(SortWay.Deccend)
+  const [sortType, setSortType] = useState(SortType.Date)
   const [groupType, setGroupType] = useState(GroupType.Project)
 
   const router = useRouter();
@@ -285,6 +286,54 @@ export default function HistoryPage() {
     }
   }
 
+  const sortList = (list: ResponseMeta[], type: SortType, way: SortWay) => {
+    const factor = way === SortWay.Accend ? 1 : -1;
+
+    return list.sort((a, b) => {
+      if (sortType === SortType.Name)
+        return factor * a.project.name.localeCompare(b.project.name);
+
+      if (sortType === SortType.Date)
+        return factor * (new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
+
+      return 0;
+    });
+  }
+
+  function groupBy<T>(
+    list: T[],
+    method: (item: T)=>string
+  ): { groupName: string; items: T[] }[] {
+
+    const map = new Map<string, T[]>()
+
+    for (const item of list) {
+      const groupKey = method(item)
+      if (!map.has(groupKey)) map.set(groupKey, []);
+      map.get(groupKey)!.push(item);
+    }
+
+    // to array
+    return Array.from(map.entries()).map(([groupName, items]) => ({
+      groupName,
+      items,
+    }));
+  }
+
+  const groupList = (list: ResponseMeta[], groupType: GroupType) => {
+    if (groupType === GroupType.None)
+      return groupBy(list, ()=>"defalt" )
+
+    if (groupType === GroupType.Project)
+      return groupBy(list, (item: ResponseMeta)=>item.project.name )
+
+    if (groupType === GroupType.Date)
+      return groupBy(list, (item: ResponseMeta)=>item.submittedAt );
+
+    if (groupType === GroupType.Questionnaire)
+      return groupBy(list, (item: ResponseMeta)=>item.versionId.toString() );
+  }
+
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
     if (userId && authToken) {
@@ -295,6 +344,12 @@ export default function HistoryPage() {
       setIsLoading(false)
     }
   }, [userId, authToken])
+
+  useEffect(()=>{
+    const sortedList = sortList(responseList, sortType, sortWay)
+    const newGroupList = groupList(sortedList, groupType)
+    if(newGroupList) setResponseGroup(newGroupList)
+  },[sortWay, sortType, groupType, responseList])
 
   const handleContextMenu = (e: React.MouseEvent) => {
     const { innerWidth, innerHeight } = window;
@@ -523,19 +578,18 @@ export default function HistoryPage() {
               )
             }
             {
-              // sorting type?
               responseList.length > 0 &&
               <>
                 <div className="
                   w-full h-[50]
-                  grid grid-cols-[35px_1fr_1.5fr_35px] gap-4 items-center
+                  grid grid-cols-[13px_1fr_1.5fr_35px] gap-4 items-center
                   mb-2 py-2 px-2
-                  bg-gray-100 rounded-t-lg
+                  rounded-t-lg
 
-                  sm:grid-cols-[35px_1fr_1.5fr_160px_35px]
+                  sm:grid-cols-[13px_1fr_1.5fr_160px_35px]
 
                   md:min-w-150
-                  md:grid-cols-[35px_1.5fr_60px_2fr_160px_35px]
+                  md:grid-cols-[13px_1.5fr_60px_2fr_160px_35px]
                 ">
                   <div/>
                   <div className=" text-gray-600 truncate">{t('historyPage.projectName')}</div>
@@ -544,41 +598,63 @@ export default function HistoryPage() {
                   <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
                 </div>
 
-                {responseList.map((data) => {
-                  const item = <ResponseItem
-                    meta={data}
-                    selected={data === curResponse}
-                    setCurResponse={() => setCurResponse(data)}
-                    showMenu={(e) => {
-                        handleContextMenu(e)
-                  }} />
-                  return (
-                    <div
-                      key={data.id}
-                      className='flex justify-end gap-4'
-                      onClick={(e) => { setCurResponse(data); e.stopPropagation(); setShowMenu(false) }}
-                      onDoubleClick={() => {
-                        setViewerState(ViewerState.loading)
-                        setIsOpen(true)
+                {
+                  responseGroup.map((group)=>{
+                    return(
+                      <div
+                        className='
+                          flex flex-col w-full'
+                        key={responseGroup.indexOf(group)}
+                      >
+                        <div
+                          className='
+                            flex justify-start items-center
+                            h-[53] p-2 pl-4
+                            text-white text-lg font-bold bg-blue-300
+                            rounded-lg'
+                        >
+                          {group.groupName}
+                        </div>
+                        {group.items.map((data) => {
+                          const item = <ResponseItem
+                            meta={data}
+                            selected={data === curResponse}
+                            setCurResponse={() => setCurResponse(data)}
+                            showMenu={(e) => {
+                                handleContextMenu(e)
+                          }} />
+                          return (
+                            <div
+                              key={data.id}
+                              className='flex justify-end gap-4'
+                              onClick={(e) => { setCurResponse(data); e.stopPropagation(); setShowMenu(false) }}
+                              onDoubleClick={() => {
+                                setViewerState(ViewerState.loading)
+                                setIsOpen(true)
 
-                        try {
-                          getResponseAndQuestionnaire(data.id, data.versionId, i18n.language, ViewerState.success)
-                        }
-                        catch (e) {
-                          console.error("取得回應時發生錯誤", e)
-                        }
-                      }}
-                      onContextMenu={(e) => {
-                        e.preventDefault()
-                        setCurResponse(data)
-                        handleContextMenu(e)
-                      }}
-                    >
-                      <div className='w-[35px]'></div>
-                      {item}
-                    </div>
-                  )
-                })}
+                                try {
+                                  getResponseAndQuestionnaire(data.id, data.versionId, i18n.language, ViewerState.success)
+                                }
+                                catch (e) {
+                                  console.error("取得回應時發生錯誤", e)
+                                }
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault()
+                                setCurResponse(data)
+                                handleContextMenu(e)
+                              }}
+                            >
+                              <div className='w-[13px]'></div>
+                              {item}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })
+                }
+                
               </>
             }
           </div>
@@ -607,8 +683,8 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
         label="排序"
         value={sortWay}
         options={[
-          { label: "遞增", value: SortWay.Accend },
           { label: "遞減", value: SortWay.Deccend },
+          { label: "遞增", value: SortWay.Accend },
         ]}
         onChange={onSortWayChange}
       />
@@ -627,8 +703,8 @@ export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortT
         label="群組類型"
         value={groupType}
         options={[
-          { label: "無", value: GroupType.None },
           { label: "專案", value: GroupType.Project },
+          { label: "無", value: GroupType.None },
           { label: "時間", value: GroupType.Date },
           { label: "問卷", value: GroupType.Questionnaire },
         ]}
@@ -679,11 +755,11 @@ function ClickAwaySelect<T>({
       </div>
 
       {open && (
-        <ul className="absolute mt-1 w-full rounded-lg bg-white border border-gray-200 shadow-lg z-50 overflow-hidden">
+        <ul className="absolute z-40 mt-1 w-full rounded-lg bg-white border border-gray-200 shadow-lg overflow-hidden">
           {options.map((o) => {
             const isSelected = o.value === value;
             return (<li
-              key={String(o.value)}
+              key={options.indexOf(o)}
               className={`px-3 py-2 cursor-pointer ${isSelected? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200":"bg-white hover:bg-gray-50 active:bg-gray-100"}`}
               onClick={() => {
                 onChange(o.value);
@@ -812,7 +888,7 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu }: {
     md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
     >
       {/* project name */}
-      <div className="truncate h-fit text-blue-600 font-bold">{meta.project.name}</div>
+      <div className="truncate h-fit text-blue-500 font-bold">{meta.project.name}</div>
 
       {/* response ver */}
       <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
