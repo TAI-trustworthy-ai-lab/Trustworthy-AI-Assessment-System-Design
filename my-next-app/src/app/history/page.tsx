@@ -161,6 +161,7 @@ export default function HistoryPage() {
       }
       tanslatedQuestionnaire.questions.push(newQ)
       setViewerData({ response: r, questionnaire: tanslatedQuestionnaire })
+      setViewerState(ViewerState.translating)
     }
     return tanslatedQuestionnaire
   }
@@ -244,24 +245,28 @@ export default function HistoryPage() {
     else q = fetchQuestionnaireList[qId]
 
     //console.log(locale)
-    setViewerState(ViewerState.translating)
-    if(locale){
-      switch(locale){
-        case "en":
-          if(fetchList[id].locale?.en){
-            q = fetchList[id].locale.en
-          } else {
-            q = await gradualTranslate(r, q)
-            fetchList[id].locale = {
-              ...fetchList[id].locale,
-              "en": q
+    try{
+      if(locale){
+        switch(locale){
+          case "en":
+            if(fetchList[id].locale?.en){
+              q = fetchList[id].locale.en
+            } else {
+              q = await gradualTranslate(r, q)
+              fetchList[id].locale = {
+                ...fetchList[id].locale,
+                "en": q
+              }
             }
-          }
-          break
-        default:
-          q = fetchQuestionnaireList[qId]
-          break
+            break
+          default:
+            q = fetchQuestionnaireList[qId]
+            break
+        }
       }
+    } catch {
+      setViewerState(ViewerState.fail)
+      console.error("翻譯失敗")
     }
 
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
