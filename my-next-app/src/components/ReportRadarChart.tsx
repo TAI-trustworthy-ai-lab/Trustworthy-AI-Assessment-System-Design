@@ -38,11 +38,9 @@ const CATEGORY_MAP: Record<string, string> = {
 
 interface ReportRadarChartProps {
     radarData: Record<string, number>;
-    chartRef: React.RefObject<ChartType<'radar', number[], string>>;
 }
 
-export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData, chartRef }) => {
-    // 獲取雷達圖的標籤（使用中文簡稱）
+export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData }) => {
     const labels = Object.keys(CATEGORY_MAP).map(key => CATEGORY_MAP[key].split('（')[0]);
     
     // 獲取對應的數值，保持與標籤順序一致
@@ -117,7 +115,7 @@ export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData, c
     return (
     <div className="flex justify-center h-96">
         <div className="max-w-sm w-full max-w-lg">
-        <Radar ref={chartRef} data={data} options={options} />
+            <Radar data={data} options={options} />
         </div>
     </div>
     );

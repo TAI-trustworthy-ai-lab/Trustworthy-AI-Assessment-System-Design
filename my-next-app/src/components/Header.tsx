@@ -20,26 +20,30 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
 
     return (
         <header className={`
-      bg-blue-100/85
-      fixed top-0 left-0 w-full 
-      z-50
-      h-20
-    `}>
+            bg-blue-100/85
+            fixed top-0 left-0 w-full 
+            z-50
+            h-20
+        `}>
             <div className='
-          flex justify-between items-center
-          h-full 
-          px-4 sm:px-6 
-          '>
-                <Link href={titleHref} className='
-          text-xl sm:text-2xl font-bold text-gray-800 hover:text-blue-600 transition
-          '>
+                flex justify-between items-center
+                h-full 
+                px-4 sm:px-6 
+            '>
+                <Link 
+                    href={titleHref} 
+                    className='
+                    w-25 sm:w-auto
+                    text-sm sm:text-2xl 
+                    font-bold text-gray-800 hover:text-blue-600 transition
+                '>
                     {t('header.title')}
                 </Link>
 
                 {/* 右側：客製化的內容 */}
                 <div className='
-                flex space-x-2 sm:space-x-5 items-center
-                flex-shrink-0 
+                    flex space-x-2 sm:space-x-5 items-center
+                    flex-shrink-0 
                 '>
                     <select
                         value={i18nInstance.language}

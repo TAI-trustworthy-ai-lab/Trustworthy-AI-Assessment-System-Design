@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 
 
 // 統一 button 樣式
-const baseButtonClasses = "flex items-center space-x-2 py-2 px-4 rounded-2xl text-white font-bold transition duration-100 shadow-md";
+// 從 baseButtonClasses 中移除 space-x-2
+const baseButtonClasses = "flex items-center py-2 px-4 rounded-2xl text-white font-bold transition duration-100 shadow-md";
 const titleLinkTarget = '/home';
 
 export default function AuthHeader() {
@@ -27,31 +28,48 @@ export default function AuthHeader() {
 
     return (
         <Header titleHref={titleLinkTarget}>
-            <div className='flex justify-end space-x-5 items-center'>
+            <div className='flex justify-end sm:space-x-5 items-center'>
                 {timeUntilLogout && (
                     <div 
-                        className={`flex items-center space-x-2 ${timerClasses} ${timerColorClasses}`}
+                        className={`
+                            flex-col 
+                            sm:flex 
+                            sm:space-x-2 
+                            items-center 
+                            ${timerClasses} 
+                            ${timerColorClasses}
+                        `}
                     >
-                        <Clock className="w-4 h-4" />
-                        <span>{t('auth.autoLogoutPrefix')}</span> 
-                        <span className='w-12 text-center'>{timeUntilLogout}</span>
-                        <span>{t('auth.autoLogoutSuffix')}</span> 
+                        <div className='flex items-center'> 
+                            <Clock className="w-4 h-4" />
+                            <span>{t('auth.autoLogoutPrefix')}</span>
+                        </div>
+                        
+                        <div className='flex items-center'>
+                            <span className='text-center'>{timeUntilLogout}</span>
+                            <span>{t('auth.autoLogoutSuffix')}</span> 
+                        </div>
                     </div>
                 )}
                 
-
                 <button
-                    onClick={() => handleLogout()} // 確保呼叫時不帶參數
+                    onClick={() => handleLogout()}
                     disabled={isLoggingOut}
-                    className={`${baseButtonClasses} ${logoutButtonClasses}`}
+                    className={`
+                        ${baseButtonClasses} 
+                        ${logoutButtonClasses}
+                        sm:justify-start sm:w-auto sm:h-auto sm:p-3 sm:space-x-3
+                    `}
                     title={isLoggingOut ? t('auth.loggingOutTitle') : t('auth.logoutTitle')}
                 >
                     {isLoggingOut ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-5 h-5 sm:w-4 sm:h-4 animate-spin" />
                     ) : (
-                        <LogOut className="w-4 h-4" />
+                        <LogOut className="w-5 h-5 sm:w-4 sm:h-4" />
                     )}
-                    <span>{isLoggingOut ? t('auth.loggingOut') : t('auth.logout')}</span>
+                    <span className="hidden sm:inline">
+                        {isLoggingOut ? t('auth.loggingOut') : t('auth.logout')}
+                    </span>
                 </button>
             </div>
         </Header>

@@ -7,7 +7,6 @@ import AuthHeader from '@/components/AuthHeader';
 import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
 import { ResponseMeta } from '@/app/history/page'
 import { ReportRadarChart } from '@/components/ReportRadarChart';
-import { Chart as ChartType } from 'chart.js';
 
 const useRouter = () => {
     return {
@@ -210,7 +209,7 @@ export default function ReportPage() {
     const markdownContent = report.analysisText;
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
-            <AuthHeader className="no-print" />
+            <AuthHeader />
             <main id="report-content" className="max-w-4xl mx-auto pt-8 mt-7"> 
                 <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl">
                     <header className="border-b pb-4 mb-6">
