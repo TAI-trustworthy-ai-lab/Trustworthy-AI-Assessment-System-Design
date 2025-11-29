@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import i18n from 'i18next';
 import '@/lib/i18n'; // 確保初始化一次
@@ -12,6 +13,14 @@ interface HeaderProps {
 export default function Header({ children, titleHref = '/'}: HeaderProps) {
     const { i18n: i18nInstance } = useTranslation();
     const { t } = useTranslation();
+
+    useEffect(() => {
+        const savedLang = localStorage.getItem('preferredLanguage');
+        if (savedLang && savedLang !== i18n.language) {
+            i18n.changeLanguage(savedLang);
+        }
+    }, [i18n]);
+
     const changeLanguage = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const lang = e.target.value;
         i18nInstance.changeLanguage(lang);
