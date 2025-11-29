@@ -59,12 +59,14 @@ export default function HistoryPage() {
 
   // reminder: key is response id
   // to do: store response/ questionaaire in local (seperated)
-  //const fetchListString = localStorage.getItem("myFetchList");
+  const [fetchQuestionnaireList, setFetchQuestionnaireList] = useState<Record<
+    number,
+    QuestionnaireData | null
+  >>({})
   const [fetchList, setFetchList] = useState<Record<
     number,
     {
       response: ResponseData | null,
-      questionnaire: QuestionnaireData | null
       locale: Record<string, QuestionnaireData> | null
     }
   >>({})
@@ -90,9 +92,12 @@ export default function HistoryPage() {
     if (typeof window !== 'undefined') {
       const storedUserId = localStorage.getItem('userId');
       const storedAuthToken = localStorage.getItem('authToken');
+      const fetchListString = localStorage.getItem("myQuestionnaire");
+      const data = fetchListString ? JSON.parse(fetchListString) : [];
 
       setUserId(storedUserId);
       setAuthToken(storedAuthToken);
+      setFetchQuestionnaireList(data)
     }
   }, []);
 
@@ -113,18 +118,17 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  const translateText = (text: string | null, source = "zh-TW", target = "en") => {
+  const translateText = async(text: string | null, source = "zh-TW", target = "en") => {
     if(text === null) return ""
 
-    /*const res = await fetch("/api/translate", {
+    const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q: text, source, target })
-    });
-
-    const data = await res.json();
-    return data.translatedText;*/
-    return "我是英文"
+    })
+    const data = await res.json()
+    return data.translatedText;
+    // return "this is English, cancel the comment in translateText() to use api"
   }
 
   const gradualTranslate = async(r:ResponseData, q: QuestionnaireData) => {
@@ -166,9 +170,9 @@ export default function HistoryPage() {
   const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => {
     fetchList[id] = fetchList[id] || {
       response: null,
-      questionnaire: null,
       locale: null
     }
+    fetchQuestionnaireList[qId] = fetchQuestionnaireList[qId] || null
 
     let r: ResponseData | null = null
     let q: QuestionnaireData | null = null
@@ -197,8 +201,21 @@ export default function HistoryPage() {
     }
     else r = fetchList[id].response
 
+    const qChecker = (q: QuestionnaireData)=>{
+      return(
+        q.description !== undefined
+        && q.group !== undefined
+        && q.id !== undefined
+        && q.questions !== undefined
+        && q.title !== undefined
+      )
+    }
+
     // questionnaire
-    if (fetchList[id].questionnaire === null) {
+    if (fetchQuestionnaireList[qId] === null 
+      || qChecker(fetchQuestionnaireList[qId]) === false )
+    {
+      //console.log("q is null")
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -216,7 +233,7 @@ export default function HistoryPage() {
         throw "fail to get questionnaire"
       }
       else {
-        fetchList[id].questionnaire = q
+        fetchQuestionnaireList[qId] = q
         try{
           
         } catch (e){
@@ -224,7 +241,7 @@ export default function HistoryPage() {
         }
       }
     }
-    else q = fetchList[id].questionnaire
+    else q = fetchQuestionnaireList[qId]
 
     //console.log(locale)
     setViewerState(ViewerState.translating)
@@ -242,10 +259,12 @@ export default function HistoryPage() {
           }
           break
         default:
-          q = fetchList[id].questionnaire
+          q = fetchQuestionnaireList[qId]
           break
       }
     }
+
+    localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
     setViewerState(finalState)
     setViewerData({ response: r, questionnaire: q })
   }
