@@ -23,7 +23,7 @@ ChartJS.register(
 
 // 從您的 ReportPage 複製過來的映射表
 const CATEGORY_MAP: Record<string, string> = {
-    "ACCURANCY": "準確性",
+    "ACCURACY": "準確性",
     "RELIABILITY": "可靠性",
     "SAFETY": "安全性",
     "RESILIENCE": "韌性",

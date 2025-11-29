@@ -43,7 +43,7 @@ export const CATEGORY_MAP: Record<string, string> = {
 };
 
 export const REPORT_CATEGORY_MAP_EN: Record<string, string> = {
-    "ACCURANCY": "一、準確性（Accuracy）",
+    "ACCURACY": "一、準確性（Accuracy）",
     "RELIABILITY": "二、可靠性（Reliability）",
     "SAFETY": "三、安全性（Safety）",
     "RESILIENCE": "四、韌性（Resilience）",
