@@ -703,7 +703,11 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             setDraftResponseId(null);
             setSubmittedResponseId(responseId);
             setIsGeneratingReport(true);
-            await generateReport(responseId);
+
+            const reportGeneratedSuccessfully = await generateReport(responseId); 
+            if (!reportGeneratedSuccessfully) {
+                throw new Error('提交報告發生錯誤。'); 
+            }
             setShowSuccessModal(true);
         } catch (error) {
             console.error('提交錯誤:', error);

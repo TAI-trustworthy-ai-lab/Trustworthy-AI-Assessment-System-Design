@@ -139,8 +139,13 @@ export const submitQuestionnaire = async (payload: any) => {
 // 5. POST create report
 export const generateReport = async (responseId: number) => {
     const url = `${REPORT_API_BASE}/generate/${responseId}`;
-    await fetchApi(url, { method: 'POST' }); 
-    return true;
+    try {
+        await fetchApi(url, { method: 'POST' });
+        return true;
+    } catch (error) {
+        console.error('Error generating report:', error);
+        return false;
+    }
 };
 
 export async function fetchResponseList(userId: string, authToken: string): Promise<ResponseMeta[]>{

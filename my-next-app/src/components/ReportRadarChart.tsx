@@ -7,7 +7,8 @@ import {
     LineElement, 
     Filler, 
     Tooltip, 
-    Legend 
+    Legend,
+    Chart as ChartType
 } from 'chart.js';
 
 // 註冊 Chart.js 所需的組件
@@ -37,9 +38,10 @@ const CATEGORY_MAP: Record<string, string> = {
 
 interface ReportRadarChartProps {
     radarData: Record<string, number>;
+    chartRef: React.RefObject<ChartType<'radar', number[], string>>;
 }
 
-export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData }) => {
+export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData, chartRef }) => {
     // 獲取雷達圖的標籤（使用中文簡稱）
     const labels = Object.keys(CATEGORY_MAP).map(key => CATEGORY_MAP[key].split('（')[0]);
     
@@ -115,7 +117,7 @@ export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData })
     return (
     <div className="flex justify-center h-96">
         <div className="max-w-sm w-full max-w-lg">
-        <Radar data={data} options={options} />
+        <Radar ref={chartRef} data={data} options={options} />
         </div>
     </div>
     );

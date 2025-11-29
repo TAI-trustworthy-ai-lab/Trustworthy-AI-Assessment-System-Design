@@ -6,6 +6,7 @@ import Header from './Header';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
+
 // 統一 button 樣式
 const baseButtonClasses = "flex items-center space-x-2 py-2 px-4 rounded-2xl text-white font-bold transition duration-100 shadow-md";
 const titleLinkTarget = '/home';

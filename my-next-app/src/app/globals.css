@@ -37,3 +37,36 @@ body {
     text-align: left; 
 }
 
+
+/* globals.css 或您的全域 CSS 文件 */
+
+@media print {
+  /* 確保背景是白色，以便在列印時節省墨水 */
+  body {
+    background: white !important;
+  }
+
+  /* 隱藏所有不需要列印的元素，如導航、按鈕、計時器等 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 調整報告內容 (main) 的邊距，使其符合 A4 頁面 */
+  #report-content {
+    /* 取消固定邊距和置中，以便內容充滿 A4 */
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    /* 調整頂部邊距，因為 Header 被隱藏了 */
+    padding-top: 20px !important; 
+    margin-top: 0 !important; 
+  }
+
+  /* 調整報告內部的背景和陰影，使其更像文件 */
+  #report-content > div {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
