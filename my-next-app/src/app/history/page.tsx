@@ -90,7 +90,7 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  const translateText = async (text: string | null, source = "zh-CN", target = "en") => {
+  const translateText = async (text: string | null, source = "zh-TW", target = "en") => {
     if(text === null) return ""
 
     const res = await fetch("/api/translate", {
@@ -202,7 +202,7 @@ export default function HistoryPage() {
     }
     if(fetchList[id].locale)
 
-    console.log(locale)
+    //console.log(locale)
     if(locale){
       switch(locale){
         case "en":

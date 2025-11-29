@@ -15,11 +15,153 @@ const useRouter = () => {
         },
     };
 };
+import { useTranslation } from 'react-i18next';
 
 
 // ----------------------------------------------------
 // 定义指標解釋映射表
 // ----------------------------------------------------
+const CATEGORY_MAP: Record<
+  string,
+  Record<string, { title: string; content: string }>
+> = {
+  ACCURACY: {
+    "zh": {
+      title: "準確性",
+      content: "AI判斷的結果與真實情況相近程度"
+    },
+    en: {
+      title: "Accuracy",
+      content: "How closely the AI's output matches the real-world situation."
+    }
+  },
+  RELIABILITY: {
+    "zh": {
+      title: "可靠性",
+      content: "AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定"
+    },
+    en: {
+      title: "Reliability",
+      content:
+        "The AI model maintains stable performance without being overly sensitive to various disturbances or abnormal conditions."
+    }
+  },
+  SAFETY: {
+    "zh": {
+      title: "安全性",
+      content: "不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害"
+    },
+    en: {
+      title: "Safety",
+      content:
+        "Ensures that the AI does not cause harm or negative impact to the environment or stakeholders such as users and the public."
+    }
+  },
+  RESILIENCE: {
+    "zh": {
+      title: "韌性",
+      content:
+        "AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰"
+    },
+    en: {
+      title: "Resilience",
+      content:
+        "The AI system and related equipment can adapt to different environments, demands, and conditions, adjusting flexibly to meet evolving challenges."
+    }
+  },
+  TRANSPARENCY: {
+    "zh": {
+      title: "透明性",
+      content:
+        "AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則"
+    },
+    en: {
+      title: "Transparency",
+      content:
+        "Users can trace the data, algorithms, or rules the AI used when making judgments or decisions."
+    }
+  },
+  ACCOUNTABILITY: {
+    "zh": {
+      title: "當責性",
+      content:
+        "當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人"
+    },
+    en: {
+      title: "Accountability",
+      content:
+        "Mechanisms must exist to oversee and assign responsibility when an AI system causes unintended negative impacts."
+    }
+  },
+  EXPLAINABILITY: {
+    "zh": {
+      title: "可解釋性",
+      content:
+        "AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由"
+    },
+    en: {
+      title: "Explainability",
+      content:
+        "The AI's decision logic (the causal relationship between input data and outputs) can be clearly described and presented to help users and stakeholders understand the reasoning."
+    }
+  },
+  AUTONOMY: {
+    "zh": {
+      title: "自主性",
+      content:
+        "AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策"
+    },
+    en: {
+      title: "Autonomy",
+      content:
+        "Users of the AI system can maintain autonomy and avoid excessive reliance on AI decisions during interactions."
+    }
+  },
+  PRIVACY: {
+    "zh": {
+      title: "隱私",
+      content: "在使用AI系統時，不會侵犯到個人隱私"
+    },
+    en: {
+      title: "Privacy",
+      content: "Ensures that the use of AI systems does not infringe on personal privacy."
+    }
+  },
+  FAIRNESS: {
+    "zh": {
+      title: "公平性",
+      content: "AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況"
+    },
+    en: {
+      title: "Fairness",
+      content:
+        "The AI system treats different groups equally when making decisions, avoiding discrimination or unfair outcomes."
+    }
+  },
+  SECURITY: {
+    "zh": {
+      title: "資訊安全性",
+      content:
+        "防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全"
+    },
+    en: {
+      title: "Security",
+      content:
+        "Protects the AI model from external intrusion or damage, ensuring the security of data used during training and testing."
+    }
+  },
+  UNKNOWN: {
+    "zh": {
+      title: "未知分類",
+      content: "{{category}}"
+    },
+    en: {
+      title: "Unknown Category",
+      content: "{{category}}"
+    }
+  }
+};
+/*
 const CATEGORY_MAP: Record<string, {title:string, content:string}> = {
   "ACCURACY": {title:"準確性", content:"AI判斷的結果與真實情況相近程度"},
   "RELIABILITY": {title:"可靠性", content:"AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定"},
@@ -33,7 +175,7 @@ const CATEGORY_MAP: Record<string, {title:string, content:string}> = {
   "FAIRNESS": {title:"公平性", content:"AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況"},
   "SECURITY": {title:"資訊安全性", content:"防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全"},
   "UNKNOWN": {title:"未知分類", content:"{{category}}"}
-}
+}*/
 
 // ----------------------------------------------------
 // 後端回傳資料結構定義
@@ -142,8 +284,6 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cu
   );
 };
 
-
-
 // 2. SINGLE_CHOICE 題型
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
@@ -241,7 +381,6 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cur
   );
 };
 
-
 // ----------------------------------------------------
 // 問題渲染器：根據 type 選擇組件
 // ----------------------------------------------------
@@ -266,12 +405,14 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 // ----------------------------------------------------
 
 export default function ResponseViewer({editable, data }: { editable: boolean, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
+  const { i18n, t } = useTranslation()
+  
   const q = data.questionnaire
   const r = data.response
 
    // 1. 根據指標映射表獲取分頁標題
-  const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()].title || category
-  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()].content || ""
+  const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
+  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
 
   const p = (()=>{
     // group by category
