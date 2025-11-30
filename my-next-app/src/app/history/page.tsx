@@ -86,7 +86,7 @@ export default function HistoryPage() {
   const [groupType, setGroupType] = useState(GroupType.Project)
 
   const router = useRouter();
-  const menuSize = { x: 200, y: 270 }
+  const menuSize = { x: 200, y: 215 }
 
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -517,6 +517,7 @@ export default function HistoryPage() {
           >
             {t('historyPage.open')}
           </div>
+          
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={() => {
@@ -536,9 +537,10 @@ export default function HistoryPage() {
           >
             {t('historyPage.viewReport')}
           </div>
+          {/* 
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             {t('historyPage.download')}
-          </div>
+          </div>*/}
           {/*
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
