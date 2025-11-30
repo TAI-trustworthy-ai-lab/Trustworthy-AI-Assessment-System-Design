@@ -98,7 +98,7 @@ export default function PdfExportButton({ contentId, projectName, preparingText,
             disabled={isGeneratingPdf}
             className={`
                 w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                bg-purple-800 text-white shadow-2xl hover:bg-purple-700
+                bg-indigo-700 text-white shadow-2xl hover:bg-indigo-600
                 transition duration-150 ease-in-out 
                 focus:outline-none focus:ring-4 focus:ring-purple-300
                 flex items-center space-x-2
