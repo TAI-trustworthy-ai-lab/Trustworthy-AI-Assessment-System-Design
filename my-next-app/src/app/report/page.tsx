@@ -4,12 +4,61 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import AuthHeader from '@/components/AuthHeader';
-import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ResponseMeta } from '@/services/responseService'
 import { ReportRadarChart } from '@/components/ReportRadarChart';
 import { Loader2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+
+// 共用翻譯工具
+const translateText = async (text: string, source: string, target: string) => {
+    const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target }),
+    });
+    const data = await res.json();
+    return data.translatedText;
+};
+
+// 暫存結構
+const translationCache: Record<string, string> = {};
+
+const TranslatedMarkdown: React.FC<{ content: string }> = ({ content }) => {
+    const { i18n } = useTranslation();
+    const [translatedContent, setTranslatedContent] = useState(content);
+
+    useEffect(() => {
+        let isActive = true;
+
+        if (i18n.language.startsWith("en")) {
+            if (translationCache[content]) {
+                setTranslatedContent(translationCache[content]);
+            } else {
+                translateText(content, "zh-CN", "en").then((result) => {
+                    if (isActive) {
+                        const finalText = result || content; // fallback 中文
+                        translationCache[content] = finalText;
+                        setTranslatedContent(finalText);
+                    }
+                });
+            }
+        } else {
+            setTranslatedContent(content); // 中文直接顯示
+        }
+
+        return () => {
+            isActive = false;
+        };
+    }, [content, i18n.language]);
+
+    return (
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            {translatedContent}
+        </ReactMarkdown>
+    );
+};
 
 const useRouter = () => {
     return {
@@ -32,9 +81,9 @@ interface ReportData {
     id: number;
     responseId: number;
     overallScore: number;
-    generatedAt: string; 
-    analysisText: string | null; 
-    radarData: Record<string, number>; 
+    generatedAt: string;
+    analysisText: string | null;
+    radarData: Record<string, number>;
     taiWeightSnapshot: Record<string, number> | null; // 應該沒有使用
     llmMeta: any | null; //應該沒有使用
     response: (ResponseMeta & {
@@ -68,7 +117,7 @@ const getScoreColor = (score: number) => {
 // 報告頁面組件
 // ----------------------------------------------------
 export default function ReportPage() {
-    const router = useRouter(); 
+    const router = useRouter();
     const { t } = useTranslation();
     const [report, setReport] = useState<ReportData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'generating' | 'success' | 'error'>('generating');
@@ -81,12 +130,12 @@ export default function ReportPage() {
     const { responseId, authToken } = useMemo(() => {
         if (typeof window === 'undefined') return { responseId: null, authToken: null };
 
-        const idString = localStorage.getItem('responseId'); 
+        const idString = localStorage.getItem('responseId');
         const token = localStorage.getItem('authToken');
         const id = idString ? parseInt(idString, 10) : null;
-        
-        return { 
-            responseId: id, 
+
+        return {
+            responseId: id,
             authToken: token,
         };
     }, []);
@@ -103,20 +152,20 @@ export default function ReportPage() {
             return;
         }
 
-        setLoadingStatus('generating'); 
+        setLoadingStatus('generating');
         try {
-            const reportData = await fetchReportService(responseId); 
+            const reportData = await fetchReportService(responseId);
             const projName = reportData.response?.project?.name ?? t('reportPage.error.missingProjectName');
             const verTitle = reportData.response?.version?.title ?? t('reportPage.error.missingVersionTitle');
             const uName = reportData.response?.user?.name ?? t('reportPage.error.missingUserName');
-            
+
             // 3. 更新狀態
             setReport(reportData);
             setProjectName(projName);
             setVersionTitle(verTitle);
             setUserName(uName);
             setLoadingStatus('success');
-            
+
         } catch (error) {
             const message = error instanceof Error ? error.message : t('reportPage.error.fetchReport');
             setErrorMessage(`${t('reportPage.error.loadFail')}: ${message}`);
@@ -139,16 +188,16 @@ export default function ReportPage() {
             // 3. 創建一個隱藏的 A 標籤並觸發下載
             const a = document.createElement('a');
             a.href = url;
-            
+
             // 使用專案名稱和 ID 命名檔案，更具體
-            const filename = projectName ? 
-                `${projectName.replace(/\s/g, '_')}-Report-${responseId}.pdf` : 
+            const filename = projectName ?
+                `${projectName.replace(/\s/g, '_')}-Report-${responseId}.pdf` :
                 `report-${responseId}.pdf`;
-                
-            a.download = filename; 
+
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
-            
+
             // 4. 清理
             window.URL.revokeObjectURL(url);
             a.remove();
@@ -189,8 +238,8 @@ export default function ReportPage() {
                 <div className="p-8 bg-white rounded-xl shadow-lg text-center max-w-md w-full">
                     <p className="text-xl font-bold text-red-600 mb-4">{t('reportPage.error.title')}</p>
                     <p className="text-gray-600 mb-6">{errorMessage}</p>
-                    <button 
-                        onClick={() => router.push('/home')} 
+                    <button
+                        onClick={() => router.push('/home')}
                         className="py-2 px-4 bg-purple-800 text-white rounded-lg transition duration-150 hover:bg-purple-700"
                     >
                         {t('reportPage.button.backHome')}
@@ -199,7 +248,7 @@ export default function ReportPage() {
             </div>
         );
     }
-    
+
     // 格式化生成時間
     const formattedDate = new Date(report.generatedAt).toLocaleDateString('zh-TW', {
         year: 'numeric',
@@ -214,7 +263,7 @@ export default function ReportPage() {
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
             <AuthHeader />
-            <main id="report-content" className="max-w-4xl mx-auto pt-8 mt-7"> 
+            <main id="report-content" className="max-w-4xl mx-auto pt-8 mt-7">
                 <div className="bg-white p-6 sm:p-10 rounded-2xl shadow-2xl">
                     <header className="border-b pb-4 mb-6">
                         <h1 className="text-4xl font-extrabold text-gray-900 text-center mb-2">
@@ -238,13 +287,13 @@ export default function ReportPage() {
                         <div className="flex justify-center items-center space-x-8">
                             {/* 總分 */}
                             <div>
-                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p> 
+                                <p className="text-5xl font-extrabold text-purple-700">{report.overallScore.toFixed(2)}</p>
                                 <p className="text-lg font-medium text-gray-500">{t('reportPage.report.overallScore')}</p>
                             </div>
                             {/* 評級 */}
                             <div className="text-center">
                                 <p className="text-4xl font-extrabold text-white inline-block px-4 py-2 rounded-lg shadow-md"
-                                   style={{ backgroundColor: grade === 'A+' || grade === 'A' ? '#10B981' : (grade === 'B' ? '#F59E0B' : '#EF4444') }}>
+                                    style={{ backgroundColor: grade === 'A+' || grade === 'A' ? '#10B981' : (grade === 'B' ? '#F59E0B' : '#EF4444') }}>
                                     {grade}
                                 </p>
                                 <p className="text-lg font-medium text-gray-500 mt-1">{t('reportPage.report.grade')}</p>
@@ -260,12 +309,7 @@ export default function ReportPage() {
                         </div>
 
                         <div className="markdown-content not-prose text-left mt-6 overflow-x-auto">
-                            <ReactMarkdown 
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeRaw]}
-                            >
-                                {markdownContent}
-                            </ReactMarkdown>
+                            <TranslatedMarkdown content={markdownContent || ""} />
                         </div>
                     </section>
 
@@ -276,7 +320,7 @@ export default function ReportPage() {
                             {/* ⭐️ 迭代 radarData */}
                             {Object.entries(TAI_INDICATOR_MAP_EN_ZH).map(([key, title]) => {
                                 const score = report.radarData[key];
-                                if (score === undefined) return null; 
+                                if (score === undefined) return null;
                                 if (typeof score === 'string') return null;
 
                                 return (
@@ -285,8 +329,8 @@ export default function ReportPage() {
                                         <div className="w-3/4 items-center">
                                             <div className="flex items-center">
                                                 <div className="w-full h-3 rounded-full bg-gray-200">
-                                                    <div 
-                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score)}`} 
+                                                    <div
+                                                        className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score)}`}
                                                         style={{ width: `${score}%` }}
                                                     ></div>
                                                 </div>
@@ -300,7 +344,7 @@ export default function ReportPage() {
                     </section>
                 </div>
             </main>
-            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
+            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print">
                 <button
                     onClick={handleDownloadPdf}
                     disabled={isGeneratingPdf}
@@ -332,7 +376,7 @@ export default function ReportPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l-2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6m-6 0h-2M9 17h6" />
                     </svg>
-                    <span>{ t("reportPage.button.backHome")}</span>
+                    <span>{t("reportPage.button.backHome")}</span>
                 </button>
             </div>
         </div>
