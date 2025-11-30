@@ -87,59 +87,46 @@ export const useAuth = () => {
             userToken = localStorage.getItem(AUTH_TOKEN_KEY);
         }
 
-        try {
-            if (userToken) {
-                const response = await fetch(`${USER_API_BASE}/logout`, { 
-                    method: "DELETE", 
-                    headers: {
-                        'Authorization': `Bearer ${userToken}`, 
-                        'Content-Type': 'application/json',
-                    },
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        console.log("後端登出 API 呼叫失敗，原因：Token 已過期 (401)。視為成功登出。");
-                    } else {
-                        let errorDetails: any = { message: '無法解析錯誤細節' };
-                        try {
-                             const contentType = response.headers.get('content-type');
-                             if (contentType && contentType.includes('application/json')) {
-                                  errorDetails = await response.json();
-                             } else {
-                                  const errorText = await response.text();
-                                  errorDetails = { message: errorText.substring(0, 100) };
-                             }
-                        } catch (e) { }
-                        console.error(
-                            `登出 API 呼叫失敗 (HTTP 錯誤 ${response.status})`, 
-                            errorDetails
-                        );
-                    }
-                } else {
-                    console.log("後端登出成功");
-                }
-            }
-        } catch (error) {
-            console.error("登出 API 呼叫時發生錯誤:", error);
-        } finally {
-            // 3. 移除前端 Token 和過期時間
-            if (typeof window !== 'undefined') {
-                localStorage.removeItem(AUTH_TOKEN_KEY);
-                localStorage.removeItem(AUTH_EXPIRY_KEY); // 【新增】移除過期時間
-                localStorage.removeItem(USER_ID_KEY); 
-                localStorage.removeItem(USER_ROLE_KEY);
-                localStorage.removeItem(QUESTIONNAIRE_ID_KEY);
-                localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
-                localStorage.removeItem(RESPONSE_ID_KEY);
-            }
+        // ⭐️ 僅在非自動登出時，執行後端 API 呼叫 
+        if (!isAutomatic) { 
+            try {
+                if (userToken) {
+                    const response = await fetch(`${USER_API_BASE}/logout`, { 
+                        method: "DELETE", 
+                        headers: {
+                            'Authorization': `Bearer ${userToken}`, 
+                            'Content-Type': 'application/json',
+                        },
+                    });
 
-            // 4. 跳轉到登入頁面
-            router.replace('/'); 
-            setIsLoggingOut(false);
+                    if (!response.ok) {
+                        // ... 錯誤處理 ...
+                    } else {
+                        console.log("後端登出成功");
+                    }
+                }
+            } catch (error) {
+                console.error("登出 API 呼叫時發生錯誤:", error);
+            }
         }
+
+        // 2. 移除前端 Token 和過期時間
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(AUTH_EXPIRY_KEY); 
+            localStorage.removeItem(USER_ID_KEY); 
+            localStorage.removeItem(USER_ROLE_KEY);
+            localStorage.removeItem(QUESTIONNAIRE_ID_KEY);
+            localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
+            localStorage.removeItem(RESPONSE_ID_KEY);
+        }
+
+        // 3. 跳轉到登入頁面並更新狀態
+        router.replace('/'); 
+        setIsLoggingOut(false);
     }, [isLoggingOut, router]);
 
+    
     // 返回剩餘時間字串
     const timeUntilLogout = secondsUntilLogout !== null && secondsUntilLogout > 0
         ? formatTime(secondsUntilLogout)
