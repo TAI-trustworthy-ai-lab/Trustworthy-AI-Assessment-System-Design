@@ -619,12 +619,17 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
                         text-red-500 px-2 select-none overflow-hidden
                         hover:overflow-visible">
                           *
-                          <div className='
+                                {(i18n.language == "en")? <div className='
+                            absolute -right-[300%] w-fit px-1.5 py-1
+                            text-center font-bold text-xs text-white whitespace-nowrap
+                            bg-red-400 rounded-full shadow shadow-gray-500'>
+                                    {t('historyPage.required')}
+                                </div> : <div className='
                             absolute -right-[180%] w-fit px-1.5 py-1
                             text-center font-bold text-xs text-white whitespace-nowrap
                             bg-red-400 rounded-full shadow shadow-gray-500'>
-                            必填
-                          </div>
+                                    {t('historyPage.required')}
+                                </div>}
                         </span>}
                     </div>
                     
