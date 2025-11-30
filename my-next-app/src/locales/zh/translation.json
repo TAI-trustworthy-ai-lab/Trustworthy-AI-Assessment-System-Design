@@ -257,25 +257,49 @@
     "version": "版本",
     "questionnaireName": "問卷名稱",
     "submitDate": "填寫日期",
-    "user": "使用者:",
+    "user": "使用者",
     "userId": "使用者 ID:",
-    "userEmail": "使用者帳號:",
+    "userEmail": "使用者帳號",
     "projectId": "專案 ID:",
     "questionnaireTitle": "問卷名稱:",
     "questionnaireId": "問卷 ID:",
     "label": "標籤:",
     "responseId": "回應 ID:",
-    "submittedAt": "提交時間:",
+    "submittedAt": "提交時間",
     "fetchFail": "獲取回應失敗",
     "loading": "載入中...",
     "justNow": "剛剛",
     "minutesAgo": "{{count}} 分鐘前",
     "hoursAgo": "{{count}} 小時前",
+    "today": "今天",
     "yesterday": "昨天",
     "dayBeforeYesterday": "前天",
+    "thisWeek": "這週",
+    "lastWeek": "上週",
+    "thisMonth": "這個月",
+    "lastMonth": "上個月",
+    "thisYear": "今年",
+    "longAgo": "很久以前",
     "daysAgo": "{{count}} 天前",
     "thisYearDate": "{{month}} 月 {{day}} 日",
-    "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日"
+    "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日",
+    "required": "必填",
+
+    "sort": {
+      "label": "排序",
+      "ascend": "遞增",
+      "descend": "遞減",
+      "by": "排序依據",
+      "byDate": "時間",
+      "byName": "專案名稱"
+    },
+    "group": {
+      "label": "群組類型",
+      "project": "專案",
+      "date": "時間",
+      "questionnaire": "問卷",
+      "none": "無"
+    }
   },
   "reportPage": {
     "report": {

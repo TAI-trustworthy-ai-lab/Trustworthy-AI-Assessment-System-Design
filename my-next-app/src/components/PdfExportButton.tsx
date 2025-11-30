@@ -32,7 +32,7 @@ export default function PdfExportButton({ contentId, projectName, preparingText,
         const imgData = canvas.toDataURL("image/jpeg", 0.98);
         const imgProps = pdf.getImageProperties(imgData);
 
-        const GLOBAL_SCALE = 0.85;
+        const GLOBAL_SCALE = 0.8;
 
         const imgWidth = pdfPageWidth * GLOBAL_SCALE;
         const imgHeight = (imgProps.height * imgWidth) / imgProps.width;

@@ -254,27 +254,50 @@
     "cancel": "Cancel",
     "projectName": "Project Name",
     "version": "Version",
-    "questionnaireName": "Questionnaire Name:",
+    "questionnaireName": "Questionnaire Name",
     "submitDate": "Submitted Date",
-    "user": "User:",
+    "user": "User",
     "userId": "User ID:",
-    "userEmail": "User Email:",
+    "userEmail": "User Email",
     "projectId": "Project ID:",
     "questionnaireTitle": "Questionnaire Title:",
     "questionnaireId": "Questionnaire ID:",
     "label": "Label:",
     "responseId": "Response ID:",
-    "submittedAt": "Submitted At:",
+    "submittedAt": "Submitted At",
     "fetchFail": "Failed to fetch response",
     "loading": "Loading...",
     "justNow": "Just now",
     "minutesAgo": "{{count}} minutes ago",
     "hoursAgo": "{{count}} hours ago",
+    "today": "Today",
     "yesterday": "Yesterday",
     "dayBeforeYesterday": "The day before yesterday",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "thisMonth": "This Month",
+    "lastMonth": "Last Month",
+    "thisYear": "This Year",
+    "longAgo": "Long Ago",
     "daysAgo": "{{count}} days ago",
     "thisYearDate": "{{month}}/{{day}}",
-    "fullDate": "{{year}}/{{month}}/{{day}}"
+    "fullDate": "{{year}}/{{month}}/{{day}}",
+    "required": "Required",
+    "sort": {
+      "label": "Sort",
+      "ascend": "Ascending",
+      "descend": "Descending",
+      "by": "Sort By",
+      "byDate": "Date",
+      "byName": "Project Name"
+    },
+    "group": {
+      "label": "Group Type",
+      "project": "Project",
+      "date": "Date",
+      "questionnaire": "Questionnaire",
+      "none": "None"
+    }
   },
   "reportPage": {
     "report": {
@@ -314,4 +337,3 @@
     }
   }
 }
-
