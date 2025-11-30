@@ -10,6 +10,7 @@ import {
     Legend,
     Chart as ChartType
 } from 'chart.js';
+import { useTranslation } from 'react-i18next';
 
 // 註冊 Chart.js 所需的組件
 ChartJS.register(
@@ -27,14 +28,20 @@ interface ReportRadarChartProps {
 }
 
 export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData }) => {
+    const { i18n } = useTranslation();
     const validKeys = Object.keys(TAI_INDICATOR_MAP_EN_ZH).filter(key => {
         const score = radarData[key];
         return typeof score === 'number';
     });
 
-    const labels = validKeys.map(key => TAI_INDICATOR_MAP_EN_ZH[key]);
-    
-    // 獲取對應的數值，保持與標籤順序一致
+    const labels = validKeys.map(key => {
+        if (i18n.language !== "en") {
+            return TAI_INDICATOR_MAP_EN_ZH[key]; 
+        } else {
+            return key.charAt(0) + key.slice(1).toLowerCase();
+        }
+    });
+
     const dataValues = validKeys.map(key => radarData[key] as number);
 
     const data = {
