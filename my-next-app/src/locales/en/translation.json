@@ -282,7 +282,22 @@
     "daysAgo": "{{count}} days ago",
     "thisYearDate": "{{month}}/{{day}}",
     "fullDate": "{{year}}/{{month}}/{{day}}",
-    "required": "Required"
+    "required": "Required",
+    "sort": {
+      "label": "Sort",
+      "ascend": "Ascending",
+      "descend": "Descending",
+      "by": "Sort By",
+      "byDate": "Date",
+      "byName": "Project Name"
+    },
+    "group": {
+      "label": "Group Type",
+      "project": "Project",
+      "date": "Date",
+      "questionnaire": "Questionnaire",
+      "none": "None"
+    }
   },
   "reportPage": {
     "report": {
