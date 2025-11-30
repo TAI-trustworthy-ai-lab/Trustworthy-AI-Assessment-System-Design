@@ -44,85 +44,6 @@ enum GroupType {
     Questionnaire,
 }
 
-// ----------------------------------------------------
-// 暫存結構：中文原文 & 英文翻譯
-// ----------------------------------------------------
-const translationCache: {
-    zh: Record<string, string>;
-    en: Record<string, string>;
-} = {
-    zh: {},
-    en: {},
-};
-
-// ----------------------------------------------------
-// 翻譯工具函式
-// ----------------------------------------------------
-const capitalizeFirstLetter = (text: string) => {
-    if (!text) return text;
-    return text.charAt(0).toUpperCase() + text.slice(1);
-};
-
-const translateText = async (text: string, source = "zh-CN", target = "en") => {
-    const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: text, source, target }),
-    });
-
-    const data = await res.json();
-    return data.translatedText;
-};
-
-// ----------------------------------------------------
-// TranslatedText Component with cache
-// ----------------------------------------------------
-const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
-    text,
-    capitalize = false,
-}) => {
-    const { i18n } = useTranslation();
-    const [translated, setTranslated] = useState(text);
-
-    useEffect(() => {
-        let isActive = true; // 標記當前 effect 是否仍有效
-
-        // 中文暫存：始終存原文
-        if (!translationCache.zh[text]) {
-            translationCache.zh[text] = text;
-        }
-
-        if (i18n.language.startsWith("en")) {
-            // 英文情境：先檢查暫存
-            if (translationCache.en[text]) {
-                setTranslated(
-                    capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
-                );
-            } else {
-                // 沒有暫存 → 呼叫翻譯 API
-                translateText(text, "zh-CN", "en").then((result) => {
-                    if (isActive) { // 只有當前 effect 還有效才更新
-                        result = result || translationCache.zh[text];//如果翻譯未成功，顯示中文。
-                        translationCache.en[text] = result;
-                        setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
-                    }
-                });
-            }
-        } else {
-            // 中文情境：直接用中文暫存
-            setTranslated(translationCache.zh[text]);
-        }
-        // cleanup：切語言時舊的請求結果不再生效
-        return () => {
-            isActive = false;
-        };
-    }, [text, i18n.language, capitalize]);
-
-    return <>{translated}</>;
-};
-
-
-
 export default function HistoryPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [authToken, setAuthToken] = useState<string | null>(null);
@@ -165,7 +86,7 @@ export default function HistoryPage() {
     const [groupType, setGroupType] = useState(GroupType.Project)
 
     const router = useRouter();
-    const menuSize = { x: 200, y: 270 }
+    const menuSize = { x: 200, y: 215 }
 
     useEffect(() => {
         isOpenRef.current = isOpen;
@@ -594,6 +515,7 @@ export default function HistoryPage() {
                     >
                         {t('historyPage.open')}
                     </div>
+
                     <div
                         className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
                         onClick={() => {
@@ -613,9 +535,10 @@ export default function HistoryPage() {
                     >
                         {t('historyPage.viewReport')}
                     </div>
-                    <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
-                        {t('historyPage.download')}
-                    </div>
+                    {/* 
+          <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
+            {t('historyPage.download')}
+          </div>*/}
                     {/*
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
@@ -1020,7 +943,7 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
             <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
 
             {/* response title */}
-            <div className="items-center truncate h-fit text-gray-600"><TranslatedText text={meta.version.title} /></div>
+            <div className="items-center truncate h-fit text-gray-600">{meta.version.title}</div>
 
             {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
             <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt, t)}</div>
