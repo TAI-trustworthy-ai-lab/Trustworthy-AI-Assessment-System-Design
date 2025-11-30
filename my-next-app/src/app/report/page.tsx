@@ -72,7 +72,7 @@ const useRouter = () => {
 
 import { fetchReport as fetchReportService } from '@/services/reportService';
 import { generatePdf } from '@/services/reportService';
-import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
+import { TAI_INDICATOR_MAP_EN_ZH, TAI_INDICATOR_MAP_ZH_EN } from '@/config/constants';
 
 // ----------------------------------------------------
 // 後端回傳資料結構定義
@@ -118,7 +118,7 @@ const getScoreColor = (score: number) => {
 // ----------------------------------------------------
 export default function ReportPage() {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { i18n, t } = useTranslation();
     const [report, setReport] = useState<ReportData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'generating' | 'success' | 'error'>('generating');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -325,7 +325,7 @@ export default function ReportPage() {
 
                                 return (
                                     <div key={key} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                                        <div className="w-1/4 text-sm sm:text-base font-semibold text-gray-700">{title}</div>
+                                        <div className="w-1/4 text-sm sm:text-base font-semibold text-gray-700">{(i18n.language != "en") ? title : (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase())}</div>
                                         <div className="w-3/4 items-center">
                                             <div className="flex items-center">
                                                 <div className="w-full h-3 rounded-full bg-gray-200">
