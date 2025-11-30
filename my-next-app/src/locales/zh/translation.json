@@ -275,7 +275,8 @@
     "dayBeforeYesterday": "前天",
     "daysAgo": "{{count}} 天前",
     "thisYearDate": "{{month}} 月 {{day}} 日",
-    "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日"
+    "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日",
+    "required": "必填"
   },
   "reportPage": {
     "report": {

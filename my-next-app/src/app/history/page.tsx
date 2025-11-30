@@ -641,7 +641,7 @@ export default function HistoryPage() {
                     return(
                       <div
                         className='
-                          flex flex-col w-full'
+                          flex flex-col w-full mb-3'
                         key={responseGroup.indexOf(group)}
                       >
                         {
@@ -649,9 +649,9 @@ export default function HistoryPage() {
                             <div
                               className='
                                 flex justify-start items-center
-                                h-[53] p-2 pl-4
+                                h-[53] p-2 pl-4 mb-1.5
                                 text-white text-lg font-bold bg-blue-300
-                                rounded-lg'
+                                rounded-t-2xl rounded-b-md'
                             >
                               {group.groupName}
                             </div>
@@ -690,7 +690,6 @@ export default function HistoryPage() {
                                 handleContextMenu(e)
                               }}
                             >
-                              <div className='w-[13px]'></div>
                               {item}
                             </div>
                           )
@@ -922,17 +921,19 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
     <div
         className={`
     w-full h-[50]
-    grid grid-cols-[1fr_1.5fr_35px] gap-4 items-center
+    grid grid-cols-[13px_1fr_1.5fr_35px] gap-4 items-center
     select-none
     py-2 px-2
     ${selected ? "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200" : "hover:bg-gray-100 active:bg-gray-200"}
     cursor-pointer rounded-lg
 
-    sm:grid-cols-[1fr_1.5fr_160px_35px]
+    sm:grid-cols-[13px_1fr_1.5fr_160px_35px]
 
     md:min-w-150
-    md:grid-cols-[1.5fr_60px_2fr_160px_35px]`}
+    md:grid-cols-[13px_1.5fr_60px_2fr_160px_35px]`}
     >
+      <div/>
+
       {/* project name */}
       <div className="truncate h-fit text-blue-500 font-bold">{meta.project.name}</div>
 

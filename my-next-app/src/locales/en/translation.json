@@ -274,7 +274,8 @@
     "dayBeforeYesterday": "The day before yesterday",
     "daysAgo": "{{count}} days ago",
     "thisYearDate": "{{month}}/{{day}}",
-    "fullDate": "{{year}}/{{month}}/{{day}}"
+    "fullDate": "{{year}}/{{month}}/{{day}}",
+    "required": "Required"
   },
   "reportPage": {
     "report": {
