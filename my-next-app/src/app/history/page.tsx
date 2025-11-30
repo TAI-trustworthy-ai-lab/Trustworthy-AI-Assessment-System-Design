@@ -1197,10 +1197,10 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
         <div className="text-black text-2xl font-semibold mb-7">{t('historyPage.detailInfo')}</div>
         <div
             className={`
-          w-full px-3 flex justify-center
+          w-full px-3 pb-10 flex justify-center
           overflow-x-auto
 
-          sm:w-fit`}
+          sm:w-fit sm:max-w-[80%]`}
             onClick={(e) => e.stopPropagation()}
         >
             <div
@@ -1218,7 +1218,8 @@ export function ResponseWindow({ state, data }: { state: ViewerState, data: { re
                 <div>{data.response?.project?.name}</div>
 
                 <div>{t('historyPage.questionnaireName')}</div>
-                <div>{data.response?.version?.title}</div>
+                <div>{<TranslatedText text={data.response?.version?.title} />}</div>
+                
 
                 {/* 
           <div>{t('historyPage.label')}</div>
