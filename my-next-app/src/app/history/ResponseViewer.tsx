@@ -19,6 +19,95 @@ const useRouter = () => {
 };
 import { useTranslation } from 'react-i18next';
 
+// ----------------------------------------------------
+// 暫存結構：中文原文 & 英文翻譯
+// ----------------------------------------------------
+const translationCache: {
+    zh: Record<string, string>;
+    en: Record<string, string>;
+} = {
+    zh: {},
+    en: {},
+};
+
+// ----------------------------------------------------
+// 翻譯工具函式 (支援 AbortController)
+// ----------------------------------------------------
+const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+const translateText = async (
+    text: string,
+    source = "zh-CN",
+    target = "en",
+    signal?: AbortSignal
+) => {
+    try {
+        const res = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ q: text, source, target }),
+            signal,
+        });
+
+        const data = await res.json();
+        return data.translatedText;
+    } catch (err: any) {
+        if (err.name === "AbortError") {
+            console.log("翻譯請求已中斷");
+            return null; // ✅ 回傳 null，表示翻譯未完成
+        }
+        console.error("翻譯失敗:", err);
+        return null;
+    }
+};
+
+// ----------------------------------------------------
+// TranslatedText Component with cache + AbortController
+// ----------------------------------------------------
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
+    text,
+    capitalize = false,
+}) => {
+    const { i18n } = useTranslation();
+    const [translated, setTranslated] = useState(text);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        const { signal } = controller;
+
+        if (!translationCache.zh[text]) {
+            translationCache.zh[text] = text;
+        }
+
+        if (i18n.language.startsWith("en")) {
+            if (translationCache.en[text]) {
+                setTranslated(
+                    capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
+                );
+            } else {
+                translateText(text, "zh-CN", "en", signal).then((result) => {
+                    if (result) {
+                        translationCache.en[text] = result;
+                        setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+                    } else {
+                        // ✅ 沒翻譯成功 → 顯示中文，並保留機會下次再翻譯
+                        setTranslated(translationCache.zh[text]);
+                    }
+                });
+            }
+        } else {
+            setTranslated(translationCache.zh[text]);
+        }
+
+        return () => controller.abort();
+    }, [text, i18n.language, capitalize]);
+
+    return <>{translated}</>;
+};
+
 
 // ----------------------------------------------------
 // 定义指標解釋映射表
@@ -308,7 +397,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
             ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
             ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
         >
-          {opt.text}
+          <TranslatedText text={opt.text} capitalize={ true } />
         </button>
       ))}
     </div>
@@ -355,8 +444,8 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
             ${editable ? (selectedOptionIds.includes(opt.id) ? editableSelected : editableUnselected): ""}
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
           }`}
-        >
-          {opt.text}
+          >
+              <TranslatedText text={opt.text} capitalize={ true } />
         </button>
       ))}
     </div>
@@ -513,10 +602,10 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
                   flex flex-col items-start justify-center gap-0.5
                 '>
                   <div className="text-2xl font-bold text-gray-700 text-start">
-                      {page.title}
+                      <TranslatedText text={page.title} />
                   </div>
                   <div className="text-md text-gray-500 text-start">
-                      {page.content}
+                      <TranslatedText text={page.content} />
                   </div>
                 </div>
               </div>
@@ -524,7 +613,7 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
                 {page.questions.map((question) => (
                   <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
                     <div className="font-semibold text-gray-700 mb-3">
-                      {question.text} 
+                      <TranslatedText text={question.text} />
                       {question.required && <span className="
                         relative inline-flex justify-center items-center w-fit
                         text-red-500 px-2 select-none overflow-hidden
