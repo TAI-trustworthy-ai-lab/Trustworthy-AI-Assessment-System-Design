@@ -3,12 +3,13 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
-import AuthHeader from '@/components/AuthHeader';
+import { useTranslation } from 'react-i18next';
+
 import React, { useState, useEffect, useMemo, useCallback,useRef } from 'react';
 import { ResponseMeta } from '@/services/responseService'
+import AuthHeader from '@/components/AuthHeader';
 import { ReportRadarChart } from '@/components/ReportRadarChart';
-import { Loader2, Download } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import PdfExportButton from '@/components/PdfExportButton';
 
 
 const useRouter = () => {
@@ -22,7 +23,6 @@ const useRouter = () => {
 };
 
 import { fetchReport as fetchReportService } from '@/services/reportService';
-import { generatePdf } from '@/services/reportService';
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
 // ----------------------------------------------------
@@ -124,44 +124,6 @@ export default function ReportPage() {
             console.error("Failed to fetch report:", error);
         }
     }, [responseId, authToken]);
-
-    const handleDownloadPdf = useCallback(async () => {
-        if (!responseId || isGeneratingPdf) return;
-
-        setIsGeneratingPdf(true); // 開始下載
-        try {
-            // 1. 呼叫新的 service 函數獲取 Blob
-            const pdfBlob = await generatePdf(responseId);
-
-            // 2. 創建一個 URL 來指向這個 Blob
-            const url = window.URL.createObjectURL(pdfBlob);
-
-            // 3. 創建一個隱藏的 A 標籤並觸發下載
-            const a = document.createElement('a');
-            a.href = url;
-            
-            // 使用專案名稱和 ID 命名檔案，更具體
-            const filename = projectName ? 
-                `${projectName.replace(/\s/g, '_')}-Report-${responseId}.pdf` : 
-                `report-${responseId}.pdf`;
-                
-            a.download = filename; 
-            document.body.appendChild(a);
-            a.click();
-            
-            // 4. 清理
-            window.URL.revokeObjectURL(url);
-            a.remove();
-
-        } catch (error) {
-            console.error("下載 PDF 失敗:", error);
-            // TODO: 在此處顯示一個 Toast 或 Alert 錯誤通知給用戶
-            const errMsg = error instanceof Error ? JSON.parse(error.message).message : "下載失敗，請聯繫管理員。";
-            alert(`${t("reportPage.report.pdfFailure")}: ${errMsg}`); // 暫時使用 alert
-        } finally {
-            setIsGeneratingPdf(false); // 結束下載
-        }
-    }, [responseId, isGeneratingPdf, projectName]); // 依賴於 responseId 和 projectName
 
 
     useEffect(() => {
@@ -328,23 +290,17 @@ export default function ReportPage() {
                 </div>
             </main>
             <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
-                <button
-                    onClick={handleDownloadPdf}
-                    disabled={isGeneratingPdf}
-                    className={`
-                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-purple-800 text-white shadow-2xl hover:bg-purple-700
-                        transition duration-150 ease-in-out 
-                        focus:outline-none focus:ring-4 focus:ring-purple-300
-                        flex items-center space-x-2
-                    `}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <span> {isGeneratingPdf ? t('reportPage.button.preparingPdf') : t('reportPage.button.generatePdf')} </span>
-                </button>
-
+                <PdfExportButton
+                    contentId="report-content"
+                    projectName={projectName}
+                    preparingText={t('reportPage.button.preparingPdf')}
+                    generateText={t('reportPage.button.generatePdf')}
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    }
+                />
                 <button
                     onClick={() => router.push('/home')}
                     className={`

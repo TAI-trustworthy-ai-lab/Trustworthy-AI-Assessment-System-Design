@@ -27,7 +27,10 @@ body {
     background-color: #f3f4f6;
     color: #1f2937;
     font-weight: 700;
-    text-align: center; 
+    text-align: center;
+    font-size: 14px;
+    word-break: break-all;
+    max-width: 25%; 
 }
 
 .markdown-content td {
@@ -38,35 +41,58 @@ body {
 }
 
 
-/* globals.css 或您的全域 CSS 文件 */
-
+/* 這是您需要添加到 CSS 中的樣式 */
 @media print {
-  /* 確保背景是白色，以便在列印時節省墨水 */
-  body {
-    background: white !important;
-  }
+    /* 1. 隱藏不必要的按鈕和元素 */
+    .no-print, 
+    .flex.justify-center.mt-10.mb-20.space-x-4 { 
+        display: none !important;
+    }
 
-  /* 隱藏所有不需要列印的元素，如導航、按鈕、計時器等 */
-  .no-print {
-    display: none !important;
-  }
+    /* 2. 針對報告內容區域進行微調 */
+    #report-content {
+        max-width: none !important; 
+        width: 100% !important; 
+        padding: 0 10mm !important; /* 確保內容不會緊貼邊緣 */
+        margin: 0 !important;
+    }
+    
+    /* 3. 關鍵修正：縮小字體大小 */
+    /* 您的標題目前可能是 text-4xl，我們在列印時將其降級 */
+    #report-content h1 {
+        font-size: 24pt !important; /* 約等於 text-3xl */
+        line-height: 1.2 !important;
+        margin-bottom: 10px !important;
+    }
+    
+    #report-content h2 {
+        font-size: 18pt !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* 修正內文、表格和基礎信息文字大小 */
+    #report-content p,
+    #report-content div {
+        font-size: 10pt !important; /* 標準 A4 內文大小 */
+        line-height: 1.5 !important;
+    }
 
-  /* 調整報告內容 (main) 的邊距，使其符合 A4 頁面 */
-  #report-content {
-    /* 取消固定邊距和置中，以便內容充滿 A4 */
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    /* 調整頂部邊距，因為 Header 被隱藏了 */
-    padding-top: 20px !important; 
-    margin-top: 0 !important; 
-  }
+    /* 4. 優化表格排版 */
+    .markdown-content table {
+        table-layout: fixed; 
+        font-size: 9pt !important; /* 表格字體再小一點 */
+        margin: 8px 0;
+    }
 
-  /* 調整報告內部的背景和陰影，使其更像文件 */
-  #report-content > div {
-    box-shadow: none !important;
-    border: none !important;
-  }
+    .markdown-content th,
+    .markdown-content td {
+        word-break: break-word !important; /* 確保內容不會溢出 */
+        padding: 4px 6px !important; /* 減少單元格內邊距 */
+    }
+
+    .bg-gray-50, .shadow-2xl, .bg-white, .p-6, .sm\:p-10 {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
 }
