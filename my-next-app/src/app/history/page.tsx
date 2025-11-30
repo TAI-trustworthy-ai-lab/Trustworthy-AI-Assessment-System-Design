@@ -123,6 +123,7 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
+  /*
   const translateText = async(text: string | null, source = "zh-TW", target = "en") => {
       if (text === null) return ""
 
@@ -136,7 +137,7 @@ export default function HistoryPage() {
       body: JSON.stringify({ q: text, source, target })
     })
     const data = await res.json()
-    return data.translatedText;*/
+    return data.translatedText;
     return "this is English, cancel the comment in translateText() to use api"
   }
 
@@ -174,7 +175,7 @@ export default function HistoryPage() {
       setViewerState(ViewerState.translating)
     }
     return tanslatedQuestionnaire
-  }
+  }*/
 
   // open
   // get response and questionnair from response id and qId (GET API)
@@ -255,6 +256,7 @@ export default function HistoryPage() {
     else q = fetchQuestionnaireList[qId]
 
     //console.log(locale)
+    /*
     try{
       if(locale){
         switch(locale){
@@ -277,7 +279,7 @@ export default function HistoryPage() {
     } catch {
       setViewerState(ViewerState.fail)
       console.error("翻譯失敗")
-    }
+    }*/
 
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
     setViewerData({ response: r, questionnaire: q })
