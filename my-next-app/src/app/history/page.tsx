@@ -714,50 +714,50 @@ export function Notification() {
 
 }
 
-export function SortControls({sortWay,sortType,groupType,onSortWayChange,onSortTypeChange,onGroupTypeChange}: {
-  sortWay: SortWay;
-  sortType: SortType;
-  groupType: GroupType;
-  onSortWayChange: (v: SortWay) => void;
-  onSortTypeChange: (v: SortType) => void;
-  onGroupTypeChange: (v: GroupType) => void;
-}) 
-{
-  return (
-    <div className="flex flex-wrap gap-4">
-      <ClickAwaySelect
-        label="排序"
-        value={sortWay}
-        options={[
-          { label: "遞增", value: SortWay.Accend },
-          { label: "遞減", value: SortWay.Deccend },
-        ]}
-        onChange={onSortWayChange}
-      />
+export function SortControls({ sortWay, sortType, groupType, onSortWayChange, onSortTypeChange, onGroupTypeChange }: {
+    sortWay: SortWay;
+    sortType: SortType;
+    groupType: GroupType;
+    onSortWayChange: (v: SortWay) => void;
+    onSortTypeChange: (v: SortType) => void;
+    onGroupTypeChange: (v: GroupType) => void;
+}) {
+    const { t } = useTranslation();
+    return (
+        <div className="flex flex-wrap gap-4">
+            <ClickAwaySelect
+                label={t("historyPage.sort.label")}
+                value={sortWay}
+                options={[
+                    { label: t("historyPage.sort.ascend"), value: SortWay.Accend },
+                    { label: t("historyPage.sort.descend"), value: SortWay.Deccend },
+                ]}
+                onChange={onSortWayChange}
+            />
 
-      <ClickAwaySelect
-        label="排序依據"
-        value={sortType}
-        options={[
-          { label: "時間", value: SortType.Date },
-          { label: "專案名稱", value: SortType.Name },
-        ]}
-        onChange={onSortTypeChange}
-      />
+            <ClickAwaySelect
+                label={t("historyPage.sort.by")}
+                value={sortType}
+                options={[
+                    { label: t("historyPage.sort.byDate"), value: SortType.Date },
+                    { label: t("historyPage.sort.byName"), value: SortType.Name },
+                ]}
+                onChange={onSortTypeChange}
+            />
 
-      <ClickAwaySelect
-        label="群組類型"
-        value={groupType}
-        options={[
-          { label: "專案", value: GroupType.Project },
-          { label: "時間", value: GroupType.Date },
-          { label: "問卷", value: GroupType.Questionnaire },
-          { label: "無", value: GroupType.None },
-        ]}
-        onChange={onGroupTypeChange}
-      />
-    </div>
-  );
+            <ClickAwaySelect
+                label={t("historyPage.group.label")}
+                value={groupType}
+                options={[
+                    { label: t("historyPage.group.project"), value: GroupType.Project },
+                    { label: t("historyPage.group.date"), value: GroupType.Date },
+                    { label: t("historyPage.group.questionnaire"), value: GroupType.Questionnaire },
+                    { label: t("historyPage.group.none"), value: GroupType.None },
+                ]}
+                onChange={onGroupTypeChange}
+            />
+        </div>
+    );
 }
 
 function ClickAwaySelect<T>({
