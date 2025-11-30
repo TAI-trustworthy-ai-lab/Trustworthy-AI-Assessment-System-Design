@@ -41,17 +41,3 @@ export const CATEGORY_MAP: Record<string, string> = {
     "SECURITY": "十一、資訊安全性(Security)：防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全",
     "UNKNOWN": "未知分類：{{category}}"
 };
-
-export const REPORT_CATEGORY_MAP_EN: Record<string, string> = {
-    "ACCURACY": "一、準確性（Accuracy）",
-    "RELIABILITY": "二、可靠性（Reliability）",
-    "SAFETY": "三、安全性（Safety）",
-    "RESILIENCE": "四、韌性（Resilience）",
-    "TRANSPARENCY": "五、透明性（Transparency）",
-    "ACCOUNTABILITY": "六、當責性（Accountability）",
-    "EXPLAINABILITY": "七、可解釋性（Explanability）",
-    "AUTONOMY": "八、自主性（Autonomy）",
-    "PRIVACY": "九、隱私（Privacy）",
-    "FAIRNESS": "十、公平性（Fairness）",
-    "SECURITY": "十一、資訊安全性（Security）",
-};

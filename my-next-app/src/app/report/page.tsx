@@ -23,7 +23,7 @@ const useRouter = () => {
 
 import { fetchReport as fetchReportService } from '@/services/reportService';
 import { generatePdf } from '@/services/reportService';
-import { REPORT_CATEGORY_MAP_EN } from '@/config/constants';
+import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
 // ----------------------------------------------------
 // 後端回傳資料結構定義
@@ -274,14 +274,15 @@ export default function ReportPage() {
                         <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">{t('reportPage.report.detailIndicators')}</h2>
                         <div className="space-y-4">
                             {/* ⭐️ 迭代 radarData */}
-                            {Object.entries(REPORT_CATEGORY_MAP_EN).map(([key, title]) => {
+                            {Object.entries(TAI_INDICATOR_MAP_EN_ZH).map(([key, title]) => {
                                 const score = report.radarData[key];
                                 if (score === undefined) return null; 
+                                if (typeof score === 'string') return null;
 
                                 return (
                                     <div key={key} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                                        <div className="w-1/3 text-sm sm:text-base font-semibold text-gray-700">{title.split('、')[1]}</div>
-                                        <div className="w-2/3">
+                                        <div className="w-1/4 text-sm sm:text-base font-semibold text-gray-700">{title}</div>
+                                        <div className="w-3/4 items-center">
                                             <div className="flex items-center">
                                                 <div className="w-full h-3 rounded-full bg-gray-200">
                                                     <div 

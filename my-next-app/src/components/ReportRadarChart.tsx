@@ -21,30 +21,21 @@ ChartJS.register(
     Legend
 );
 
-// 從您的 ReportPage 複製過來的映射表
-const CATEGORY_MAP: Record<string, string> = {
-    "ACCURACY": "準確性",
-    "RELIABILITY": "可靠性",
-    "SAFETY": "安全性",
-    "RESILIENCE": "韌性",
-    "TRANSPARENCY": "透明性",
-    "ACCOUNTABILITY": "當責性",
-    "EXPLAINABILITY": "可解釋性",
-    "AUTONOMY": "自主性",
-    "PRIVACY": "隱私",
-    "FAIRNESS": "公平性",
-    "SECURITY": "資訊安全性",
-};
-
+import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 interface ReportRadarChartProps {
-    radarData: Record<string, number>;
+    radarData: Record<string, number | string>;
 }
 
 export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData }) => {
-    const labels = Object.keys(CATEGORY_MAP).map(key => CATEGORY_MAP[key].split('（')[0]);
+    const validKeys = Object.keys(TAI_INDICATOR_MAP_EN_ZH).filter(key => {
+        const score = radarData[key];
+        return typeof score === 'number';
+    });
+
+    const labels = validKeys.map(key => TAI_INDICATOR_MAP_EN_ZH[key]);
     
     // 獲取對應的數值，保持與標籤順序一致
-    const dataValues = Object.keys(CATEGORY_MAP).map(key => radarData[key] || 0);
+    const dataValues = validKeys.map(key => radarData[key] as number);
 
     const data = {
         labels: labels,

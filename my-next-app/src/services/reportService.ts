@@ -33,10 +33,15 @@ export const fetchReport = async (responseId: number): Promise<any> => {
 
     // backend would return 0-1 but we will show 0-100
     if (reportData && reportData.radarData) {
-        const convertedRadarData: Record<string, number> = {};
+        const convertedRadarData: Record<string, number | string> = {};
         for (const key in reportData.radarData) {
             if (reportData.radarData.hasOwnProperty(key)) {
-                convertedRadarData[key] = reportData.radarData[key] * 100;
+                const score = reportData.radarData[key];
+                if (score === -1) {
+                    convertedRadarData[key] = key.toLowerCase();
+                } else {
+                    convertedRadarData[key] = reportData.radarData[key] * 100;
+                }
             }
         }
         reportData.radarData = convertedRadarData;
