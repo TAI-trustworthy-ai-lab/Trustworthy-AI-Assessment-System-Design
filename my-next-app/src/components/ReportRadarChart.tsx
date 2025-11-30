@@ -28,27 +28,36 @@ interface ReportRadarChartProps {
 }
 
 export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData }) => {
-    const { i18n } = useTranslation();
-    const validKeys = Object.keys(TAI_INDICATOR_MAP_EN_ZH).filter(key => {
-        const score = radarData[key];
-        return typeof score === 'number';
-    });
+    const { t, i18n } = useTranslation();
+    const allKeys = Object.keys(TAI_INDICATOR_MAP_EN_ZH);
 
-    const labels = validKeys.map(key => {
+    const labels = allKeys.map(key => {
+        let baseLabel: string; 
+        
         if (i18n.language !== "en") {
-            return TAI_INDICATOR_MAP_EN_ZH[key]; 
+            baseLabel = TAI_INDICATOR_MAP_EN_ZH[key]; 
         } else {
-            return key.charAt(0) + key.slice(1).toLowerCase();
+            baseLabel = key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
         }
+
+        const score = radarData[key];
+        if (typeof score === 'string') {
+            const naText = t('reportPage.common.notAvailable'); 
+            return `${baseLabel} (${naText})`;
+        }
+        
+        return baseLabel;
     });
 
-    const dataValues = validKeys.map(key => radarData[key] as number);
+    const dataValues = allKeys.map(key => {
+        const score = radarData[key];
+        return typeof score === 'number' ? score : null; 
+    });
 
     const data = {
         labels: labels,
         datasets: [
             {
-                label: '指標分數',
                 data: dataValues,
                 backgroundColor: 'rgba(109, 40, 217, 0.2)', // 紫色透明
                 borderColor: 'rgba(109, 40, 217, 1)', // 紫色
@@ -91,19 +100,32 @@ export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData })
         },
         plugins: {
             legend: {
-                display: false, // 隱藏圖例
+                display: false,
             },
             tooltip: {
+                mode: 'point',
+                intersect: true,
+
                 callbacks: {
+                    title: function(context: any) {
+                        return t('reportPage.common.indicatorScore');
+                    },
                     label: function(context: any) {
-                        let label = context.dataset.label || '';
-                        if (label) {
-                            label += ': ';
+                        const axisLabel = context.label ?? context.chart.data.labels[context.dataIndex];
+
+                        let value: number | null = null;
+                        if (context.parsed && typeof context.parsed.r === 'number') {
+                            value = context.parsed.r;
+                        } else if (typeof context.raw === 'number') {
+                            value = context.raw;
+                        } else {
+                            value = dataValues[context.dataIndex] as number | null;
                         }
-                        if (context.parsed.r !== null) {
-                            label += context.parsed.r.toFixed(2) + ' 分';
+
+                        if (value === null || value === undefined) {
+                        return axisLabel + ': ' + t('common.notAvailable');
                         }
-                        return label;
+                        return axisLabel + ': ' + value.toFixed(2) + ' ';
                     }
                 }
             }
@@ -111,7 +133,7 @@ export const ReportRadarChart: React.FC<ReportRadarChartProps> = ({ radarData })
     };
 
     return (
-    <div className="flex justify-center h-96">
+    <div className="flex justify-center sm:h-96">
         <div className="max-w-sm w-full max-w-lg">
             <Radar data={data} options={options} />
         </div>

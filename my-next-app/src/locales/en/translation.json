@@ -307,6 +307,10 @@
       "backHome": "Back to Home",
       "generatePdf": "Generate PDF",
       "preparingPdf": "Preparing PDF..."
+    },
+    "common": {
+      "notAvailable": "N/A",
+      "indicatorScore": "TAI Score: "
     }
   }
 }

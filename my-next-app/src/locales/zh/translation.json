@@ -308,6 +308,10 @@
       "backHome": "返回主頁",
       "generatePdf": "生成 PDF",
       "preparingPdf": "正在準備 PDF..."
+    },
+    "common": {
+      "notAvailable": "不適用",
+      "indicatorScore": "指標分數："
     }
   }
 

@@ -38,7 +38,7 @@ export const fetchReport = async (responseId: number): Promise<any> => {
             if (reportData.radarData.hasOwnProperty(key)) {
                 const score = reportData.radarData[key];
                 if (score === -1) {
-                    convertedRadarData[key] = key.toLowerCase();
+                    convertedRadarData[key] = "不適用";
                 } else {
                     convertedRadarData[key] = reportData.radarData[key] * 100;
                 }
