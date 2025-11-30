@@ -363,7 +363,7 @@ export default function HistoryPage() {
       return groupBy(list, (item: ResponseMeta)=>item.project.name )
 
     if (groupType === GroupType.Date)
-      return groupBy(list, (item: ResponseMeta)=>formatRelativeTime(item.submittedAt, t) );
+      return groupBy(list, (item: ResponseMeta)=>formatTimeGroup(item.submittedAt, t) );
 
     if (groupType === GroupType.Questionnaire)
       return groupBy(list, (item: ResponseMeta)=>item.versionId.toString() );
@@ -979,20 +979,32 @@ export function formatRelativeTime(isoString: string, t: TFunction<"translation"
     const sec = Math.floor(diff / 1000);
     const min = Math.floor(sec / 60);
     const hr = Math.floor(min / 60);
-    const day = Math.floor(hr / 24);
 
     // formated time difference
     if (sec < 60) return t('historyPage.justNow');
     if (min < 60) return t('historyPage.minutesAgo', { count: min });
     if (hr < 24) return t('historyPage.hoursAgo', { count: hr });
 
+    const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
     // yesterday / the day before yesterday (or just "2 days ago")
-    if (day === 1) return t('historyPage.yesterday');
-    if (day === 2) return t('historyPage.dayBeforeYesterday');
+    const target = startOfDay(date)
+    const today = startOfDay(now)
 
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
 
-    // xx days ago
-    if (day < 7) return t('historyPage.daysAgo', { count: day });
+    const twoDaysAgo = new Date(today)
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+
+    // yesterday
+    if (+target === +yesterday) return t('historyPage.yesterday')
+    // The day before yesterday
+    if (+target === +twoDaysAgo) return t('historyPage.dayBeforeYesterday')
+
+    const diffMs = today.getTime() - target.getTime()
+    const dayDiff = Math.round(diffMs / (1000 * 60 * 60 * 24))
+    if (dayDiff < 7) return t('historyPage.daysAgo', { count: dayDiff });
 
     // this year "MM/DD", or other format?
     const thisYear = now.getFullYear();
@@ -1022,6 +1034,63 @@ export function formatTime(isoString: string | undefined): string {
     }:${
       String(d.getSeconds()).padStart(2, '0')
     }`
+}
+
+export function formatTimeGroup(isoString: string, t: TFunction<"translation", undefined>): string {
+  const now = new Date();
+  const d = new Date(isoString);
+
+  const startOfDay = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const startOfWeek = (date: Date) => {
+    const d = startOfDay(date);
+    const day = d.getDay() || 7;
+    d.setDate(d.getDate() - day + 1);
+    return d;
+  };
+  const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
+  const startOfYear = (date: Date) => new Date(date.getFullYear(), 0, 1);
+
+  const today = startOfDay(now);
+  const target = startOfDay(d);
+
+  // today
+  if (+target === +today) return t('historyPage.today');;
+
+  // yesterday
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (+target === +yesterday) return t('historyPage.yesterday');;
+
+  // this week
+  const thisWeekStart = startOfWeek(now);
+  const nextWeekStart = new Date(thisWeekStart);
+  nextWeekStart.setDate(nextWeekStart.getDate() + 7);
+  if (target >= thisWeekStart && target < nextWeekStart) return t('historyPage.thisWeek');;
+
+  // last week
+  const lastWeekStart = new Date(thisWeekStart);
+  lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+  if (target >= lastWeekStart && target < thisWeekStart) return t('historyPage.lastWeek');;
+
+  // this month
+  const thisMonthStart = startOfMonth(now);
+  const nextMonthStart = new Date(thisMonthStart);
+  nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
+  if (target >= thisMonthStart && target < nextMonthStart) return t('historyPage.thisMonth');;
+
+  // last month
+  const lastMonthStart = new Date(thisMonthStart);
+  lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+  if (target >= lastMonthStart && target < thisMonthStart) return t('historyPage.lastMonth');;
+
+  // this year
+  const thisYearStart = startOfYear(now);
+  const nextYearStart = new Date(thisYearStart);
+  nextYearStart.setFullYear(nextYearStart.getFullYear() + 1);
+  if (target >= thisYearStart && target < nextYearStart) return t('historyPage.thisYear');;
+
+  // long ago
+  return t('historyPage.longAgo');;
 }
 
 export function ResponseWindow({ state, data }: { state: ViewerState, data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } }) {
