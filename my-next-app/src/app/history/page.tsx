@@ -124,7 +124,9 @@ export default function HistoryPage() {
   }, [userId, authToken]);
 
   const translateText = async(text: string | null, source = "zh-TW", target = "en") => {
-    if(text === null) return ""
+      if (text === null) return ""
+
+      return text;
     await new Promise(resolve => setTimeout(resolve, 430))
 
     /*
