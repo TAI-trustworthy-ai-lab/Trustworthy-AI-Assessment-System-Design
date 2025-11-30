@@ -10,6 +10,123 @@ import { ReportRadarChart } from '@/components/ReportRadarChart';
 import { Loader2, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+// ----------------------------------------------------
+// 暫存結構：中文原文 & 英文翻譯
+// ----------------------------------------------------
+const translationCache: {
+    zh: Record<string, string>;
+    en: Record<string, string>;
+} = {
+    zh: {},
+    en: {},
+};
+
+// ----------------------------------------------------
+// 翻譯工具函式
+// ----------------------------------------------------
+const capitalizeFirstLetter = (text: string) => {
+    if (!text) return text;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+};
+
+const translateText = async (text: string, source = "zh-CN", target = "en") => {
+    const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target }),
+    });
+
+    const data = await res.json();
+    return data.translatedText;
+};
+
+// ----------------------------------------------------
+// TranslatedText Component with cache
+// ----------------------------------------------------
+const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
+    text,
+    capitalize = false,
+}) => {
+    const { i18n } = useTranslation();
+    const [translated, setTranslated] = useState(text);
+
+    useEffect(() => {
+        let isActive = true; // 標記當前 effect 是否仍有效
+
+        // 中文暫存：始終存原文
+        if (!translationCache.zh[text]) {
+            translationCache.zh[text] = text;
+        }
+
+        if (i18n.language.startsWith("en")) {
+            // 英文情境：先檢查暫存
+            if (translationCache.en[text]) {
+                setTranslated(
+                    capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
+                );
+            } else {
+                // 沒有暫存 → 呼叫翻譯 API
+                translateText(text, "zh-CN", "en").then((result) => {
+                    if (isActive) { // 只有當前 effect 還有效才更新
+                        result = result || translationCache.zh[text];//如果翻譯未成功，顯示中文。
+                        translationCache.en[text] = result;
+                        setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
+                    }
+                });
+            }
+        } else {
+            // 中文情境：直接用中文暫存
+            setTranslated(translationCache.zh[text]);
+        }
+        // cleanup：切語言時舊的請求結果不再生效
+        return () => {
+            isActive = false;
+        };
+    }, [text, i18n.language, capitalize]);
+
+    return <>{translated}</>;
+};
+
+
+
+// 暫存結構
+const translationCache_Mark: Record<string, string> = {};
+
+const TranslatedMarkdown: React.FC<{ content: string }> = ({ content }) => {
+    const { i18n } = useTranslation();
+    const [translatedContent, setTranslatedContent] = useState(content);
+
+    useEffect(() => {
+        let isActive = true;
+
+        if (i18n.language.startsWith("en")) {
+            if (translationCache_Mark[content]) {
+                setTranslatedContent(translationCache_Mark[content]);
+            } else {
+                translateText(content, "zh-CN", "en").then((result) => {
+                    if (isActive) {
+                        const finalText = result || content; // fallback 中文
+                        translationCache_Mark[content] = finalText;
+                        setTranslatedContent(finalText);
+                    }
+                });
+            }
+        } else {
+            setTranslatedContent(content); // 中文直接顯示
+        }
+
+        return () => {
+            isActive = false;
+        };
+    }, [content, i18n.language]);
+
+    return (
+        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            {translatedContent}
+        </ReactMarkdown>
+    );
+};
+
 
 const useRouter = () => {
     return {
