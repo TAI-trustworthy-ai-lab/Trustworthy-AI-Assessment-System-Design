@@ -283,7 +283,23 @@
     "daysAgo": "{{count}} 天前",
     "thisYearDate": "{{month}} 月 {{day}} 日",
     "fullDate": "{{year}} 年 {{month}} 月 {{day}} 日",
-    "required": "必填"
+    "required": "必填",
+
+    "sort": {
+      "label": "排序",
+      "ascend": "遞增",
+      "descend": "遞減",
+      "by": "排序依據",
+      "byDate": "時間",
+      "byName": "專案名稱"
+    },
+    "group": {
+      "label": "群組類型",
+      "project": "專案",
+      "date": "時間",
+      "questionnaire": "問卷",
+      "none": "無"
+    }
   },
   "reportPage": {
     "report": {
