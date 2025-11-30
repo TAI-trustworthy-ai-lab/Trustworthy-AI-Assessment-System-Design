@@ -579,12 +579,12 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
     <div className="size-full bg-white px-6 pt-13 pb-20 overflow-y-scroll overflow-x-hidden">
       {/* 問卷題目 titleA */}
       <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
-        {q.title}
+        <TranslatedText text={q.title} />
       </h1>
 
       {/* 问卷描述 description */}
       {q.description && (
-        <p className="text-center text-gray-500 mb-8">{q.description}</p>
+        <p className="text-center text-gray-500 mb-8"><TranslatedText text={q.description} /></p>
       )}
 
       {/* 當期分頁內容 */}
