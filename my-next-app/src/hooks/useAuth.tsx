@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'; // 引入 useEffect
 import { useRouter } from 'next/navigation';
-import { USER_API_BASE } from '../config/apiConfig';
+import { USER_API_BASE, BASE_API_URL, API_PREFIX } from '../config/apiConfig';
 
 const AUTH_TOKEN_KEY = 'authToken';
 const AUTH_EXPIRY_KEY = 'authExpiry'; 
@@ -91,7 +91,7 @@ export const useAuth = () => {
         if (!isAutomatic) { 
             try {
                 if (userToken) {
-                    const response = await fetch(`${USER_API_BASE}/logout`, { 
+                    const response = await fetch(`${BASE_API_URL}${API_PREFIX}/user/logout`, { 
                         method: "DELETE", 
                         headers: {
                             'Authorization': `Bearer ${userToken}`, 
