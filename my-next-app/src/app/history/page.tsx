@@ -672,16 +672,23 @@ export default function HistoryPage() {
             w-full
             md:max-w-250
           ">
-                        <div className='flex justify-end items-end w-full my-3'>
-                            <SortControls
+
+                        {
+                          responseList.length > 0 &&
+                          (
+                            <div className='flex justify-end items-end w-full my-3'>
+                              <SortControls
                                 sortWay={sortWay}
                                 sortType={sortType}
                                 groupType={groupType}
                                 onSortWayChange={setSortWay}
                                 onSortTypeChange={setSortType}
                                 onGroupTypeChange={setGroupType}
-                            />
-                        </div>
+                              />
+                            </div>
+                          )
+                        }
+                        
                         {
                             // no history
                             responseList.length <= 0 && (
