@@ -459,7 +459,6 @@ export default function HistoryPage() {
     } else if (userId !== null && authToken !== null) {
       setIsLoading(false)
     }
-    localStorage.removeItem("myQuestionnaire")
   }, [userId, authToken])
 
   useEffect(() => {
