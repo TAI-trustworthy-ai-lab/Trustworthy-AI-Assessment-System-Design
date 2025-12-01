@@ -296,7 +296,9 @@ export default function HistoryPage() {
         q.description !== undefined
         && q.group !== undefined
         && q.id !== undefined
+        && r.versionId == q.id
         && q.questions !== undefined
+        && q.questions.length>0
         && q.title !== undefined
       )
     }
