@@ -11,6 +11,22 @@ import { useTranslation } from 'react-i18next';
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
 
+
+
+
+
+// homePage.dashboard.adminPanel: 管理員面板
+
+
+
+
+
+
+
+
+
+
+
 // ----------------------------------------------------
 //   資料結構 DATA STRUCTURE FROM SERVICES
 // ----------------------------------------------------
@@ -518,6 +534,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
 const Home = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [authToken, setAuthToken] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const [projects, setProjects] = useState<ProjectData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -531,9 +548,12 @@ const Home = () => {
         if (typeof window !== "undefined") {
             const storedUserId = localStorage.getItem("userId");
             const storedAuthToken = localStorage.getItem("authToken");
+            const storedUserRole = localStorage.getItem("userRole");
 
             setUserId(storedUserId);
             setAuthToken(storedAuthToken);
+            setUserRole(storedUserRole);
+
             setIsInitialized(true);
         }
     }, []);
@@ -701,16 +721,19 @@ const Home = () => {
                 ))}
             </div>
 
-            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40 p-4">
+            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40 p-4 
+                w-full max-w-xs mx-auto                                    /* 限制容器最大寬度，避免按鈕過長 */
+                flex flex-col items-center justify-center                 /* 強制垂直排列且內容居中 */
+                space-y-3">
                 <button
                     onClick={() => router.push("/history")}
                     className={`
-                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        w-full py-3 px-6 text-lg font-semibold rounded-full 
                         bg-white text-indigo-600 shadow-2xl border border-indigo-300 
                         transition duration-150 ease-in-out 
                         hover:bg-indigo-50 active:bg-indigo-100
                         focus:outline-none focus:ring-4 focus:ring-indigo-300
-                        flex items-center space-x-2
+                        flex items-center justify-center space-x-2
                     `}
                 >
                     <svg
@@ -729,6 +752,34 @@ const Home = () => {
                     </svg>
                     <span>{t("homePage.dashboard.viewHistory")}</span>
                 </button>
+
+                {userRole === 'ADMIN' && (
+                    <button
+                        onClick={() => router.push("/admin")}
+                        className={`
+                            w-full py-3 px-6 text-lg font-semibold rounded-full 
+                            bg-red-600 text-white shadow-2xl 
+                            transition duration-150 ease-in-out 
+                            hover:bg-red-700 active:bg-red-800
+                            focus:outline-none focus:ring-4 focus:ring-red-300
+                            flex items-center justify-center space-x-2
+                        `}
+                    >
+                        <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className="h-5 w-5" 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                        >
+                            <path 
+                                fillRule="evenodd" 
+                                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" 
+                                clipRule="evenodd" 
+                            />
+                        </svg>
+                        <span>{t("homePage.dashboard.adminPanel")}</span>
+                    </button>
+                )}
             </div>
 
             <AddProjectModal

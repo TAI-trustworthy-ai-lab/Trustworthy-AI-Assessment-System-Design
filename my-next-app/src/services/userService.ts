@@ -9,6 +9,11 @@ interface RegisterPayload extends LoginPayload {
     name: string;
 }
 
+interface ResendPayload {
+    email: string;
+}
+
+
 // 統一的 fetch 函數（可選，用於處理通用標頭、錯誤處理等）
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const url = `${USER_API_BASE}${endpoint}`;
@@ -46,7 +51,15 @@ export async function login(payload: LoginPayload) {
 
 // 2. 註冊 API 函數
 export async function register(payload: RegisterPayload) {
-    return apiFetch("/signup", {
+    return apiFetch("/register", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+// 3. 重寄email
+export async function resend(payload: ResendPayload) {
+    return apiFetch("/resend-verification", {
         method: "POST",
         body: JSON.stringify(payload),
     });

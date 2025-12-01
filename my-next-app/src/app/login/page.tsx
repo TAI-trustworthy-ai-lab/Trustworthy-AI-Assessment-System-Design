@@ -8,6 +8,18 @@ import { login, register } from "@/services/userService";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+
+
+
+
+// loginPage.login.error403Generic: 請先完成 Email 驗證後再登入
+
+
+
+
+
+
+
 export default function LoginPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -27,6 +39,7 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null); 
 
         try {
             const data = await login({ email, password });
@@ -67,6 +80,9 @@ export default function LoginPage() {
                         errorMessage = t('loginPage.login.error404Path');
                     }
                 }
+                else if (statusCode === 403) { 
+                    errorMessage = t('loginPage.login.error403Generic'); 
+                } 
             } catch (e) {
 
             }
@@ -84,11 +100,14 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setSuccess(null);
         try {
             // If response.ok
             await register({ name, email, password }); 
-            setIsRegistering(false);
-            setSuccess(t('loginPage.register.success'));
+            localStorage.setItem('verifingEmail', email);
+            router.push('/verify-pending');
+
+            // REnew to be blank
             setName("");
             setEmail("");
             setPassword("");
@@ -109,7 +128,7 @@ export default function LoginPage() {
                     errorMessage = t('loginPage.register.error500');
                 } else if (statusCode === 400) {
                     errorMessage = backendMessage || t('loginPage.register.error400');
-                }
+                } 
             } catch (e) {
             
             }
