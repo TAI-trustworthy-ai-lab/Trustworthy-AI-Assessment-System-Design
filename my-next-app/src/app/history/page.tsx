@@ -296,10 +296,8 @@ export default function HistoryPage() {
         q.description !== undefined
         && q.group !== undefined
         && q.id !== undefined
-        && r.versionId == q.id
-        && q.questions !== undefined
-        && q.questions.length>0
         && q.title !== undefined
+        && q.questions !== undefined
       )
     }
 
@@ -307,7 +305,7 @@ export default function HistoryPage() {
     if (fetchQuestionnaireList[qId] === null
       || qChecker(fetchQuestionnaireList[qId]) === false)
     {
-      //console.log("q is null")
+      console.log("not find q in local storage")
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -461,6 +459,7 @@ export default function HistoryPage() {
     } else if (userId !== null && authToken !== null) {
       setIsLoading(false)
     }
+    localStorage.removeItem("myQuestionnaire")
   }, [userId, authToken])
 
   useEffect(() => {
