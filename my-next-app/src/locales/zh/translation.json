@@ -50,7 +50,8 @@
       "error500": "伺服器內部錯誤，請稍後再試。",
       "errorIncomplete": "登入成功但未收到完整的授權憑證或用戶資訊缺失。",
       "errorUnknown": "發生未知錯誤",
-      "switchToRegister": "沒有帳戶？立即註冊"
+      "switchToRegister": "沒有帳戶？立即註冊",
+      "error403Generic": "拒絕存取，您沒有權限檢視此資源。"
     },
     "register": {
       "title": "注冊賬戶",
