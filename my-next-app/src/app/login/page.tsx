@@ -28,6 +28,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [errorKey, setErrorKey] = useState<string | null>(null);
 
     const router = useRouter();
     const { t } = useTranslation();
@@ -40,6 +41,7 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
         setSuccess(null); 
+        setErrorKey(null);
 
         try {
             const data = await login({ email, password });
@@ -70,21 +72,22 @@ export default function LoginPage() {
                 backendMessage = errorObj.message;
 
                 if (statusCode === 401) {
-                    errorMessage = t('loginPage.login.error401');
+                    setErrorKey('loginPage.login.error401');
                 } else if (statusCode === 500) {
-                    errorMessage = t('loginPage.login.error500');
+                    setErrorKey('loginPage.login.error500');
                 } else if (statusCode === 404) {
                     if (backendMessage === "User not found") {
-                        errorMessage = t('loginPage.login.error404UserNotFound');
+                        setErrorKey('loginPage.login.error404UserNotFound');
                     } else {
-                        errorMessage = t('loginPage.login.error404Path');
+                        setErrorKey('loginPage.login.error404Path');
                     }
+                } else if (statusCode === 403) {
+                    setErrorKey('loginPage.login.error403Generic');
+                } else {
+                    setErrorKey('loginPage.login.errorUnknown');
                 }
-                else if (statusCode === 403) { 
-                    errorMessage = t('loginPage.login.error403Generic'); 
-                } 
             } catch (e) {
-
+                setErrorKey('loginPage.login.errorUnknown');
             }
             setError(errorMessage);
         } finally {
@@ -158,7 +161,7 @@ export default function LoginPage() {
                 {/* error or success box */}
                 {error && (
                     <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
-                        <strong>{t('loginPage.common.errorLabel')}</strong> {error}
+                        <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
                     </div>
                 )}
                 {success && (
