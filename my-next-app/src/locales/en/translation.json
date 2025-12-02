@@ -50,7 +50,8 @@
       "error500": "Internal server error, please try again later.",
       "errorIncomplete": "Login successful but missing required credentials or user information.",
       "errorUnknown": "An unknown error occurred",
-      "switchToRegister": "Don't have an account? Register now"
+      "switchToRegister": "Don't have an account? Register now",
+      "error403Generic": "Access forbidden, you do not have permission to view this resource."
     },
     "register": {
       "title": "Register an account",
