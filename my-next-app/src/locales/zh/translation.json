@@ -338,6 +338,23 @@
       "notAvailable": "不適用",
       "indicatorScore": "指標分數："
     }
+  },
+  "verify": {
+    "title": "驗證電子郵件",
+    "sentTo": "驗證連結已發送至",
+    "description": "請檢查您的收件箱 (也請檢查垃圾郵件)。點擊信中的連結以啟用您的帳戶。",
+    "resendSuccess": "新的驗證連結已成功發送。",
+    "resendFailed": "發送驗證連結失敗，請稍後再試。",
+    "cooldownError": "發送頻率過高，請等待 {{seconds}} 秒後重試。",
+    "countdownRemaining": "冷卻期剩餘時間",
+    "timeUnit": "秒",
+    "sending": "正在發送...",
+    "resend": "重發驗證信"
+  },
+  "success": {
+    "title": "Email 驗證成功！",
+    "message": "您的帳戶已啟用，現在可以開始登入。",
+    "button": "前往登入"
   }
 
 
