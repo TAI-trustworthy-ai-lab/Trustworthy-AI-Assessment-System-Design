@@ -152,6 +152,7 @@ export default function HistoryPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
+  const [isGroupOpen, setIsGroupOpen] = useState<boolean[]>([])
   const isOpenRef = useRef(isOpen);
   const [isDeleteWindowOpen, setIsDeleteWindowOpen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -450,6 +451,16 @@ export default function HistoryPage() {
       return groupBy(list, (item: ResponseMeta) => item.versionId.toString());
   }
 
+  function groupOpenSwitch(id: number){
+    if(id >= 0 && id < isGroupOpen.length){
+      setIsGroupOpen(prev => {
+        const newArr = [...prev]
+        newArr[id] = !newArr[id]
+        return newArr
+      })
+    }
+  }
+
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
     if (userId && authToken) {
@@ -466,7 +477,10 @@ export default function HistoryPage() {
     newGroupList?.forEach((group, id) => {
       group.items = sortList(group.items, sortType, sortWay)
     })
-    if (newGroupList) setResponseGroup(newGroupList)
+    if (newGroupList){
+      setResponseGroup(newGroupList)
+      setIsGroupOpen(Array(10).fill(true))
+    }
   }, [sortWay, sortType, groupType, responseList, t])
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -732,25 +746,33 @@ export default function HistoryPage() {
                 <div className="hidden size-fit text-gray-600 sm:flex md:flex">{t('historyPage.submitDate')}</div>
               </div>
 
-              {responseGroup.map((group) => {
+              {responseGroup.map((group, index) => {
                 return (
                   <div
                     className='
                       flex flex-col w-full mb-3'
-                    key={responseGroup.indexOf(group)}
+                    key={index}
                   >
                     {groupType !== GroupType.None && (
-                      <div className='
-                        flex justify-start items-center
-                        h-[53] p-2 pl-4 mb-1.5
-                        text-white text-lg font-bold bg-blue-300
-                        rounded-t-2xl rounded-b-md'
+                      <div
+                        className='
+                          flex justify-start items-center
+                          h-[53] p-2 pl-4 mb-1.5
+                          text-white text-lg font-bold bg-blue-300
+                          rounded-t-2xl rounded-b-md
+                          cursor-pointer select-none
+                          
+                          hover:bg-blue-400'
+                        onClick={()=>{ 
+                          //console.log(isGroupOpen[index])
+                          groupOpenSwitch(index)
+                        }}
                       >
                         {group.groupName}
                       </div>
                     )}
 
-                    {group.items.map((data) => {
+                    {isGroupOpen[index] && group.items.map((data) => {
                       const item = <ResponseItem
                         meta={data}
                         selected={data === curResponse}
