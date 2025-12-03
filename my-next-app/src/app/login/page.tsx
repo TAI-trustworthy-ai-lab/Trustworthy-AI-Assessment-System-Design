@@ -149,11 +149,6 @@ export default function LoginPage() {
                         <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
                     </div>
                 )}
-                {success && (
-                    <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm" role="alert">
-                        <strong>{t('loginPage.common.successLabel')}</strong> {success}
-                    </div>
-                )}
 
                 {/* form handling */}
                 <form
