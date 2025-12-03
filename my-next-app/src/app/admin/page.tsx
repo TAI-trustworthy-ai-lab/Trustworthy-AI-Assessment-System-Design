@@ -240,7 +240,6 @@ export default function AdminDashboard() {
         <div className="min-h-screen flex flex-col items-center bg-gray-100 p-8">
             <AuthHeader />
             <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
-                {t("homePage.dashboard.title")}
             </h1>
             <div className="w-full max-w-4xl flex justify-between items-center mb-10">
                 <h1 className="text-4xl font-extrabold text-indigo-700">🌐 系統儀表板</h1>
