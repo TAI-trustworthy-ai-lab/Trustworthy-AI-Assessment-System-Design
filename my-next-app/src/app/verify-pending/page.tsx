@@ -6,22 +6,6 @@ import Header from "@/components/Header";
 import { resend } from "@/services/userService";
 import { useRouter } from "next/navigation";
 
-/*
-{
-  "verify": {
-    "title": "驗證電子郵件",
-    "sentTo": "驗證連結已發送至",
-    "description": "請檢查您的收件箱 (也請檢查垃圾郵件)。點擊信中的連結以啟用您的帳戶。",
-    "resendSuccess": "新的驗證連結已成功發送。",
-    "resendFailed": "發送驗證連結失敗，請稍後再試。",
-    "cooldownError": "發送頻率過高，請等待 {{seconds}} 秒後重試。",
-    "countdownRemaining": "冷卻期剩餘時間",
-    "timeUnit": "秒",
-    "sending": "正在發送...",
-    "resend": "重發驗證信"
-  },
-}
-*/
 
 export default function VerifyPending() {
   const { t } = useTranslation();
@@ -110,13 +94,24 @@ export default function VerifyPending() {
     }
   };
 
-useEffect(() => {
-    if (counter === 0) {
-        if (message.includes(t("verify.cooldownError", { seconds: '' }).replace(/\d/g, ''))) {
+  useEffect(() => {
+    const isCooldownError = message.includes(t("verify.cooldownError", { seconds: '' }).replace(/\d/g, ''));
+
+    if (message && !isCooldownError) {
+        const timer = setTimeout(() => {
             setMessage("");
-        }
+        }, 5000);
+        return () => clearTimeout(timer);
     }
-}, [counter, t, message]);
+}, [message, t]);
+
+  useEffect(() => {
+      if (counter === 0) {
+          if (message.includes(t("verify.cooldownError", { seconds: '' }).replace(/\d/g, ''))) {
+              setMessage("");
+          }
+      }
+  }, [counter, t, message]);
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 p-6">
@@ -140,22 +135,10 @@ useEffect(() => {
         </p>
 
         {message && (
-            <p className={`text-center mb-4 p-2 rounded-lg font-medium 
+            <p className={`text-center p-2 rounded-lg font-medium 
                         ${counter > 0 && !loading ? 'text-red-700 bg-red-50' : 'text-purple-700 bg-purple-50'}`}>
             {message}
             </p>
-        )}
-
-        {counter > 0 && (
-            <div className="text-center my-4">
-            <p className="text-base font-bold text-red-600">
-                {t("verify.countdownRemaining")}
-            </p>
-            <p className="text-3xl font-extrabold text-red-600 mt-1">
-                { counter } 
-                <span className="text-xl font-semibold ml-1">{t("verify.timeUnit")}</span>
-            </p>
-            </div>
         )}
 
         <button
@@ -166,7 +149,18 @@ useEffect(() => {
                 "bg-gray-400 cursor-not-allowed" : 
                 "bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg"}`}
         >
-            {loading ? t("verify.sending") : t("verify.resend")}
+            {loading ? (
+                t("verify.sending")
+            ) : counter > 0 ? (
+                // 顯示倒計時和單位
+                <div className="flex items-center justify-center">
+                    <span className="mr-2">{t("verify.resend")}</span>
+                    <span>({counter}{t("verify.timeUnit")})</span>
+                </div>
+            ) : (
+                // 顯示正常按鈕文字
+                t("verify.resend")
+            )}
         </button>
       </div>
     </div>
