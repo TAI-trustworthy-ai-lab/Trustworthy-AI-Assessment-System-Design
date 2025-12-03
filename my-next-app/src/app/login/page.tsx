@@ -8,18 +8,6 @@ import { login, register } from "@/services/userService";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
-
-
-
-
-// loginPage.login.error403Generic: 請先完成 Email 驗證後再登入
-
-
-
-
-
-
-
 export default function LoginPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
