@@ -344,7 +344,7 @@
     "resendFailed": "Failed to send verification link. Please try again later.",
     "cooldownError": "Too many requests. Please wait {{seconds}} seconds before trying again.",
     "countdownRemaining": "Cooldown time remaining",
-    "timeUnit": "seconds",
+    "timeUnit": "s",
     "sending": "Sending...",
     "resend": "Resend Verification Email"
   },

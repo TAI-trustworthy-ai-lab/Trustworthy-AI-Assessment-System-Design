@@ -143,7 +143,7 @@ export default function LoginPage() {
                     </h2>
                 </div>
 
-                {/* error or success box */}
+                {/* error box */}
                 {error && (
                     <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
                         <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
