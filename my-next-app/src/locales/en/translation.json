@@ -336,5 +336,22 @@
       "notAvailable": "N/A",
       "indicatorScore": "TAI Score: "
     }
+  },
+  "verify": {
+    "title": "Verify Email",
+    "sentTo": "Verification link has been sent to",
+    "description": "Please check your inbox (and also your spam folder). Click the link in the email to activate your account.",
+    "resendSuccess": "A new verification link has been sent successfully.",
+    "resendFailed": "Failed to send verification link. Please try again later.",
+    "cooldownError": "Too many requests. Please wait {{seconds}} seconds before trying again.",
+    "countdownRemaining": "Cooldown time remaining",
+    "timeUnit": "seconds",
+    "sending": "Sending...",
+    "resend": "Resend Verification Email"
+  },
+  "success": {
+    "title": "Email Verification Successful!",
+    "message": "Your account has been activated. You can now log in.",
+    "button": "Go to Login"
   }
 }
