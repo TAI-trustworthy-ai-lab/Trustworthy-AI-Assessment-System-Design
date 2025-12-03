@@ -35,9 +35,8 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
     // 初始訊息
     useEffect(() => {
         if (messages.length === 0) {
-            // 假設 t('Chat.initialPrompt') 存在於您的翻譯檔中
             setMessages([
-                { id: 0, text: t('Chat.initialPrompt') || '您有任何疑問嗎？', sender: 'llm' }
+                { id: 0, text: t('Any problem?') || '您有任何疑問嗎？', sender: 'llm' }
             ]);
         }
     }, [messages.length, t]);
@@ -65,7 +64,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         // 2. 顯示載入中的 AI 訊息佔位符
         const loadingMsgId = userMsgId + 1;
         // isStreaming: true 在非串流中用作 loading 標記
-        setMessages(prev => [...prev, { id: loadingMsgId, text: t('Chat.thinking') || 'AI 正在思考...', sender: 'llm', isStreaming: true }]);
+        setMessages(prev => [...prev, { id: loadingMsgId, text: t('Thinking...') || 'AI 正在思考...', sender: 'llm', isStreaming: true }]);
 
 
         try {
@@ -111,7 +110,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
             ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}
         >
             <div className="flex justify-between items-center p-3 border-b bg-indigo-600 rounded-t-xl">
-                <h4 className="text-white font-bold">{t('Chat.title') || 'AI 助手'}</h4>
+                <h4 className="text-white font-bold">{t('AI assistance') || 'AI 助手'}</h4>
                 <button onClick={onClose} className="text-white hover:text-gray-200 text-xl">&times;</button>
             </div>
             
@@ -139,7 +138,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={t('Chat.placeholder') || '輸入您的問題...'}
+                        placeholder={t('Input something...') || '輸入您的問題...'}
                         disabled={isThinking}
                         rows={1}
                         className="flex-grow p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
@@ -149,7 +148,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                         disabled={isThinking || input.trim() === ''}
                         className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
                     >
-                        {isThinking ? '...' : t('Chat.send') || '發送'}
+                        {isThinking ? '...' : t('Send') || '發送'}
                     </button>
                 </div>
             </form>
