@@ -104,9 +104,11 @@ export default function LoginPage() {
         setLoading(true);
         setError(null);
         setSuccess(null);
+        setErrorKey(null);
+
         try {
             // If response.ok
-            await register({ name, email, password }); 
+            await register({ name, email, password });
             localStorage.setItem('verifingEmail', email);
             router.push('/verify-pending');
 
@@ -115,7 +117,6 @@ export default function LoginPage() {
             setEmail("");
             setPassword("");
         } catch (err) {
-            // If !response.ok
             let errorMessage = err instanceof Error ? err.message : t('loginPage.register.errorUnknown');
             let statusCode = 0;
             let backendMessage = '';
@@ -124,16 +125,18 @@ export default function LoginPage() {
                 const errorObj = JSON.parse(errorMessage);
                 statusCode = errorObj.status;
                 backendMessage = errorObj.message;
-                
-                if (statusCode === 409) { 
-                    errorMessage = t('loginPage.register.error409');
+
+                if (statusCode === 409) {
+                    setErrorKey('loginPage.register.error409');
                 } else if (statusCode === 500) {
-                    errorMessage = t('loginPage.register.error500');
+                    setErrorKey('loginPage.register.error500');
                 } else if (statusCode === 400) {
-                    errorMessage = backendMessage || t('loginPage.register.error400');
-                } 
+                    setErrorKey('loginPage.register.error400');
+                } else {
+                    setErrorKey('loginPage.register.errorUnknown');
+                }
             } catch (e) {
-            
+                setErrorKey('loginPage.register.errorUnknown');
             }
 
             console.error("Registration Error:", err);
