@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
+import { fetchAllQuestionnaires } from '@/services/questionnaireService';
 
 // API 常量
 const API_BASE_URL = "http://localhost:3001/api";
@@ -146,6 +147,10 @@ export default function AdminDashboard() {
     const [listLoading, setListLoading] = useState<boolean>(true);
     const [listError, setListError] = useState<string | null>(null);
     const { i18n, t } = useTranslation();
+    const [questionnaires, setQuestionnaires] = useState<any[]>([]);
+    const [qLoading, setQLoading] = useState(false);
+    const [qError, setQError] = useState<string | null>(null);
+
     // 格式化日期時間顯示
     const formatDateTime = (dateString: string) => {
         try {
@@ -232,6 +237,26 @@ export default function AdminDashboard() {
         }
     }, [currentUserRole, fetchUsers]);
 
+    // 抓問卷資料
+    const fetchQuestionnaires = async () => {
+        setQLoading(true);
+        setQError(null);
+        try {
+            const data = await fetchAllQuestionnaires();
+            setQuestionnaires(data || []);
+        } catch (err: any) {
+            console.error("載入問卷失敗:", err);
+            setQError(err.message || "未知錯誤");
+        } finally {
+            setQLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (currentUserRole === ADMIN_ROLE) {
+            fetchQuestionnaires();
+        }
+    }, [currentUserRole]);
 
     // ------------------- 渲染 -------------------
     const isLoggedIn = !!currentUserRole;
@@ -319,6 +344,53 @@ export default function AdminDashboard() {
             <p className="mt-8 text-sm text-gray-500">
                 * 請確保後端服務 (http://localhost:3001) 正在運行，Login API 響應格式正確。
             </p>
+
+            {/* 問卷表格 */}
+            <h2 className="text-2xl font-bold mt-10 mb-4 border-b pb-2 text-gray-800">
+                📑 問卷版本列表
+            </h2>
+            {qLoading && <p className="text-center text-indigo-600 p-4">正在載入問卷資料...</p>}
+            {qError && (
+                <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
+                    🚨 問卷載入失敗: {qError}
+                </div>
+            )}
+            {!qLoading && !qError && questionnaires.length > 0 && (
+                <div className="overflow-x-auto mt-4">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-indigo-600 text-white">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">群組名稱</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本 ID</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本號</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">標題</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">啟用狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                            {questionnaires.map((q: any) => (
+                                <tr key={q.id} className="hover:bg-indigo-50 transition duration-150">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {q.group?.name || "—"}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {q.id}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        v{q.versionNumber}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {q.title}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {q.isActive ? "✅ 啟用" : "❌ 停用"}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }
