@@ -76,11 +76,7 @@ export default function LoginPage() {
                 } else if (statusCode === 500) {
                     setErrorKey('loginPage.login.error500');
                 } else if (statusCode === 404) {
-                    if (backendMessage === "User not found") {
-                        setErrorKey('loginPage.login.error404UserNotFound');
-                    } else {
-                        setErrorKey('loginPage.login.error404Path');
-                    }
+                    setErrorKey('loginPage.login.error404');
                 } else if (statusCode === 403) {
                     setErrorKey('loginPage.login.error403Generic');
                 } else {
@@ -126,9 +122,7 @@ export default function LoginPage() {
                 statusCode = errorObj.status;
                 backendMessage = errorObj.message;
 
-                if (statusCode === 409) {
-                    setErrorKey('loginPage.register.error409');
-                } else if (statusCode === 500) {
+                if (statusCode === 500) {
                     setErrorKey('loginPage.register.error500');
                 } else if (statusCode === 400) {
                     setErrorKey('loginPage.register.error400');
