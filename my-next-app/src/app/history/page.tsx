@@ -594,19 +594,6 @@ export default function HistoryPage() {
           className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
           onClick={() => { setIsOpen(false) }}
         >
-          <div 
-            className='fixed top-13 left-8 z-[61] size-fit'
-            onClick={() => { setIsOpen(false) }}
-          >
-            <CircleX
-              size={40}
-              className='
-              text-white hover:text-red-500 cursor-pointer
-                drop-shadow-lg drop-shadow-black/45
-                
-                lg:hidden'
-            />
-          </div>
           <div
             className=" 
               absolute flex flex-col top-[3vh]
@@ -623,6 +610,19 @@ export default function HistoryPage() {
               bg-gray-50 
               rounded overflow-hidden "
             >
+              <div 
+                className='absolute top-4 left-4 z-[61] size-fit'
+                onClick={() => { setIsOpen(false) }}
+              >
+                <CircleX
+                  size={40}
+                  className='
+                  text-white hover:text-red-500 cursor-pointer
+                    drop-shadow-lg drop-shadow-black/45
+                    
+                    lg:hidden'
+                />
+              </div>
               <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
               <ResponseWindow state={viewerState} data={viewerData} />
             </div>
