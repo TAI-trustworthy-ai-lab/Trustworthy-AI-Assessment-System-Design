@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
-import { fetchAllQuestionnaires } from '@/services/questionnaireService';
+import { fetchAllQuestionnaires, duplicateQuestionnaire } from '@/services/questionnaireService';
 import ResponseViewer from "@/app/admin/QuestionnaireEditor";
 import { ViewerState } from "@/services/responseService";
 
@@ -343,7 +343,7 @@ export default function AdminDashboard() {
                 </div>
             )}
             {isLoggedIn && (
-                <QuestionnaireTable questionnaires={questionnaires} />
+                <QuestionnaireTable questionnaires={questionnaires} onRefresh={fetchQuestionnaires} />
             )}
             <p className="mt-8 text-sm text-gray-500">
                 * 請確保後端服務 (http://localhost:3001) 正在運行，Login API 響應格式正確。
@@ -356,10 +356,28 @@ export default function AdminDashboard() {
 
 interface QuestionnaireTableProps {
     questionnaires: any[];
+    onRefresh: () => void; // 新增一個回呼，用來刷新表格
 }
 
-const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires }) => {
+const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires, onRefresh }) => {
     const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<any | null>(null);
+    const [loadingId, setLoadingId] = useState<number | null>(null);
+
+    const handleDuplicate = async (q: any) => {
+        setLoadingId(q.id);
+        try {
+            const newTitle = `${q.title}（副本）`;
+            const newDesc = `從 v${q.versionNumber} 複製而來的問卷版本`;
+            await duplicateQuestionnaire(q.id, { title: newTitle, description: newDesc });
+            // 成功後刷新表格
+            onRefresh();
+        } catch (err: any) {
+            console.error("複製問卷失敗:", err);
+            alert(err.message || "複製失敗");
+        } finally {
+            setLoadingId(null);
+        }
+    };
 
     return (
         <div className="overflow-x-auto mt-4">
@@ -386,12 +404,19 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires 
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 {q.isActive ? "✅ 啟用" : "❌ 停用"}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
                                 <button
                                     onClick={() => setSelectedQuestionnaire(q)}
                                     className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                                 >
                                     編輯
+                                </button>
+                                <button
+                                    onClick={() => handleDuplicate(q)}
+                                    disabled={loadingId === q.id}
+                                    className={`px-3 py-1 rounded text-white ${loadingId === q.id ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`}
+                                >
+                                    {loadingId === q.id ? "複製中..." : "複製"}
                                 </button>
                             </td>
                         </tr>
