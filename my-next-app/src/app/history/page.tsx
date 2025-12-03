@@ -34,7 +34,10 @@ enum SortWay {
 
 enum SortType {
     Name,
-    Date
+    Date,
+    Project,
+    None,
+    Questionnaire,
 }
 
 enum GroupType {
@@ -42,6 +45,17 @@ enum GroupType {
     None,
     Date,
     Questionnaire,
+}
+
+interface SortingData{
+  sort: {
+    type: SortType,
+    way: SortWay
+  },
+  group: {
+    type: GroupType,
+    way: SortWay
+  }
 }
 
 // ----------------------------------------------------
@@ -59,19 +73,19 @@ const translationCache: {
 // 翻譯工具函式
 // ----------------------------------------------------
 const capitalizeFirstLetter = (text: string) => {
-    if (!text) return text;
-    return text.charAt(0).toUpperCase() + text.slice(1);
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
 const translateText = async (text: string, source = "zh-CN", target = "en") => {
-    const res = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: text, source, target }),
-    });
+  const res = await fetch("/api/translate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ q: text, source, target }),
+  });
 
-    const data = await res.json();
-    return data.translatedText;
+  const data = await res.json();
+  return data.translatedText;
 };
 
 // ----------------------------------------------------
@@ -159,6 +173,7 @@ export default function HistoryPage() {
   const [menuPositionOriginal, setMenuPositionOriginal] = useState({ x: 0, y: 0 });
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
+  const [isSortLock, setIsSortLock] = useState(true)
   const [sortWay, setSortWay] = useState(SortWay.Accend)
   const [sortType, setSortType] = useState(SortType.Date)
   const [groupType, setGroupType] = useState(GroupType.Project)
@@ -181,6 +196,26 @@ export default function HistoryPage() {
       setUserId(storedUserId);
       setAuthToken(storedAuthToken);
       setFetchQuestionnaireList(data)
+
+      setIsSortLock(true)
+      const sortingDataString = localStorage.getItem("sortingData");
+      console.log("loading: ", sortingDataString)
+
+      const sortingData = sortingDataString ? JSON.parse(sortingDataString) as SortingData :
+        {
+          sort: {
+            type: SortType.Date,
+            way: SortWay.Accend
+          },
+          group: {
+            type: GroupType.Project,
+            way: SortWay.Accend
+          }
+        }
+      setSortType(sortingData.sort? sortingData.sort.type : SortType.Date)
+      setSortWay(sortingData.sort? sortingData.sort.way: SortWay.Accend)
+      setGroupType(sortingData.group? sortingData.group.type: GroupType.Project)
+      setIsSortLock(false)
     }
   }, []);
 
@@ -464,8 +499,9 @@ export default function HistoryPage() {
   // 2. 當 userId 或 authToken 改變時載入專案
   useEffect(() => {
     if (userId && authToken) {
-      console.debug("loadResponses()")
-      //setIsLoading(false)
+      // console.debug("loadResponses()")
+      // setIsLoading(false)
+
       loadResponses()
     } else if (userId !== null && authToken !== null) {
       setIsLoading(false)
@@ -473,6 +509,8 @@ export default function HistoryPage() {
   }, [userId, authToken])
 
   useEffect(() => {
+    if(isSortLock) return
+    
     const newGroupList = groupList(responseList, groupType)
     newGroupList?.forEach((group, id) => {
       group.items = sortList(group.items, sortType, sortWay)
@@ -481,6 +519,19 @@ export default function HistoryPage() {
       setResponseGroup(newGroupList)
       setIsGroupOpen(Array(10).fill(true))
     }
+
+    const data = {
+      sort: {
+        type: sortType,
+        way: sortWay
+      },
+      group: {
+        type: groupType,
+        way: SortWay.Accend
+      }
+    }
+    localStorage.setItem("sortingData", JSON.stringify(data))
+    console.log("saved: ", localStorage.getItem("sortingData"))
   }, [sortWay, sortType, groupType, responseList, t])
 
   const handleContextMenu = (e: React.MouseEvent) => {
