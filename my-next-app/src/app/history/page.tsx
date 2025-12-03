@@ -23,7 +23,7 @@ import ResponseViewer, {
     styleSelected,
     styleUnselected
 } from './ResponseViewer';
-import { Info, FileText } from 'lucide-react'
+import { Info, FileText, ChevronDown, CircleX } from 'lucide-react'
 import { TFunction } from 'i18next';
 //import { Info, Edit, FileText } from 'lucide-react'
 
@@ -199,7 +199,7 @@ export default function HistoryPage() {
 
       setIsSortLock(true)
       const sortingDataString = localStorage.getItem("sortingData");
-      console.log("loading: ", sortingDataString)
+      //console.log("loading: ", sortingDataString)
 
       const sortingData = sortingDataString ? JSON.parse(sortingDataString) as SortingData :
         {
@@ -510,7 +510,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if(isSortLock) return
-    
+
     const newGroupList = groupList(responseList, groupType)
     newGroupList?.forEach((group, id) => {
       group.items = sortList(group.items, sortType, sortWay)
@@ -531,7 +531,7 @@ export default function HistoryPage() {
       }
     }
     localStorage.setItem("sortingData", JSON.stringify(data))
-    console.log("saved: ", localStorage.getItem("sortingData"))
+    //console.log("saved: ", localStorage.getItem("sortingData"))
   }, [sortWay, sortType, groupType, responseList, t])
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -594,6 +594,19 @@ export default function HistoryPage() {
           className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
           onClick={() => { setIsOpen(false) }}
         >
+          <div 
+            className='fixed top-13 left-8 z-[61] size-fit'
+            onClick={() => { setIsOpen(false) }}
+          >
+            <CircleX
+              size={40}
+              className='
+              text-white hover:text-red-500 cursor-pointer
+                drop-shadow-lg drop-shadow-black/45
+                
+                lg:hidden'
+            />
+          </div>
           <div
             className=" 
               absolute flex flex-col top-[3vh]
@@ -734,8 +747,8 @@ export default function HistoryPage() {
       )}
 
       <div
-        className="
-          p-8 bg-gray-50 min-h-screen font-sans"
+        className={`
+          p-8 bg-gray-50 min-h-screen font-sans `}
         onClick={() => { setShowMenu(false); setCurResponse(null) }}
       >
         <AuthHeader />
@@ -750,9 +763,9 @@ export default function HistoryPage() {
           flex justify-center
           w-full mb-14"
         >
-          <div className="
+          <div className='
             w-full
-            md:max-w-250"
+            md:max-w-250'
           >
             {responseList.length > 0 && (
               <div className='flex justify-end items-end w-full my-3'>
@@ -920,7 +933,7 @@ export function SortControls({ sortWay, sortType, groupType, onSortWayChange, on
   )
 }
 
-function ClickAwaySelect<T>({
+export function ClickAwaySelect<T>({
   label,
   value,
   options,
@@ -964,7 +977,9 @@ function ClickAwaySelect<T>({
         onClick={() => setOpen(!open)}
       >
         <span>{options.find((o) => o.value === value)?.label}</span>
-        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>▼</span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>
+          <ChevronDown/>
+        </span>
       </div>
 
       {open && (
@@ -1412,7 +1427,7 @@ export function ResponseWindow({ state, data }: {
           flex justify-center items-center
           size-13 rounded-full backdrop-blur-xs
           shadow-black/20 border shadow-md 
-          overflow-hidden select-none cursor-pointer
+          overflow-hidden select-none cursor-pointer pointer-events-auto
 
           hover:overflow-visible 
           active:shadow-sm
@@ -1446,23 +1461,19 @@ export function ResponseWindow({ state, data }: {
         w-full h-full"
       onClick={() => { setCurState(ViewerState.success) }}
     >
-      <div className={`
+      <div className='
         absolute bottom-0 z-52
-        w-[100%] h-[12%]
+        w-[100%] h-[70px]
         bg-gradient-to-t from-black/10 to-transparent
-        pointer-events-none
-
-        ${curState === ViewerState.detail ?
-          "translate-y-0" :
-          "translate-y-0"
-        }`}
+        pointer-events-none'
       />
 
       <div
         className={`
           absolute z-[58] bottom-0
           flex justify-center items-start space-x-4
-          h-[12%] w-fit`
+          h-[70px] w-fit
+          pointer-events-none`
         }
         onClick={(e) => {
           if (curState === ViewerState.detail) e.stopPropagation()
@@ -1513,7 +1524,7 @@ export function ResponseWindow({ state, data }: {
 
       <div
         className={`
-          absolute -bottom-[90%] z-[52]
+          absolute -bottom-[100%] z-[52]
           flex flex-col justify-start items-center
           w-[100%] h-[87%]
           rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]

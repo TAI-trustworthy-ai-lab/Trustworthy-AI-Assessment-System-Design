@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   ResponseMeta, 
   ResponseData,
   ViewerState
 } from "@/services/responseService";
-import { LoadingComponent } from "@/app/history/page"
+import { LoadingComponent, } from "@/app/history/page"
+import { ChevronUp } from 'lucide-react'
 
 const useRouter = () => {
     return {
@@ -502,6 +503,44 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
   const r = data.response
   const editable = curState === ViewerState.editing
 
+  const viewerRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [curPage, setCurPage] = useState(0);
+
+  const scrollToWithOffset = (element: HTMLElement, offset: number) => {
+    const viewer = viewerRef.current
+    if (!viewer || !element) return
+
+    const y = element.offsetTop - viewer.offsetTop + offset
+
+    console.log("scrolling")
+    viewer.scrollTo({
+      top: y,
+      behavior: "smooth",
+    })
+  }
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = Number(entry.target.getAttribute("data-index"))
+            setCurPage(index)
+          }
+        })
+      },
+      {
+        root: viewerRef.current || null,
+        threshold: 0.5,
+      }
+    )
+
+    sectionRefs.current.forEach((el) => el && observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
+
    // 1. 根據指標映射表獲取分頁標題
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
   const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
@@ -575,8 +614,51 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
     }));
   }
 
-  return (
-    <div className="size-full bg-white px-6 pt-13 pb-20 overflow-y-scroll overflow-x-hidden">
+  return (<>
+    <div
+      className="fixed inset-0 z-60 flex items-center justify-center pointer-events-none"
+    >
+      <div
+        className=" 
+          absolute flex flex-col top-[3vh]
+          w-full h-[90vh] max-h-[680]
+          mx-0 p-5
+          
+          md:mx-20
+          md:max-w-[800]"
+      >
+        <div className="
+          relative h-full w-full
+          rounded overflow-hidden"
+        >
+          <div
+            className="absolute z-[51] bottom-5 right-6 pointer-events-auto"
+          >
+            <ClickAwaySelect
+              label="指標"
+              value={curPage}
+              options={p.map((page, index)=>{
+                return { label: page.title, value: index }
+              })}
+              onChange={(v)=>{
+                console.log("changing")
+                setCurPage(v)
+                scrollToWithOffset(sectionRefs.current[v]!, -20)
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div className="
+      relative
+      px-6 pt-18 pb-20
+      size-full
+      bg-white  
+      overflow-y-scroll overflow-x-hidden"
+      ref={(el) => {viewerRef.current = el}}
+    >
       {/* 問卷題目 titleA */}
       <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
         <TranslatedText text={q.title} />
@@ -589,11 +671,17 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
 
       {/* 當期分頁內容 */}
       {
-        p.map(page=>{
+        p.map((page, index)=>{
           return (
-            <div key={p.indexOf(page)}>
+            <div
+              key={index}
+              data-index={index}
+              ref={(el) => {sectionRefs.current[index] = el}}
+            >
               <div className='
-                flex mt-7 mb-5
+                flex
+                mt-7 mb-5
+                bg-white
               '>
                 <div className='
                   flex justify-around w-[8px] ml-3 mr-2 bg-indigo-400 text-transparent select-none
@@ -614,22 +702,21 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
                   <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
                     <div className="font-semibold text-gray-700 mb-3">
                       <TranslatedText text={question.text} />
-                      {question.required && <span className="
-                        relative inline-flex justify-center items-center w-fit
-                        text-red-500 px-2 select-none overflow-hidden
-                        hover:overflow-visible">
+                      {question.required &&
+                        <span className="
+                          relative inline-flex justify-center items-center w-fit
+                          text-red-500 px-2 select-none overflow-hidden
+                          hover:overflow-visible"
+                        >
                           *
-                                {(i18n.language == "en")? <div className='
-                            absolute -right-[300%] w-fit px-1.5 py-1
+                          <div className='
+                            absolute
+                            left-full ml-1.5 w-fit px-1.5 py-1
                             text-center font-bold text-xs text-white whitespace-nowrap
-                            bg-red-400 rounded-full shadow shadow-gray-500'>
-                                    {t('historyPage.required')}
-                                </div> : <div className='
-                            absolute -right-[180%] w-fit px-1.5 py-1
-                            text-center font-bold text-xs text-white whitespace-nowrap
-                            bg-red-400 rounded-full shadow shadow-gray-500'>
-                                    {t('historyPage.required')}
-                                </div>}
+                            bg-red-400 rounded-full shadow shadow-gray-500'
+                          >
+                            {t('historyPage.required')}
+                          </div>
                         </span>}
                     </div>
                     
@@ -659,6 +746,89 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
           )
         }
       </div>
+    </div>
+  </>)
+}
+
+export function ClickAwaySelect<T>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { label: string; value: T }[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // 點擊畫面空白收起
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="
+        relative w-13 select-none
+        sm:w-40"
+    >
+      <div
+        className="
+          flex justify-center items-center 
+          px-3 py-2
+          rounded-lg border border-gray-300 bg-white shadow-sm 
+          cursor-pointer
+          
+          sm:justify-between"
+        onClick={() => setOpen(!open)}
+      >
+        <span className='hidden sm:flex'>{options.find((o) => o.value === value)?.label}</span>
+        <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>
+          <ChevronUp/>
+        </span>
+      </div>
+
+      {open && (
+        <div className="
+          absolute z-40
+          bottom-full right-0 mb-4 w-fit min-w-40 max-h-[67vh]
+          rounded-lg bg-white border border-gray-200 shadow-lg
+          overflow-y-auto whitespace-nowrap"
+        >
+          {options.map((o) => {
+            const isSelected = o.value === value;
+            return (<div
+              key={options.indexOf(o)}
+              className={`
+                pl-3 pr-5 py-2
+                cursor-pointer
+                ${isSelected ?
+                  "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200" :
+                  "bg-white hover:bg-gray-50 active:bg-gray-100"
+                }
+              `}
+              onClick={() => {
+                onChange(o.value);
+                setOpen(false);
+              }}
+            >
+              {o.label}
+            </div>)
+          })}
+        </div>
+      )}
     </div>
   )
 }
