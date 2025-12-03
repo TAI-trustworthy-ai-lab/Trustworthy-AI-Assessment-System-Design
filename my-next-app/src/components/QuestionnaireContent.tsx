@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-
+import FloatingChatWindow from '@/components/FloatingChatWindow';
 // ----------------------------------------------------
 //  其他檔案資料 IMPORT FROM OTHERS FOLDER
 // ----------------------------------------------------
@@ -55,7 +55,6 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
 }) => {
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
-    
     useEffect(() => {
         let isActive = true; // 標記當前 effect 是否仍有效
 
@@ -430,7 +429,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [draftResponseId, setDraftResponseId] = useState<number | null>(null);
     const [isSavingDraft, setIsSavingDraft] = useState(false);
-
+    // 👇👇👇 補上這一行，紅字就會消失了 👇👇👇
+    const [isChatVisible, setIsChatVisible] = useState(false);
 
     // =============
     //     分頁
@@ -912,6 +912,24 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             {/* Modal 渲染移到最頂層，由狀態控制 */}
             {showSuccessModal && <SuccessModal />}
             {isGeneratingReport && <FullPageLoadingOverlay message={t('Questionnaire.report.generating')} />}
+            {/* --- 這裡開始是新增的聊天按鈕 --- */}
+            <FloatingChatWindow 
+                isVisible={isChatVisible} 
+                onClose={() => setIsChatVisible(false)} 
+            />
+
+            <button
+                onClick={() => setIsChatVisible(prev => !prev)}
+                className="fixed bottom-4 right-4 p-4 rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition duration-300 z-50"
+                title="AI 助手"
+            >
+                {isChatVisible ? (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                )}
+            </button>
+            {/* --- 新增結束 --- */}
         </div>
     );
 }
