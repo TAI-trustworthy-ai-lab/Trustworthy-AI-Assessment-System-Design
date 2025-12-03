@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
 import { fetchAllQuestionnaires } from '@/services/questionnaireService';
+import ResponseViewer from "@/app/admin/QuestionnaireEditor";
+import { ViewerState } from "@/services/responseService";
 
 // API 常量
 const API_BASE_URL = "http://localhost:3001/api";
@@ -340,57 +342,93 @@ export default function AdminDashboard() {
                     )}
                 </div>
             )}
-            
+            {isLoggedIn && (
+                <QuestionnaireTable questionnaires={questionnaires} />
+            )}
             <p className="mt-8 text-sm text-gray-500">
                 * 請確保後端服務 (http://localhost:3001) 正在運行，Login API 響應格式正確。
             </p>
 
-            {/* 問卷表格 */}
-            <h2 className="text-2xl font-bold mt-10 mb-4 border-b pb-2 text-gray-800">
-                📑 問卷版本列表
-            </h2>
-            {qLoading && <p className="text-center text-indigo-600 p-4">正在載入問卷資料...</p>}
-            {qError && (
-                <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                    🚨 問卷載入失敗: {qError}
-                </div>
-            )}
-            {!qLoading && !qError && questionnaires.length > 0 && (
-                <div className="overflow-x-auto mt-4">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-indigo-600 text-white">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">群組名稱</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本 ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本號</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">標題</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">啟用狀態</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100">
-                            {questionnaires.map((q: any) => (
-                                <tr key={q.id} className="hover:bg-indigo-50 transition duration-150">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {q.group?.name || "—"}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {q.id}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        v{q.versionNumber}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {q.title}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {q.isActive ? "✅ 啟用" : "❌ 停用"}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            
+        </div>
+    );
+}
+
+interface QuestionnaireTableProps {
+    questionnaires: any[];
+}
+
+const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires }) => {
+    const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<any | null>(null);
+
+    return (
+        <div className="overflow-x-auto mt-4">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-indigo-600 text-white">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">群組名稱</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本 ID</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本號</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">標題</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">啟用狀態</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">操作</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                    {questionnaires.map((q: any) => (
+                        <tr key={q.id} className="hover:bg-indigo-50 transition duration-150">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {q.group?.name || "—"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{q.id}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">v{q.versionNumber}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{q.title}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {q.isActive ? "✅ 啟用" : "❌ 停用"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <button
+                                    onClick={() => setSelectedQuestionnaire(q)}
+                                    className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                >
+                                    編輯
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+            {/* Modal for ResponseViewer */}
+            {selectedQuestionnaire && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh]">
+                        <button
+                            onClick={() => setSelectedQuestionnaire(null)}
+                            className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                            關閉
+                        </button>
+                        <ResponseViewer
+                            curState={ViewerState.detail}
+                            data={{
+                                questionnaire: selectedQuestionnaire,
+                                response: {
+                                    answers: [],
+                                    id: 0,
+                                    userId: 0,
+                                    projectId: 0,
+                                    versionId: selectedQuestionnaire.id,
+                                    submittedAt: "",
+                                    user: { id: 0, name: "", email: "" },
+                                    project: { id: 0, name: "" },
+                                    version: { id: selectedQuestionnaire.id, title: selectedQuestionnaire.title },
+                                },
+                            }}
+                        />
+                    </div>
                 </div>
             )}
         </div>
     );
-}
+};
