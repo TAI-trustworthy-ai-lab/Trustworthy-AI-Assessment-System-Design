@@ -37,36 +37,37 @@
 
   "loginPage": {
     "login": {
-      "title": "登入您的賬戶",
-      "emailLabel": "電子郵件地址",
-      "emailPlaceholder": "請輸入電子郵件地址",
+      "title": "登入您的帳號",
+      "emailLabel": "電子郵件",
+      "emailPlaceholder": "請輸入您的電子郵件",
       "passwordLabel": "密碼",
-      "passwordPlaceholder": "請輸入密碼",
+      "passwordPlaceholder": "請輸入您的密碼",
       "button": "登入",
       "loading": "處理中...",
-      "error401": "憑證無效，請檢查電子郵件或密碼。",
-      "error404UserNotFound": "查無此帳戶，請確認電子郵件是否正確或先進行註冊。",
+      "error401": "帳號或密碼錯誤，請重新確認。",
+      "error404UserNotFound": "找不到使用者，請確認您的電子郵件或先註冊。",
       "error404Path": "請求路徑錯誤或資源不存在。",
       "error500": "伺服器內部錯誤，請稍後再試。",
-      "errorIncomplete": "登入成功但未收到完整的授權憑證或用戶資訊缺失。",
+      "errorIncomplete": "登入成功但缺少必要的使用者資訊。",
       "errorUnknown": "發生未知錯誤",
-      "switchToRegister": "沒有帳戶？立即註冊",
-      "error403Generic": "拒絕存取，您沒有權限檢視此資源。"
+      "switchToRegister": "還沒有帳號？立即註冊",
+      "error403Generic": "請先完成 Email 驗證後再登入。"
     },
     "register": {
-      "title": "注冊賬戶",
-      "fullNameLabel": "全名",
-      "fullNamePlaceholder": "請輸入全名",
-      "button": "注冊",
-      "success": "注冊成功！請登入",
-      "error409": "帳戶已存在，請直接登入。",
+      "title": "註冊新帳號",
+      "fullNameLabel": "姓名",
+      "fullNamePlaceholder": "請輸入您的姓名",
+      "button": "註冊",
+      "success": "註冊成功！請登入",
+      "error409": "帳號已存在，請直接登入。",
       "error500": "伺服器內部錯誤，請稍後再試。",
+      "error400": "註冊資料不正確，請檢查您的輸入。",
       "errorUnknown": "註冊失敗，發生未知錯誤",
-      "switchToLogin": "已有帳戶？立即登入"
+      "switchToLogin": "已經有帳號？立即登入"
     },
     "common": {
-      "errorLabel": "發生錯誤:",
-      "successLabel": "成功:",
+      "errorLabel": "錯誤：",
+      "successLabel": "成功：",
       "loading": "處理中..."
     }
   },
