@@ -118,7 +118,8 @@
       "title": "My Project Dashboard",
       "addProject": "Add Project",
       "unnamedProject": "Untitled Project {{index}}",
-      "viewHistory": "View Previous Reports"
+      "viewHistory": "View Previous Reports",
+      "adminPanel": "Go to Admin Panel"
     },
 
     "viewProject": {
