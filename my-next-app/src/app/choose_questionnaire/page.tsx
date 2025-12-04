@@ -97,7 +97,7 @@ export default function ChooseQuestionnairePage() {
             return;
         }
         localStorage.setItem("QuestionnaireID", String(versionId));
-        router.push(`/model/${stage}`);
+        router.push(`/questionnaire`);
     };
 
     const StageButton = ({ stageKey }: { stageKey: keyof ReturnType<typeof stages> }) => {
