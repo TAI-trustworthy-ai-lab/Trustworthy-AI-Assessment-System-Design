@@ -554,6 +554,23 @@ const Home = () => {
             setAuthToken(storedAuthToken);
             setUserRole(storedUserRole);
 
+            const keysToKeep = [
+                "userName",
+                "authToken",
+                "userId",
+                "userRole",
+                "authExpiry",
+                "preferredLanguage"
+            ];
+
+            const allKeys = Object.keys(localStorage);
+
+            for (const key of allKeys) {
+                if (!keysToKeep.includes(key)) {
+                    localStorage.removeItem(key);
+                }
+            }
+
             setIsInitialized(true);
         }
     }, []);
