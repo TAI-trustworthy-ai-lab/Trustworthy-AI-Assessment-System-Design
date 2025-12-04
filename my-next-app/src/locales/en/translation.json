@@ -200,13 +200,120 @@
     }
   },
   "aboutPage": {
-    "title": "About Us",
-    "introduction": "We are committed to building reliable and scalable solutions that empower users worldwide.",
-    "mission": "Our mission is to deliver technology that enhances trust, transparency, and accessibility.",
-    "values": "We value fairness, privacy, and responsibility in every step of our development process.",
-    "future": "Looking ahead, we continue to innovate and refine our systems to meet global needs.",
+    "title": "Questionnaire Files and Legal Regulations",
+
+    "sectionQuestionnaire": "Questionnaire Files:",
+
+    "table": {
+      "question": "Questionnaire",
+      "version": "Version",
+      "updatedAt": "Release / Update Date"
+    },
+
+    "beforeModeling": "Before Modeling",
+    "duringModeling": "During Modeling",
+    "afterModeling": "After Modeling",
+
+    "sectionLaw": "Legal Regulations:",
+
+    "law": {
+      "intro": "The following outlines the legal requirements that AI systems must comply with before, during, and after the modeling process, including personal data protection, intellectual property, cybersecurity, open data, and AI responsibility.",
+
+      "pdpa": {
+        "title": "I. Personal Data Protection Act (PDPA)",
+
+        "item1": {
+          "title": "1️⃣ Legality of Personal Data Collection, Processing, and Use",
+          "law": "Relevant Regulations: PDPA Article 6, Article 9 Paragraph 2 Subparagraph 2",
+          "point1": "Data collection must have a legitimate and specific purpose.",
+          "point2": "Sensitive personal data requires meeting legal exceptions.",
+          "point3": "Legality and necessity must be confirmed before AI training."
+        },
+
+        "item2": {
+          "title": "2️⃣ Obligation to Inform Before Collection (Including Indirect Collection)",
+          "law": "Relevant Regulations: PDPA Article 9",
+          "point1": "Data subjects must be informed of purpose, usage, retention period, and rights.",
+          "point2": "Indirectly obtained data must also be properly notified."
+        },
+
+        "item3": {
+          "title": "3️⃣ Restrictions on Disclosure of De-identified Data",
+          "point1": "Data not fully de-identified is still considered personal data.",
+          "point2": "Re-identification of individuals must be prevented."
+        },
+
+        "item4": {
+          "title": "4️⃣ Rights of Data Subjects",
+          "point1": "Provide rights to withdraw consent, access, correct, delete, and stop usage.",
+          "point2": "Systems must provide an opt-out mechanism.",
+          "point3": "Access control and data handling procedures must be established."
+        },
+
+        "item5": {
+          "title": "5️⃣ Personal Data Management and Incident Handling",
+          "point1": "Establish a personal data management system.",
+          "point2": "Maintain access logs, audit trails, and evidence preservation.",
+          "point3": "Implement incident response and notification mechanisms."
+        },
+
+        "item6": {
+          "title": "6️⃣ Cross-border Data Transfer Regulations",
+          "point1": "Cross-border transfers must comply with Taiwan regulations and international standards (e.g., GDPR).",
+          "point2": "Data protection agreements must be signed with overseas partners."
+        }
+      },
+
+      "ip": {
+        "title": "II. Intellectual Property and Open Source",
+
+        "item1": {
+          "title": "1️⃣ Software is Protected Under Copyright Law",
+          "law": "Relevant Regulations: Copyright Act Article 5 Paragraph 1 Subparagraph 10"
+        },
+
+        "item2": {
+          "title": "2️⃣ Compliance with Open Source Licenses",
+          "law": "Relevant Regulations: Copyright Act Article 37"
+        },
+
+        "item3": {
+          "title": "3️⃣ IP Ownership in Collaboration and Development Agreements"
+        }
+      },
+
+      "opendata": {
+        "title": "III. Open Data Requirements",
+        "point1": "Establish data quality review and update mechanisms.",
+        "point2": "Ensure traceability of data sources.",
+        "point3": "Personal data within open data remains subject to PDPA."
+      },
+
+      "responsibility": {
+        "title": "IV. AI Responsibility and Liability",
+        "point1": "AI must not replace human decision-making.",
+        "point2": "Public liability is borne by the using agency.",
+        "point3": "Contracts must clearly define responsibilities."
+      },
+
+      "userRights": {
+        "title": "V. User Rights and Transparency",
+        "point1": "Inform users of model accuracy, limitations, and risks.",
+        "point2": "Prevent users from over-relying on AI.",
+        "point3": "Provide channels for user inquiries and understanding."
+      },
+
+      "cybersecurity": {
+        "title": "VI. Cybersecurity Regulations",
+        "point1": "Conduct assessments of model vulnerabilities and attack risks.",
+        "point2": "Establish cybersecurity management and access control.",
+        "point3": "Implement incident reporting and remediation procedures."
+      }
+    },
+
     "back": "Back"
   },
+
   "Questionnaire": {
     "loading": "Loading questionnaire...",
     "translationLoading": "Translating questionnaire...",
