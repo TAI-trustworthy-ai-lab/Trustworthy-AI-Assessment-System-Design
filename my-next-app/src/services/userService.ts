@@ -38,6 +38,7 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
         }));
     }
 
+    console.log(response);
     return response.json();
 }
 

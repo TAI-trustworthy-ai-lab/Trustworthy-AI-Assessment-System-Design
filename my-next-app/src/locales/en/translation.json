@@ -45,7 +45,7 @@
       "button": "Login",
       "loading": "Processing...",
       "error401": "Invalid credentials, please check your email or password.",
-      "error404": "Email and password are both required.",
+      "error404": "User not found. Please ensure the account is registered.",
       "error500": "Internal server error, please try again later.",
       "errorIncomplete": "Login successful but missing required credentials or user information.",
       "errorUnknown": "An unknown error occurred",
@@ -58,7 +58,7 @@
       "fullNamePlaceholder": "Enter your full name",
       "button": "Register",
       "success": "Verification email has been sent, please check your email.",
-      "error500": "Internal server error, please try again later.",
+      "error500": "IInternal server error. Please try again later. If the issue persists, please make sure that the name provided is the full name.",
       "error400": "This account has already been registered.",
       "errorUnknown": "Registration failed, an unknown error occurred.",
       "switchToLogin": "Already have an account? Login now"

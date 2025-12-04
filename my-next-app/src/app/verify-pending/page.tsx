@@ -135,8 +135,7 @@ export default function VerifyPending() {
         </p>
 
         {message && (
-            <p className={`text-center p-2 rounded-lg font-medium 
-                        ${counter > 0 && !loading ? 'text-red-700 bg-red-50' : 'text-purple-700 bg-purple-50'}`}>
+            <p className="text-center p-2 rounded-lg font-medium text-orange-700 bg-orange-50">
             {message}
             </p>
         )}
