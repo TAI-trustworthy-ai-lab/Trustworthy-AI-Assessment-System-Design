@@ -118,7 +118,8 @@
       "title": "我的專案儀表板",
       "addProject": "新增專案",
       "unnamedProject": "未命名專案 {{index}}",
-      "viewHistory": "檢視先前報告"
+      "viewHistory": "檢視先前報告",
+      "adminPanel": "前往管理員介面"
     },
     "viewProject": {
       "title": "專案詳細資訊",
