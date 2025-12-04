@@ -774,10 +774,10 @@ const Home = () => {
                     <button
                         onClick={() => router.push("/admin")}
                         className={`
-                            w-full py-3 px-6 text-lg font-semibold rounded-full 
-                            bg-red-600 text-white shadow-2xl 
-                            transition duration-150 ease-in-out 
-                            hover:bg-red-700 active:bg-red-800
+                            w-full py-3 px-6 text-lg font-semibold rounded-full
+                            bg-white text-red-600 shadow-2xl border border-red-300
+                            transition duration-150 ease-in-out
+                            hover:bg-red-50 active:bg-red-100
                             focus:outline-none focus:ring-4 focus:ring-red-300
                             flex items-center justify-center space-x-2
                         `}
