@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   ResponseMeta, 
   ResponseData,
-  ViewerState
+  ViewerState,
+  updateResponse
 } from "@/services/responseService";
 import { LoadingComponent, } from "@/app/history/page"
 import { ChevronUp } from 'lucide-react'
@@ -315,15 +316,15 @@ export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 '
 // Loading UI - 提交按鈕上的指示器
 // ----------------------------------------------------
 const SubmissionLoadingIndicator: React.FC = () => (
-    <div className="flex items-center justify-center space-x-2">
-        <span className="font-bold">提交中</span>
-        {/* Animated Dots using Tailwind's built-in animate-pulse */}
-        <div className="flex items-end h-4 pb-0.5">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-        </div>
+  <div className="flex items-center justify-center space-x-2">
+    <span className="font-bold">提交中</span>
+    {/* Animated Dots using Tailwind's built-in animate-pulse */}
+    <div className="flex items-end h-4 pb-0.5">
+      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
     </div>
+  </div>
 );
 
 // ----------------------------------------------------
@@ -331,10 +332,10 @@ const SubmissionLoadingIndicator: React.FC = () => (
 // ----------------------------------------------------
 
 interface QuestionRendererProps {
-    editable: boolean,
-    question: Question;
-    currentAnswer: AnswerValue;
-    onAnswer: (answer: AnswerValue) => void;
+  editable: boolean,
+  question: Question;
+  currentAnswer: AnswerValue;
+  onAnswer: (answer: AnswerValue) => void;
 }
 
 const gridColNum = [
@@ -344,7 +345,7 @@ const gridColNum = [
   "grid-cols-3",
 ]
 
-// 1. SCALE 題型
+// SCALE qustion
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   // 假設選項已經按 order 排序 + options 存在
   const options = question.options || [];
@@ -376,12 +377,11 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cu
   );
 };
 
-// 2. SINGLE_CHOICE 題型
+// SINGLE_CHOICE qustion
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
+ 
   const options = question.options || [];
   const selectedOptionId = currentAnswer.optionIds?.[0];
-
-  //console.log("option length", options.length)
 
   return (
     <div className={`gap-3 w-full sm:w-fit grid ${options.length >= 4 ? " grid-cols-2" :`${gridColNum[options.length]}`} `}>
@@ -405,7 +405,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
   );
 };
 
-// 3. MULTIPLE_CHOICE 題型
+// MULTIPLE_CHOICE qustion
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const options = question.options || [];
   const selectedOptionIds = currentAnswer.optionIds || [];
@@ -453,7 +453,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
   );
 };
 
-// 4. TEXT 題型
+// TEXT qustion
 const TextQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const textValue = currentAnswer.textValue || '';
   
@@ -496,7 +496,11 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 // 問卷內容主組件
 // ----------------------------------------------------
 
-export default function ResponseViewer({curState, data }: { curState: ViewerState, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
+export default function ResponseViewer({curState, data, onEdit }: { 
+  curState: ViewerState,
+  data:{response: ResponseData, questionnaire: QuestionnaireData},
+  onEdit: ()=>void
+}) {
   const { i18n, t } = useTranslation()
   
   const q = data.questionnaire
@@ -541,10 +545,11 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
     return () => observer.disconnect()
   }, [])
 
-   // 1. 根據指標映射表獲取分頁標題
+   // map to corresponding title and content
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
   const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
 
+  // build each page
   const p = (()=>{
     // group by category
     const grouped = q.questions.reduce((acc, question) => {
@@ -579,16 +584,15 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
   })()
 
   // original answer
+  // reminder: key is questionId
   const answers: Record<number, AnswerValue> = r.answers.reduce((acc, data)=>{
     let opts = [data.optionId]
     if(data.question.type === 'SCALE'){
       
       const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
-        //console.log(`${o.value}, ${data.value}`)
         return o.value === data.value
       })?.id
       if(os) opts = [os]
-      //console.log(`SCALE: ${os}`)
     }
     if(acc[data.questionId] && acc[data.questionId].optionIds){
       const tmp = acc[data.questionId].optionIds as number[]
@@ -606,42 +610,106 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
 
   // edited answer
   const [a, setA] = useState<Record<number, AnswerValue>>(answers)
-
   const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
     setA(prev => ({
-        ...prev,
-        [questionId]: answerValue,
+      ...prev,
+      [questionId]: answerValue,
     }));
+  }
+
+  const [isUpdate, SetIsUpdate] = useState(false)
+  const [isComplete, SetIsComplete] = useState(true)
+  const [isReport, SetIsReport] = useState(false)
+
+  const handleUpdate = async () => {
+    SetIsUpdate(true)
+    const userId = localStorage.getItem('userId') || ""
+    const authToken = localStorage.getItem('authToken') || ""
+    try {
+      const data: {
+        questionId: number,
+        value: number,
+        textValue: string,
+        optionId: number
+      }[] = []
+      for (const key in a){
+        a[key].optionIds?.map(oId=>{
+          data.push({
+            questionId: Number.parseInt(key),
+            value: a[key].score || 0,
+            textValue: a[key].textValue || "",
+            optionId: oId
+          })
+        })
+      }
+      await updateResponse(userId, authToken, r.id, data)
+      onEdit()
+      // await generateReport(responseId)
+      // success if it doesnt catch any error
+
+    } catch (error) {
+      console.error('提交錯誤:', error);
+    } finally{
+      SetIsUpdate(false)
+    }
   }
 
   return (<>
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center pointer-events-none"
+      className="
+        fixed inset-0 z-60
+        flex items-center justify-center
+        pointer-events-none"
     >
+      {/* this is the same as ResponseWindow in history page
+          add pointer-events-auto to enable event */}
       <div
         className=" 
-          absolute flex flex-col top-[3vh]
-          w-full h-[90vh] max-h-[680]
-          mx-0 p-5
+          absolute top-[3vh]
+          flex flex-col 
+          w-full h-[90vh] max-h-[680] mx-0 p-5
           
           md:mx-20
           md:max-w-[800]"
       >
         <div className="
-          relative h-full w-full
-          rounded overflow-hidden"
+          relative
+          h-full w-full
+          rounded
+          overflow-hidden"
         >
+          {/* submit button */}
+          {((curState & ViewerState.editing) !== 0) && (
+            <button
+              onClick={handleUpdate}
+              disabled={isUpdate || !isComplete}
+              className="
+                absolute z-[51] top-5 right-6
+                flex items-center justify-center
+                min-w-[150px]
+                py-2 px-6
+                bg-green-600 rounded-lg
+                text-white font-bold
+                pointer-events-auto
+                
+                hover:bg-green-500
+                disabled:opacity-50 "
+            >
+              {isUpdate ? <SubmissionLoadingIndicator /> : t('Questionnaire.actions.finishAndSubmit')}
+            </button>
+          )}
           <div
-            className="absolute z-[51] bottom-5 right-6 pointer-events-auto"
+            className="
+              absolute z-[51] bottom-5 right-6
+              pointer-events-auto"
           >
+            {/* jump to page */}
             <ClickAwaySelect
-              label="指標"
               value={curPage}
               options={p.map((page, index)=>{
                 return { label: page.title, value: index }
               })}
               onChange={(v)=>{
-                //console.log("changing")
                 setCurPage(v)
                 scrollToWithOffset(sectionRefs.current[v]!, -20)
               }}
@@ -659,17 +727,25 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
       overflow-y-scroll overflow-x-hidden"
       ref={(el) => {viewerRef.current = el}}
     >
-      {/* 問卷題目 titleA */}
-      <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
+      {/* quetionnaire title */}
+      <h1 className="
+        mb-4
+        text-3xl font-extrabold text-gray-900 text-center"
+      >
         <TranslatedText text={q.title} />
       </h1>
 
-      {/* 问卷描述 description */}
+      {/* quetionnaire description */}
       {q.description && (
-        <p className="text-center text-gray-500 mb-8"><TranslatedText text={q.description} /></p>
+        <p className="
+          mb-8
+          text-center text-gray-500"
+        >
+          <TranslatedText text={q.description} />
+        </p>
       )}
 
-      {/* 當期分頁內容 */}
+      {/* page content */}
       {
         p.map((page, index)=>{
           return (
@@ -681,46 +757,74 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
               <div className='
                 flex
                 mt-7 mb-5
-                bg-white
-              '>
+                bg-white'
+              >
+                {/* blue line for decoration */}
                 <div className='
-                  flex justify-around w-[8px] ml-3 mr-2 bg-indigo-400 text-transparent select-none
-                '>.</div>
+                  flex justify-around
+                  w-[8px] ml-3 mr-2
+                  bg-indigo-400
+                  text-transparent
+                  select-none'
+                >
+                  .
+                </div>
+
                 <div className='
-                  flex flex-col items-start justify-center gap-0.5
-                '>
+                  flex flex-col gap-0.5 items-start justify-center'
+                >
+                  {/* page title */}
                   <div className="text-2xl font-bold text-gray-700 text-start">
-                      <TranslatedText text={page.title} />
+                    <TranslatedText text={page.title} />
                   </div>
+                  {/* page content text */}
                   <div className="text-md text-gray-500 text-start">
-                      <TranslatedText text={page.content} />
+                    <TranslatedText text={page.content} />
                   </div>
                 </div>
               </div>
+
+              {/* questions in this page */}
               <div className="space-y-2">
                 {page.questions.map((question) => (
-                  <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
+                  <div
+                    key={question.id}
+                    className="
+                      p-4
+                      rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]"
+                  >
                     <div className="font-semibold text-gray-700 mb-3">
+
+                      {/* question text */}
                       <TranslatedText text={question.text} />
+
+                      {/* add question description here */}
+
+                      {/* a "required" tip */}
                       {question.required &&
                         <span className="
-                          relative inline-flex justify-center items-center w-fit
-                          text-red-500 px-2 select-none overflow-hidden
+                          relative
+                          inline-flex justify-center items-center
+                          w-fit px-2
+                          text-red-500 
+                          select-none overflow-hidden
+
                           hover:overflow-visible"
                         >
                           *
                           <div className='
-                            absolute
-                            left-full ml-1.5 w-fit px-1.5 py-1
+                            absolute left-full
+                            ml-1.5 w-fit px-1.5 py-1
                             text-center font-bold text-xs text-white whitespace-nowrap
                             bg-red-400 rounded-full shadow shadow-gray-500'
                           >
                             {t('historyPage.required')}
                           </div>
-                        </span>}
+                        </span>
+                      }
                     </div>
                     
-                    {/* 根據 type 渲染不同 UI */}
+                    {/* render with different question type */}
                     <div className="flex justify-start">
                       <QuestionRenderer
                         editable={editable}
@@ -739,9 +843,12 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
           )
         })
       }
+
+      {/* "translating..." tip */}
       <div className='h-20 w-full'>
         {
-          curState === ViewerState.translating && (
+          // temporary no use
+          ((curState & ViewerState.translating) !== 0) && (
             <LoadingComponent message='翻譯中...' />
           )
         }
@@ -751,12 +858,10 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
 }
 
 export function ClickAwaySelect<T>({
-  label,
   value,
   options,
   onChange,
 }: {
-  label: string;
   value: T;
   options: { label: string; value: T }[];
   onChange: (v: T) => void;

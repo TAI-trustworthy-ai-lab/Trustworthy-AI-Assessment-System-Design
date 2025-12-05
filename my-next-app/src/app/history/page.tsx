@@ -156,10 +156,7 @@ export default function HistoryPage() {
   >>({})
   const [fetchList, setFetchList] = useState<Record<
     number,
-    {
-      response: ResponseData | null,
-      locale: Record<string, QuestionnaireData> | null
-    }
+    ResponseData | null
   >>({})
   const [infoText, setInfoText] = useState<string>("")
   const { i18n, t } = useTranslation();
@@ -294,17 +291,15 @@ export default function HistoryPage() {
   // get response and questionnair from response id and qId (GET API)
   const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => 
   {
-    fetchList[id] = fetchList[id] || {
-      response: null,
-      locale: null
-    }
+    fetchList[id] = fetchList[id] || null
     fetchQuestionnaireList[qId] = fetchQuestionnaireList[qId] || null
 
     let r: ResponseData | null = null
     let q: QuestionnaireData | null = null
 
     // response
-    if (fetchList[id].response === null) {
+    if (fetchList[id] === null) {
+      console.log("fetch response")
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
@@ -322,10 +317,10 @@ export default function HistoryPage() {
         throw "fail to get response"
       }
       else {
-        fetchList[id].response = r
+        fetchList[id] = r
       }
     }
-    else r = fetchList[id].response
+    else r = fetchList[id]
 
     const qChecker = (q: QuestionnaireData) => {
       return (
@@ -624,7 +619,20 @@ export default function HistoryPage() {
                 />
               </div>
               <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
-              <ResponseWindow state={viewerState} data={viewerData} />
+              <ResponseWindow
+                state={viewerState}
+                data={viewerData}
+                onEdit={()=>{
+                  console.log("onEdit")
+                  if (curResponse) {
+                    setFetchList(prev=>{
+                      const p = {...prev}
+                      p[curResponse.id] = null
+                      return p
+                    })
+                  }
+                }}
+              />
             </div>
           </div>
         </div>
@@ -1303,11 +1311,12 @@ export function formatTimeGroup(
   return t('historyPage.longAgo');;
 }
 
-export function ResponseWindow({ state, data }: {
+export function ResponseWindow({ state, data, onEdit }: {
   state: ViewerState,
-  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } 
+  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } ,
+  onEdit: ()=>void
 }) {
-  const [curState, setCurState] = useState(0)
+  const [curState, setCurState] = useState(state)
   const router = useRouter();
   const { i18n, t } = useTranslation();
 
@@ -1315,7 +1324,7 @@ export function ResponseWindow({ state, data }: {
     setCurState(state)
   }, [state])
 
-  useEffect(()=>console.log(curState), [curState])
+  useEffect(()=>console.log(curState.toString(2).padStart(6, '0')), [curState])
 
   const switchState = (state: ViewerState)=>{
     setCurState(prev => prev ^ state)
@@ -1574,6 +1583,7 @@ export function ResponseWindow({ state, data }: {
             ViewerState.success
           }
         data={{ response: data.response, questionnaire: data.questionnaire }}
+        onEdit={onEdit}
       />
     </div>
   </>)

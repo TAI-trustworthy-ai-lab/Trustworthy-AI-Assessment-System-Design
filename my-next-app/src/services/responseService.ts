@@ -4,6 +4,8 @@ import {
     REPORT_API_BASE 
 } from '@/config/apiConfig';
 
+// reminder: for those answers that have multiple option
+// the AnswerData is seperated
 export interface AnswerData{
   id: number,
   responseId: number,
@@ -67,12 +69,13 @@ export interface ResponseData{
 
 export enum ViewerState{
   loading     = 1 << 0,
-  editing     = 1 << 1,
-  detail      = 1 << 2,
-  success     = 1 << 3,
-  fail        = 1 << 4,
-  report      = 1 << 5,
-  translating = 1 << 6
+  fail        = 1 << 1,
+  success     = 1 << 2,
+  editing     = 1 << 3,
+  dirty       = 1 << 4,
+  detail      = 1 << 5,
+  report      = 1 << 6,
+  translating = 1 << 7,
 }
 
 // fetch 函數  FETCH FUNCTION
@@ -177,6 +180,43 @@ export async function deleteResponse(userId: string, authToken: string, id: numb
         'Authorization': `Bearer ${authToken}`,
         'Content-Type': 'application/json',
       },
+    });
+
+    const result: { error?: string, message?: string } = await response.json();
+
+    if (!response.ok) {
+      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+      throw errorMessage;
+    }
+  } catch (e) {
+    console.error(`API 請求最終失敗 (${url}):`, e); 
+    throw e
+  }
+};
+
+export async function updateResponse(userId: string, authToken: string, id: number, answers: unknown){
+  if (!userId || userId === 'fallback-user-id') {
+    console.warn('用戶 ID 無效，無法獲取回覆。');
+    return;
+  }
+  if (!authToken || authToken === 'fallback-auth-token') {
+    throw new Error('認證失敗：未提供有效的 authToken。');
+  }
+  const url = `${RESPONSE_API_BASE}/${id}`;
+  const options = { method: 'PATCH' }
+
+  const payload = {
+    "answers": answers
+  }
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
     });
 
     const result: { error?: string, message?: string } = await response.json();
