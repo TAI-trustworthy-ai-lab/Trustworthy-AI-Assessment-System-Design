@@ -66,13 +66,13 @@ export interface ResponseData{
 }
 
 export enum ViewerState{
-  loading,
-  editing,
-  detail,
-  success,
-  fail,
-  report,
-  translating
+  loading     = 1 << 0,
+  editing     = 1 << 1,
+  detail      = 1 << 2,
+  success     = 1 << 3,
+  fail        = 1 << 4,
+  report      = 1 << 5,
+  translating = 1 << 6
 }
 
 // fetch 函數  FETCH FUNCTION

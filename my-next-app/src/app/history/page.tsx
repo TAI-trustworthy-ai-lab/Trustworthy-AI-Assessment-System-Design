@@ -1307,15 +1307,30 @@ export function ResponseWindow({ state, data }: {
   state: ViewerState,
   data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } 
 }) {
-  const [curState, setCurState] = useState(state)
+  const [curState, setCurState] = useState(0)
   const router = useRouter();
   const { i18n, t } = useTranslation();
+
   useEffect(() => {
     setCurState(state)
   }, [state])
 
+  useEffect(()=>console.log(curState), [curState])
+
+  const switchState = (state: ViewerState)=>{
+    setCurState(prev => prev ^ state)
+  }
+
+  const addState = (state: ViewerState)=>{
+    setCurState(prev => prev | state)
+  }
+
+  const removeState = (state: ViewerState)=>{
+    setCurState(prev => prev & ~(state))
+  }
+
   // loading
-  if (curState === ViewerState.loading) return (
+  if (curState & ViewerState.loading) return (
     <div className="
       flex items-center justify-center
       w-full h-full"
@@ -1325,7 +1340,7 @@ export function ResponseWindow({ state, data }: {
   )
 
   // fail
-  if (curState === ViewerState.fail
+  if ((curState & ViewerState.fail)
     || (data.response === null || data.questionnaire === null)
   ) return (
     <div className="
@@ -1394,20 +1409,20 @@ export function ResponseWindow({ state, data }: {
   const style = {
     orange: {
       border: `border-orange-200`,
-      enable: `bg-orange-400 hover:bg-orange-500 active:bg-orange-600`,
-      disable: `bg-orange-400/50 hover:bg-orange-500/50 active:bg-orange-600/50`,
+      enable: `bg-orange-400 hover:bg-orange-500 active:bg-orange-600 text-[#fff085]`,
+      disable: `bg-orange-400/50 hover:bg-orange-500/50 active:bg-orange-600/50 text-[#ffffff]`,
       tip: "bg-orange-400"
     },
     blue: {
       border: `border-blue-200`,
-      enable: `bg-blue-400 hover:bg-blue-500 active:bg-blue-600`,
-      disable: `bg-blue-400/50 hover:bg-blue-500/50 active:bg-blue-600/50`,
+      enable: `bg-blue-400 hover:bg-blue-500 active:bg-blue-600 text-[#fff085]`,
+      disable: `bg-blue-400/50 hover:bg-blue-500/50 active:bg-blue-600/50 text-[#ffffff]`,
       tip: "bg-blue-400"
     },
     green: {
       border: `border-green-200`,
-      enable: `bg-green-400 hover:bg-green-500 active:bg-green-600`,
-      disable: `bg-green-400/50 hover:bg-green-500/50 active:bg-green-600/50`,
+      enable: `bg-green-400 hover:bg-green-500 active:bg-green-600 text-[#fff085]`,
+      disable: `bg-green-400/50 hover:bg-green-500/50 active:bg-green-600/50 text-[#ffffff]`,
       tip: "bg-green-400"
     }
   }
@@ -1432,7 +1447,7 @@ export function ResponseWindow({ state, data }: {
           active:shadow-sm
         
           ${color.border}
-          ${curState === state ? color.enable : color.disable}`
+          ${curState & state  ? color.enable : color.disable}`
         }
         onClick={onClick}
       >
@@ -1458,7 +1473,9 @@ export function ResponseWindow({ state, data }: {
         relative
         flex flex-col items-center justify-center
         w-full h-full"
-      onClick={() => { setCurState(ViewerState.success) }}
+      onClick={() => {
+        removeState(ViewerState.detail)
+      }}
     >
       <div className='
         absolute bottom-0 z-52
@@ -1475,38 +1492,40 @@ export function ResponseWindow({ state, data }: {
           pointer-events-none`
         }
         onClick={(e) => {
-          if (curState === ViewerState.detail) e.stopPropagation()
+          // what?
+          if (curState & ViewerState.detail) e.stopPropagation()
         }}
       >
+        {/*edit response*/}
         {toolComponent(
           "編輯", 
-          (<Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
+          (<Edit size={30} />),
           style.orange,
           ViewerState.editing,
           (e)=>{
             e.stopPropagation()
-            if(curState === ViewerState.detail)
-              setCurState(ViewerState.success)
-            else setCurState(ViewerState.detail)
+            switchState(ViewerState.editing)
           }
         )}
+
+        {/*detail panel*/}
         {toolComponent(
           t('historyPage.detailInfo'),
-          (<Info size={30} color={`${curState === ViewerState.detail ? "#fff085" : "#ffffff"}`} />),
+          (<Info size={30} />),
           style.blue,
           ViewerState.detail,
           (e) => {
             e.stopPropagation()
-            if (curState === ViewerState.detail)
-              setCurState(ViewerState.success)
-            else setCurState(ViewerState.detail)
+            switchState(ViewerState.detail)
           }
         )}
+
+        {/*view report*/}
         {toolComponent(
           t('historyPage.viewReport'),
-          (<FileText size={30} color="#ffffff" />),
+          (<FileText size={30}/>),
           style.green,
-          ViewerState.editing,
+          ViewerState.report,
           (e) => {
             e.stopPropagation()
             if (data.response === null || data.response === undefined) return
@@ -1532,7 +1551,7 @@ export function ResponseWindow({ state, data }: {
           sm:rounded-t-md
           sm:w-[80%]
 
-          ${curState === ViewerState.detail ?
+          ${curState & ViewerState.detail ?
             `-translate-y-[100%] bg-white/70 overflow-hidden` :
             `translate-y-0`
           }`
@@ -1548,7 +1567,14 @@ export function ResponseWindow({ state, data }: {
         {detailPanel}
       </div>
 
-      <ResponseViewer curState={curState} data={{ response: data.response, questionnaire: data.questionnaire }} />
+      <ResponseViewer
+        curState={
+          curState & ViewerState.editing?
+            ViewerState.editing:
+            ViewerState.success
+          }
+        data={{ response: data.response, questionnaire: data.questionnaire }}
+      />
     </div>
   </>)
 }
