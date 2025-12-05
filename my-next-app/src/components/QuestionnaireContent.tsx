@@ -9,8 +9,6 @@ import FloatingChatWindow from '@/components/FloatingChatWindow';
 import { CATEGORY_MAP } from '@/config/constants'; 
 import { 
     fetchQuestionnaire as fetchQuestionnaireService, 
-    saveDraft as saveDraftService,
-    loadDraft as loadDraftService,
     submitQuestionnaire as submitQuestionnaireService,
     generateReport as generateReportService,
 } from '@/services/responseService';
@@ -427,8 +425,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [draftResponseId, setDraftResponseId] = useState<number | null>(null);
-    const [isSavingDraft, setIsSavingDraft] = useState(false);
     // 👇👇👇 補上這一行，紅字就會消失了 👇👇👇
     const [isChatVisible, setIsChatVisible] = useState(false);
 
@@ -476,7 +472,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // =============
     //  BCKEND API
     // =============
-    // 1. 取問卷内容
+    // 取問卷内容
     const fetchQuestionnaire = useCallback(async () => {
         // 預設問卷 ID 無誤 & 後端截取資料結構一定正確！
         setLoadingStatus('loading');
@@ -507,86 +503,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     }, [questionnaireId]);
 
-    // 2. 儲存草稿
-    const saveDraft = useCallback(async (currentAnswers: Answers, currentDraftId: number | null) => {
-        if (!questionnaire) return;
-        
-        setIsSavingDraft(true);
-        setSubmissionError(null);
-
-        const answersPayload = formatAnswersForSubmission(currentAnswers, questionnaire.questions);
-        const currentUserId = localStorage.getItem('userId');
-        const currentProjectId = localStorage.getItem('currentProjectId');
-
-        const parsedUserId = parseInt(currentUserId || '0', 10);
-        const parsedProjectId = parseInt(currentProjectId || '0', 10);
-        const parsedVersionId = typeof questionnaireId === 'number' ? questionnaireId : parseInt(String(questionnaireId), 10);
-
-        const basePayload = {
-            answers: answersPayload,
-            isDraft: true, // 標記為草稿
-        };
-
-        let finalPayload: any = basePayload;
-        
-        // 如果是 POST (創建草稿)，則需要這些 ID
-        if (!currentDraftId) {
-            finalPayload = {
-                ...basePayload,
-                userId: parsedUserId,
-                projectId: parsedProjectId,
-                versionId: parsedVersionId,
-            };
-        }
-/* 後端 PATCH 有問題，暫時注解掉
-        try {
-            const data = await saveDraftService(finalPayload, currentDraftId);
-            const newResponseId = data.id;
-            
-            if (!currentDraftId) {
-                setDraftResponseId(newResponseId); // 設置新的草稿 ID
-                localStorage.setItem('draftResponseId', newResponseId.toString()); // 儲存到 LocalStorage
-            }
-            console.log(`草稿儲存成功: ID ${newResponseId}`);
-        } catch (error: any) {
-            let errorMsg = `儲存草稿失敗`;
-            try {
-                const errorObj = JSON.parse(error.message);
-                console.error(`儲存草稿失敗 (${errorObj.status})`, errorObj);
-                errorMsg += ` (${errorObj.status}): ${errorObj.message}`;
-            } catch (e) {
-
-            }
-        } finally {
-            setIsSavingDraft(false);
-        }
-*/
-    }, [questionnaire, questionnaireId]);
-
-    // 3. 載入草稿
-    const loadDraft = useCallback(async (draftId: number, token: string) => {
-        try {
-            const data = await loadDraftService(draftId);
-            const draftData = data;
-
-            const loadedAnswers: Answers = (draftData.answers || []).reduce((acc: Answers, ans: any) => {
-                acc[ans.questionId] = {
-                    score: ans.value || undefined,
-                    optionIds: ans.optionIds || (ans.optionId ? [ans.optionId] : undefined),
-                    textValue: ans.textValue || undefined,
-                };
-                return acc;
-            }, {});
-                
-            setAnswers(loadedAnswers);
-        } catch (error) {
-            console.error('載入草稿時發生網路錯誤:', error);
-            localStorage.removeItem('draftResponseId');
-            setDraftResponseId(null);
-        }
-    }, []);
-
-    // 4. 生成報告
+    // 生成報告
     const generateReport = async (responseId: number) => {
         try {
             await generateReportService(responseId);
@@ -610,29 +527,29 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     // 2. 取問卷資料
     useEffect(() => {
         fetchQuestionnaire().then(() => {
-            const savedDraftIdString = localStorage.getItem('draftResponseId');
-            const userToken = localStorage.getItem('authToken');
+            // 從 LocalStorage 載入答案
+            const savedAnswersJson = localStorage.getItem('questionnaireAnswers');
+            if (savedAnswersJson) {
+                try {
+                    const loadedAnswers = JSON.parse(savedAnswersJson);
+                    setAnswers(loadedAnswers);
+                } catch (e) {
+                    console.error("解析 LocalStorage 答案失敗:", e);
+                    localStorage.removeItem('questionnaireAnswers');
+                }
+            }
             
-            if (savedDraftIdString && userToken) {
-                const savedDraftId = parseInt(savedDraftIdString, 10);
-                setDraftResponseId(savedDraftId);
-                // 載入草稿答案並覆蓋初始的空答案
-                loadDraft(savedDraftId, userToken);
+            // 從 LocalStorage 載入頁面進度
+            const savedPage = localStorage.getItem('questionnaireCurrentPage');
+            if (savedPage) {
+                const pageIndex = parseInt(savedPage, 10);
+                if (!isNaN(pageIndex) && pageIndex >= 0) {
+                    setCurrentPage(pageIndex);
+                }
             }
         });
-    }, [fetchQuestionnaire, loadDraft]);
+    }, [fetchQuestionnaire]);
 
-    // 3. 自動儲存機制（每 30 秒自動儲存）
-/* 後端 PATCH 有問題，暫時注解掉！！！
-    useEffect(() => {
-        if (loadingStatus !== 'success') return;
-        const intervalId = setInterval(() => {
-            saveDraft(answers, draftResponseId); 
-        }, 30000); 
-
-        return () => clearInterval(intervalId); // 清除定時器
-    }, [answers, draftResponseId, saveDraft, loadingStatus]);
-*/  
 
     // =============
     //   分頁進度
@@ -668,21 +585,29 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     //  不同處理
     // =============
     const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
-        setAnswers(prev => ({
-            ...prev,
-            [questionId]: answerValue,
-        }));
+        setAnswers(prev => {
+            const newAnswers = {
+                ...prev,
+                [questionId]: answerValue,
+            };
+            localStorage.setItem('questionnaireAnswers', JSON.stringify(newAnswers));
+            return newAnswers;
+        });
     };
 
     const handleNext = () => {
         if (currentPage < TOTAL_PAGES - 1) {
-            setCurrentPage(currentPage + 1);
+            const newPage = currentPage + 1;
+            setCurrentPage(newPage);
+            localStorage.setItem('questionnaireCurrentPage', newPage.toString());
         }
     };
 
     const handlePrevious = () => {
         if (currentPage > 0) {
-            setCurrentPage(currentPage - 1);
+            const newPage = currentPage - 1;
+            setCurrentPage(newPage);
+            localStorage.setItem('questionnaireCurrentPage', newPage.toString());
         }
     };
 
@@ -738,8 +663,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             const responseId = data.id;
 
             localStorage.setItem('responseId', responseId.toString());
-            localStorage.removeItem('draftResponseId');
-            setDraftResponseId(null);
+            localStorage.removeItem('questionnaireAnswers'); 
+            localStorage.removeItem('questionnaireCurrentPage');
             setSubmittedResponseId(responseId);
             setIsGeneratingReport(true);
 

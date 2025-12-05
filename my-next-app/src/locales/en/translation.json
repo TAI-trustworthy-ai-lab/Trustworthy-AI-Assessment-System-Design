@@ -423,6 +423,7 @@
       "overallScore": "Overall Score (out of 100)",
       "grade": "Grade",
       "radarChart": "Radar Chart of Indicators",
+      "indicatorWeights": "Project TAI weight",
       "detailIndicators": "Detailed Indicator Performance",
       "pdfFailure": "PDF build failed"
     },
@@ -447,7 +448,8 @@
     },
     "common": {
       "notAvailable": "N/A",
-      "indicatorScore": "TAI Score: "
+      "indicatorScore": "TAI Score: ",
+      "noWeightSnapshot": "This project does not use TAI sorting"
     }
   },
   "verify": {

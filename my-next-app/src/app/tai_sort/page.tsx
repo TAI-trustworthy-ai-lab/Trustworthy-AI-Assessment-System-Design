@@ -352,7 +352,7 @@ export default function TAISorter() {
         const payload = sortedData.map((item, index) => ({
             indicator: item.indicator,
             rank: index + 1, 
-            weight: item.weight,
+            weight: item.weight / 100,
         }));
 
         // 提示訊息調整
@@ -360,7 +360,7 @@ export default function TAISorter() {
         if (sortingMode !== 'disabled') {
             const priorityDisplay = indicators.map((indicatorZh, index) => {
                 const weight = payload[index].weight;
-                return `${indicatorZh} (${weight})`;
+                return `${indicatorZh} (${(weight * 100).toFixed(0)}%)`;
             }).join(" → ");
             confirmationMessage += t('sortPage.currentPriority') + "\n" + priorityDisplay; 
 

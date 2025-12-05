@@ -151,7 +151,7 @@ interface ReportData {
     generatedAt: string;
     analysisText: string | null;
     radarData: Record<string, number>;
-    taiWeightSnapshot: Record<string, number> | null; // 應該沒有使用
+    taiWeightSnapshot: Record<string, number> | null;
     llmMeta: any | null; //應該沒有使用
     response: (ResponseMeta & {
         project?: { name?: string };
@@ -179,6 +179,52 @@ const getScoreColor = (score: number) => {
     return 'bg-red-400';
 };
 
+
+// ----------------------------------------------------
+// TAI 權重顯示組件
+// ----------------------------------------------------
+const renderTaiWeights = (taiWeightSnapshot: Record<string, number> | null) => {
+    const { t, i18n } = useTranslation();
+    console.log(taiWeightSnapshot);
+    if (!taiWeightSnapshot || Object.keys(taiWeightSnapshot).length === 0) {
+        return (
+            <div className="text-center p-4 text-gray-500 border-t mt-4">
+                <p>{t('reportPage.common.noWeightSnapshot')}</p>
+            </div>
+        );
+    }
+
+    // 將物件轉換為陣列並按權重降序排序，方便閱讀
+    const sortedWeights = Object.entries(taiWeightSnapshot)
+        .map(([key, weight]) => ({
+            key,
+            title: TAI_INDICATOR_MAP_EN_ZH[key] || key,
+            weight,
+        }))
+        .sort((a, b) => b.weight - a.weight);
+
+    return (
+        <div className="w-full text-center margin-center border-t pt-4 mt-6">
+            <h3 className="text-xl font-bold text-gray-700 mb-4">{t('reportPage.report.indicatorWeights')}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-purple-50 rounded-lg max-w-lg mx-auto">
+                {sortedWeights.map(({ title, key, weight }) => (
+                    <div key={key} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-purple-200">
+                        <span className="text-xs font-medium text-gray-500 text-center">
+                            {(i18n.language !== "en")
+                                ? title
+                                : (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase())
+                            }
+                        </span>
+                        {/* 權重百分比顯示 */}
+                        <span className="text-lg font-bold text-purple-700 mt-1">
+                            {(weight * 100).toFixed(0)}%
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
 
 // ----------------------------------------------------
 // 報告頁面組件
@@ -287,6 +333,49 @@ export default function ReportPage() {
         minute: '2-digit',
     });
 
+    // 權重顯示邏輯
+    const renderTaiWeights = (taiWeightSnapshot: Record<string, number> | null) => {
+        if (!taiWeightSnapshot || Object.keys(taiWeightSnapshot).length === 0) {
+            return (
+                <div className="text-center p-4 text-gray-500 border-t mt-4">
+                    <p>{t('reportPage.common.noWeightSnapshot')}</p>
+                </div>
+            );
+        }
+
+        // 權重排序
+        const sortedWeights = Object.entries(taiWeightSnapshot)
+            .map(([key, weight]) => ({
+                key,
+                title: TAI_INDICATOR_MAP_EN_ZH[key] || key,
+                weight,
+            }))
+            .sort((a, b) => b.weight - a.weight);
+
+        return (
+            <div className="w-full text-center margin-center border-t pt-4 mt-6">
+                <h3 className="text-xl font-bold text-gray-700 mb-4">{t('reportPage.report.indicatorWeights')}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 bg-purple-50 rounded-lg max-w-lg mx-auto">
+                    {sortedWeights.map(({ title, key, weight }) => (
+                        <div key={key} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-purple-200">
+                            <span className="text-xs font-medium text-gray-500 text-center">
+                                {(i18n.language !== "en")
+                                    ? title
+                                    : (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase())
+                                }
+                            </span>
+                            {/* 權重百分比顯示 */}
+                            <span className="text-lg font-bold text-purple-700 mt-1">
+                                {((weight) * 100).toFixed(0)}%
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+
     // --- 報告成功載入後的渲染 --- 
     const markdownContent = report.analysisText;
     return (
@@ -336,6 +425,7 @@ export default function ReportPage() {
                                 <ReportRadarChart radarData={report.radarData} />
                             </div>
                         </div>
+                        {report.taiWeightSnapshot && renderTaiWeights(report.taiWeightSnapshot)}
 
                         <div className="markdown-content not-prose text-left mt-6 overflow-x-auto">
                             <TranslatedMarkdown content={markdownContent || ""} />

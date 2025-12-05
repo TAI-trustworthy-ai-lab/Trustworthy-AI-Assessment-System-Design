@@ -397,7 +397,6 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
         }
 
         const allWeightsAreZero = taiOrders.every(order => order.weight === 0);
-
         if (allWeightsAreZero) {
             return (
                 <p className="text-sm text-orange-600">
@@ -406,14 +405,21 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             );
         }
 
+        // 複製陣列並根據 rank 排序
         const sortedIndicators = [...taiOrders].sort((a, b) => a.rank - b.rank);
+
         const indicatorString = sortedIndicators
             .map(order => {
+                // 取得中文指標名稱
                 const chineseIndicator = TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator;
-                return chineseIndicator;
+                const formattedWeight = `${(order.weight * 100).toFixed(0)}%`;
+                
+                return `${chineseIndicator} (${formattedWeight})`;
             })
+            // 使用箭頭符號連接
             .join(" → ");
 
+        // 4. 渲染結果
         return (
             <div className="text-sm p-3 bg-gray-50 rounded-lg border border-gray-200 overflow-x-auto">
                 <p className="whitespace-nowrap font-mono text-gray-700 tracking-wider text-base">

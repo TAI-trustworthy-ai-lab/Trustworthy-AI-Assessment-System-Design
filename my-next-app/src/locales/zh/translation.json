@@ -426,6 +426,7 @@
       "overallScore": "總體分數 (滿分 100)",
       "grade": "評級",
       "radarChart": "指標分佈雷達圖",
+      "indicatorWeights": "專案對應之指標權重",
       "detailIndicators": "細項指標表現",
       "pdfFailure": "PDF 生成失敗"
     },
@@ -450,7 +451,8 @@
     },
     "common": {
       "notAvailable": "不適用",
-      "indicatorScore": "指標分數："
+      "indicatorScore": "指標分數：",
+      "noWeightSnapshot": "此專案不使用排序功能"
     }
   },
   "verify": {
