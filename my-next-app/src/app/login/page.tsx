@@ -35,6 +35,7 @@ export default function LoginPage() {
             const data = await login({ email, password });
             const token = data?.data?.token;
             const user = data?.data?.user;
+            console.log(user);
             const estimatedExpiryTimestampMs = Date.now() + ONE_HOUR_MS;
 
             // If response.ok, save user info into local storage
@@ -42,7 +43,6 @@ export default function LoginPage() {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('userId', user.id.toString());
                 localStorage.setItem('userRole', user.role);
-                localStorage.setItem('userName', user.name);
                 localStorage.setItem('authExpiry', estimatedExpiryTimestampMs.toString());
                 router.push('/home');
             } else {
