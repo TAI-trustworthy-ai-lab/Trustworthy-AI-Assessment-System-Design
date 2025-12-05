@@ -23,7 +23,7 @@ import ResponseViewer, {
     styleSelected,
     styleUnselected
 } from './ResponseViewer';
-import { Info, FileText, ChevronDown, CircleX } from 'lucide-react'
+import { Info, Edit, FileText, ChevronDown, CircleX } from 'lucide-react'
 import { TFunction } from 'i18next';
 //import { Info, Edit, FileText } from 'lucide-react'
 
@@ -698,13 +698,12 @@ export default function HistoryPage() {
           >
             {t('historyPage.viewReport')}
           </div>
-
           {/* 
           <div className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200">
             {t('historyPage.download')}
           </div>*/}
 
-          {/*
+          
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
@@ -714,7 +713,7 @@ export default function HistoryPage() {
             }}
           >
             編輯
-          </div>*/}
+          </div>
 
           <div
             className="
@@ -1479,7 +1478,7 @@ export function ResponseWindow({ state, data }: {
           if (curState === ViewerState.detail) e.stopPropagation()
         }}
       >
-        {/*toolComponent(
+        {toolComponent(
           "編輯", 
           (<Edit size={30} color={`${curState === ViewerState.detail?"#fff085":"#ffffff"}`} />),
           style.orange,
@@ -1490,7 +1489,7 @@ export function ResponseWindow({ state, data }: {
               setCurState(ViewerState.success)
             else setCurState(ViewerState.detail)
           }
-        )*/}
+        )}
         {toolComponent(
           t('historyPage.detailInfo'),
           (<Info size={30} color={`${curState === ViewerState.detail ? "#fff085" : "#ffffff"}`} />),

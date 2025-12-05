@@ -513,7 +513,7 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
 
     const y = element.offsetTop - viewer.offsetTop + offset
 
-    console.log("scrolling")
+    //console.log("scrolling")
     viewer.scrollTo({
       top: y,
       behavior: "smooth",
@@ -641,7 +641,7 @@ export default function ResponseViewer({curState, data }: { curState: ViewerStat
                 return { label: page.title, value: index }
               })}
               onChange={(v)=>{
-                console.log("changing")
+                //console.log("changing")
                 setCurPage(v)
                 scrollToWithOffset(sectionRefs.current[v]!, -20)
               }}
