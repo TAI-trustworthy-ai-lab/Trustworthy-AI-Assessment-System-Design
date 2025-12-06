@@ -53,7 +53,7 @@ export const fetchAllQuestionnaires = async () => {
     }
 };
 
-// 6. POST 建立新問卷（複製）
+// 6. POST 建立新問卷
 export const createQuestionnaire = async (payload: {
     groupName: string;
     title: string;
@@ -129,3 +129,16 @@ export const duplicateQuestionnaire = async (
         throw error;
     }
 };
+
+export async function deleteQuestionnaire(id: number) {
+    const url = `${QUESTIONNAIRE_API_BASE}/${id}`;
+    const res = await fetch(url, {
+        method: "DELETE",
+    });
+
+    if (!res.ok) {
+        throw new Error("刪除問卷失敗");
+    }
+
+    return res.json();
+}
