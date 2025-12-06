@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
-import { fetchAllQuestionnaires, duplicateQuestionnaire } from '@/services/questionnaireService';
+import { createQuestionnaire, deleteQuestionnaire, fetchAllQuestionnaires, duplicateQuestionnaire } from '@/services/questionnaireService';
 import ResponseViewer from "@/app/admin/QuestionnaireEditor";
 import { ViewerState } from "@/services/responseService";
 
@@ -260,6 +260,39 @@ export default function AdminDashboard() {
         }
     }, [currentUserRole]);
 
+    const handleCreateQuestionnaire = async () => {
+        const groupName = prompt("請輸入群組名稱：");
+        if (!groupName) return;
+
+        const title = prompt("請輸入問卷標題：");
+        if (!title) return;
+
+        const description = prompt("請輸入問卷描述：") || "";
+
+        // ✅ 這裡先建立一份空問卷（沒有題目）
+        const payload = {
+            groupName,
+            title,
+            description,
+            questions: [],
+        };
+
+        try {
+            const status = await createQuestionnaire(payload);
+
+            if (status === 201 || status === 200) {
+                alert("✅ 問卷建立成功！");
+                fetchQuestionnaires(); // ✅ 刷新列表
+            } else {
+                alert("⚠️ 問卷建立成功，但回傳狀態碼異常：" + status);
+            }
+        } catch (err: any) {
+            console.error("建立問卷失敗:", err);
+            alert("❌ 建立問卷失敗：" + (err.message || "未知錯誤"));
+        }
+    };
+
+
     // ------------------- 渲染 -------------------
     const isLoggedIn = !!currentUserRole;
 
@@ -343,8 +376,22 @@ export default function AdminDashboard() {
                 </div>
             )}
             {isLoggedIn && (
-                <QuestionnaireTable questionnaires={questionnaires} onRefresh={fetchQuestionnaires} />
+                <div className="w-full max-w-4xl mt-10">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-gray-800">📋 問卷管理</h2>
+
+                        <button
+                            onClick={handleCreateQuestionnaire}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
+                        >
+                            ➕ 新增問卷
+                        </button>
+                    </div>
+
+                    <QuestionnaireTable questionnaires={questionnaires} onRefresh={fetchQuestionnaires} />
+                </div>
             )}
+
             <p className="mt-8 text-sm text-gray-500">
                 * 請確保後端服務 (http://localhost:3001) 正在運行，Login API 響應格式正確。
             </p>
@@ -379,6 +426,20 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
         }
     };
 
+    const handleDelete = async (q: any) => {
+        if (!confirm(`確定要刪除問卷「${q.title}」嗎？此動作無法復原`)) return;
+
+        try {
+            await deleteQuestionnaire(q.id);
+            alert("✅ 刪除成功");
+            onRefresh();
+        } catch (err: any) {
+            console.error("刪除問卷失敗:", err);
+            alert(err.message || "刪除失敗");
+        }
+    };
+
+
     return (
         <div className="overflow-x-auto mt-4">
             <table className="min-w-full divide-y divide-gray-200">
@@ -411,12 +472,21 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                                 >
                                     編輯
                                 </button>
+
                                 <button
                                     onClick={() => handleDuplicate(q)}
                                     disabled={loadingId === q.id}
-                                    className={`px-3 py-1 rounded text-white ${loadingId === q.id ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"}`}
+                                    className={`px-3 py-1 rounded text-white ${loadingId === q.id ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
+                                        }`}
                                 >
                                     {loadingId === q.id ? "複製中..." : "複製"}
+                                </button>
+
+                                <button
+                                    onClick={() => handleDelete(q)}
+                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                                >
+                                    刪除
                                 </button>
                             </td>
                         </tr>
