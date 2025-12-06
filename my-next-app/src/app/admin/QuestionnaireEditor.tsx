@@ -1,26 +1,26 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import {
-  ResponseMeta, 
-  ResponseData,
-  ViewerState
-} from "@/services/responseService";
-import { LoadingComponent } from "@/app/history/page"
+import React, { useState, useEffect } from "react";
+import { ResponseData, ViewerState } from "@/services/responseService";
+import { useTranslation } from "react-i18next";
+import { createQuestionnaire, deleteQuestionnaire } from '@/services/questionnaireService';
 
+
+// ----------------------------------------------------
+// Router（保留你的原始行為）
+// ----------------------------------------------------
 const useRouter = () => {
     return {
         push: (url: string) => {
-            if (typeof window !== 'undefined') {
+            if (typeof window !== "undefined") {
                 window.location.href = url;
             }
         },
     };
 };
-import { useTranslation } from 'react-i18next';
 
 // ----------------------------------------------------
-// 暫存結構：中文原文 & 英文翻譯
+// 翻譯快取
 // ----------------------------------------------------
 const translationCache: {
     zh: Record<string, string>;
@@ -30,14 +30,14 @@ const translationCache: {
     en: {},
 };
 
-// ----------------------------------------------------
-// 翻譯工具函式 (支援 AbortController)
-// ----------------------------------------------------
 const capitalizeFirstLetter = (text: string) => {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
+// ----------------------------------------------------
+// 翻譯 API（支援 AbortController）
+// ----------------------------------------------------
 const translateText = async (
     text: string,
     source = "zh-CN",
@@ -57,7 +57,7 @@ const translateText = async (
     } catch (err: any) {
         if (err.name === "AbortError") {
             console.log("翻譯請求已中斷");
-            return null; // ✅ 回傳 null，表示翻譯未完成
+            return null;
         }
         console.error("翻譯失敗:", err);
         return null;
@@ -65,7 +65,7 @@ const translateText = async (
 };
 
 // ----------------------------------------------------
-// TranslatedText Component with cache + AbortController
+// TranslatedText Component（保留你的邏輯 + 清理排版）
 // ----------------------------------------------------
 const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     text,
@@ -85,7 +85,9 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
         if (i18n.language.startsWith("en")) {
             if (translationCache.en[text]) {
                 setTranslated(
-                    capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
+                    capitalize
+                        ? capitalizeFirstLetter(translationCache.en[text])
+                        : translationCache.en[text]
                 );
             } else {
                 translateText(text, "zh-CN", "en", signal).then((result) => {
@@ -93,7 +95,6 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
                         translationCache.en[text] = result;
                         setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
                     } else {
-                        // ✅ 沒翻譯成功 → 顯示中文，並保留機會下次再翻譯
                         setTranslated(translationCache.zh[text]);
                     }
                 });
@@ -108,557 +109,970 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     return <>{translated}</>;
 };
 
-
 // ----------------------------------------------------
-// 定义指標解釋映射表
+// CATEGORY_MAP（保留你的內容）
 // ----------------------------------------------------
 const CATEGORY_MAP: Record<
-  string,
-  Record<string, { title: string; content: string }>
+    string,
+    Record<string, { title: string; content: string }>
 > = {
-  ACCURACY: {
-    "zh": {
-      title: "準確性",
-      content: "AI判斷的結果與真實情況相近程度"
+    ACCURACY: {
+        zh: {
+            title: "準確性",
+            content: "AI判斷的結果與真實情況相近程度",
+        },
+        en: {
+            title: "Accuracy",
+            content: "How closely the AI's output matches the real-world situation.",
+        },
     },
-    en: {
-      title: "Accuracy",
-      content: "How closely the AI's output matches the real-world situation."
-    }
-  },
-  RELIABILITY: {
-    "zh": {
-      title: "可靠性",
-      content: "AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定"
+    RELIABILITY: {
+        zh: {
+            title: "可靠性",
+            content:
+                "AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定",
+        },
+        en: {
+            title: "Reliability",
+            content:
+                "The AI model maintains stable performance without being overly sensitive to disturbances.",
+        },
     },
-    en: {
-      title: "Reliability",
-      content:
-        "The AI model maintains stable performance without being overly sensitive to various disturbances or abnormal conditions."
-    }
-  },
-  SAFETY: {
-    "zh": {
-      title: "安全性",
-      content: "不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害"
+    SAFETY: {
+        zh: {
+            title: "安全性",
+            content:
+                "不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害",
+        },
+        en: {
+            title: "Safety",
+            content:
+                "Ensures that the AI does not cause harm or negative impact to the environment or stakeholders.",
+        },
     },
-    en: {
-      title: "Safety",
-      content:
-        "Ensures that the AI does not cause harm or negative impact to the environment or stakeholders such as users and the public."
-    }
-  },
-  RESILIENCE: {
-    "zh": {
-      title: "韌性",
-      content:
-        "AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰"
+    RESILIENCE: {
+        zh: {
+            title: "韌性",
+            content:
+                "AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰",
+        },
+        en: {
+            title: "Resilience",
+            content:
+                "The AI system adapts to different environments and evolving challenges.",
+        },
     },
-    en: {
-      title: "Resilience",
-      content:
-        "The AI system and related equipment can adapt to different environments, demands, and conditions, adjusting flexibly to meet evolving challenges."
-    }
-  },
-  TRANSPARENCY: {
-    "zh": {
-      title: "透明性",
-      content:
-        "AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則"
+    TRANSPARENCY: {
+        zh: {
+            title: "透明性",
+            content:
+                "AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則",
+        },
+        en: {
+            title: "Transparency",
+            content:
+                "Users can trace the data, algorithms, or rules used by the AI.",
+        },
     },
-    en: {
-      title: "Transparency",
-      content:
-        "Users can trace the data, algorithms, or rules the AI used when making judgments or decisions."
-    }
-  },
-  ACCOUNTABILITY: {
-    "zh": {
-      title: "當責性",
-      content:
-        "當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人"
+    ACCOUNTABILITY: {
+        zh: {
+            title: "當責性",
+            content: "當AI系統導致非預期的負面影響時，要有監督機制或負責單位",
+        },
+        en: {
+            title: "Accountability",
+            content:
+                "Mechanisms must exist to assign responsibility when AI causes unintended impacts.",
+        },
     },
-    en: {
-      title: "Accountability",
-      content:
-        "Mechanisms must exist to oversee and assign responsibility when an AI system causes unintended negative impacts."
-    }
-  },
-  EXPLAINABILITY: {
-    "zh": {
-      title: "可解釋性",
-      content:
-        "AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由"
+    EXPLAINABILITY: {
+        zh: {
+            title: "可解釋性",
+            content:
+                "AI 的決策邏輯可以被清楚描述與呈現，讓使用者了解AI的決策理由",
+        },
+        en: {
+            title: "Explainability",
+            content:
+                "The AI's decision logic can be clearly described to users and stakeholders.",
+        },
     },
-    en: {
-      title: "Explainability",
-      content:
-        "The AI's decision logic (the causal relationship between input data and outputs) can be clearly described and presented to help users and stakeholders understand the reasoning."
-    }
-  },
-  AUTONOMY: {
-    "zh": {
-      title: "自主性",
-      content:
-        "AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策"
+    AUTONOMY: {
+        zh: {
+            title: "自主性",
+            content:
+                "AI系統使用者能保持充分的自主性，不過度依賴AI的判斷或決策",
+        },
+        en: {
+            title: "Autonomy",
+            content:
+                "Users maintain autonomy and avoid excessive reliance on AI decisions.",
+        },
     },
-    en: {
-      title: "Autonomy",
-      content:
-        "Users of the AI system can maintain autonomy and avoid excessive reliance on AI decisions during interactions."
-    }
-  },
-  PRIVACY: {
-    "zh": {
-      title: "隱私",
-      content: "在使用AI系統時，不會侵犯到個人隱私"
+    PRIVACY: {
+        zh: {
+            title: "隱私",
+            content: "在使用AI系統時，不會侵犯到個人隱私",
+        },
+        en: {
+            title: "Privacy",
+            content: "Ensures AI usage does not infringe personal privacy.",
+        },
     },
-    en: {
-      title: "Privacy",
-      content: "Ensures that the use of AI systems does not infringe on personal privacy."
-    }
-  },
-  FAIRNESS: {
-    "zh": {
-      title: "公平性",
-      content: "AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況"
+    FAIRNESS: {
+        zh: {
+            title: "公平性",
+            content: "AI系統能平等對待不同群體，避免不公正的情況",
+        },
+        en: {
+            title: "Fairness",
+            content:
+                "The AI system treats groups equally and avoids unfair outcomes.",
+        },
     },
-    en: {
-      title: "Fairness",
-      content:
-        "The AI system treats different groups equally when making decisions, avoiding discrimination or unfair outcomes."
-    }
-  },
-  SECURITY: {
-    "zh": {
-      title: "資訊安全性",
-      content:
-        "防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全"
+    SECURITY: {
+        zh: {
+            title: "資訊安全性",
+            content:
+                "防止外部環境對AI模型的侵入和損害，以保護訓練與測試資料安全",
+        },
+        en: {
+            title: "Security",
+            content:
+                "Protects the AI model from intrusion and ensures data security.",
+        },
     },
-    en: {
-      title: "Security",
-      content:
-        "Protects the AI model from external intrusion or damage, ensuring the security of data used during training and testing."
-    }
-  },
-  UNKNOWN: {
-    "zh": {
-      title: "未知分類",
-      content: "{{category}}"
+    UNKNOWN: {
+        zh: { title: "未知分類", content: "{{category}}" },
+        en: { title: "Unknown Category", content: "{{category}}" },
     },
-    en: {
-      title: "Unknown Category",
-      content: "{{category}}"
-    }
-  }
 };
-/*
-const CATEGORY_MAP: Record<string, {title:string, content:string}> = {
-  "ACCURACY": {title:"準確性", content:"AI判斷的結果與真實情況相近程度"},
-  "RELIABILITY": {title:"可靠性", content:"AI 模型在面對不同類型的干擾或異常情況時，敏感度適中，不會過度敏感導致表現不穩定"},
-  "SAFETY": {title:"安全性", content:"不會對周遭環境、利害關係人（例如使用者與民眾）造成不利的影響或傷害"},
-  "RESILIENCE": {title:"韌性", content:"AI 系統與相關設備能夠適應不同的環境、需求及條件，靈活調整與擴展，以滿足不斷變化的需求和挑戰"},
-  "TRANSPARENCY": {title:"透明性", content:"AI 系統使用者可以追溯AI 在做判斷或決策時，所使用的資料、演算法或規則"},
-  "ACCOUNTABILITY": {title:"當責性", content:"當AI系統導致非預期的負面影響時，要有監督機制或該負責的單位或人"},
-  "EXPLAINABILITY": {title:"可解釋性", content:"AI 的決策邏輯（即資料輸入與決策結果之間的因果關係）可以被清楚描述與呈現，讓使用者與利害關係者更了解AI的決策理由"},
-  "AUTONOMY": {title:"自主性", content:"AI系統使用者與AI的互動過程中，能保持充分的自主性，不過度依賴AI的判斷或決策"},
-  "PRIVACY": {title:"隱私", content:"在使用AI系統時，不會侵犯到個人隱私"},
-  "FAIRNESS": {title:"公平性", content:"AI系統在做判斷或決策時，能平等對待不同群體，避免不公正的情況"},
-  "SECURITY": {title:"資訊安全性", content:"防止外部環境對AI模型的侵入和損害，以保護訓練與測試過程中的資料安全"},
-  "UNKNOWN": {title:"未知分類", content:"{{category}}"}
-}*/
 
 // ----------------------------------------------------
-// 後端回傳資料結構定義
+// 型別定義（保留你的）
 // ----------------------------------------------------
 export interface Option {
-  id: number;
-  text: string;
-  value: number;
-  order: number;
+    id: number;
+    text: string;
+    value: number;
+    order: number;
 }
 
 export interface Question {
-  id: number;
-  text: string;
-  category: string;
-  order: number;
-  type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT'; 
-  required: boolean;
-  options?: Option[]; 
+    id: number;
+    text: string;
+    category: string;
+    order: number;
+    type: "SCALE" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT";
+    required: boolean;
+    options?: Option[];
 }
 
 export interface QuestionnaireData {
-  id: number;
-  title: string;
-  description: string | null;
-  questions: Question[];
-  group: {
     id: number;
-    name: string;
-  }
+    title: string;
+    description: string | null;
+    questions: Question[];
+    group: {
+        id: number;
+        name: string;
+    };
 }
 
 type AnswerValue = {
-  score?: number; 
-  optionIds?: number[]; 
-  textValue?: string; 
+    score?: number;
+    optionIds?: number[];
+    textValue?: string;
 };
 
-export const editableSelected   = "cursor-pointer hover:bg-[#5C5BED] hover:shadow hover:shadow-[0_0_8px_rgba(120,120,120,0.5)]"
-export const editableUnselected = "cursor-pointer hover:border-blue-200 hover:shadow-[0_0_8px_rgba(159,168,218,0.5)]"
-export const styleSelected   = 'bg-indigo-500 text-white border border-transparent ' 
-export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 '
 
 // ----------------------------------------------------
-// Loading UI - 提交按鈕上的指示器
+// 統一後的按鈕樣式（所有題型共用）
+// ----------------------------------------------------
+const baseOption =
+    "py-2 px-3 rounded-lg border text-sm sm:text-base transition-all select-none";
+
+const selectedOption =
+    "bg-indigo-500 text-white border-transparent shadow";
+
+const unselectedOption =
+    "bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:shadow-sm";
+
+// ----------------------------------------------------
+// Loading Indicator（保留你的版本）
 // ----------------------------------------------------
 const SubmissionLoadingIndicator: React.FC = () => (
     <div className="flex items-center justify-center space-x-2">
         <span className="font-bold">提交中</span>
-        {/* Animated Dots using Tailwind's built-in animate-pulse */}
         <div className="flex items-end h-4 pb-0.5">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0s" }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
+            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
         </div>
     </div>
 );
 
 // ----------------------------------------------------
-// 根據 Type 渲染不同 UI
+// 題型元件：SCALE
 // ----------------------------------------------------
-
-interface QuestionRendererProps {
-    editable: boolean,
+const ScaleQuestion: React.FC<{
+    editable: boolean;
     question: Question;
     currentAnswer: AnswerValue;
     onAnswer: (answer: AnswerValue) => void;
-}
+}> = ({ editable, question, currentAnswer, onAnswer }) => {
+    const options = question.options || [];
+    const selectedId = currentAnswer.optionIds?.[0];
 
-const gridColNum = [
-  "grid-cols-0",
-  "grid-cols-1",
-  "grid-cols-2",
-  "grid-cols-3",
-]
+    return (
+        <div className="flex justify-center gap-3 sm:gap-4">
+            {options.map((opt) => (
+                <button
+                    key={opt.id}
+                    onClick={() => editable && onAnswer({ optionIds: [opt.id], score: opt.value })}
+                    className={`
+            w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all
+            ${selectedId === opt.id ? "bg-indigo-500 text-white shadow" : "bg-white border border-gray-300 text-gray-700"}
+            ${editable ? "cursor-pointer hover:border-indigo-300 hover:shadow-sm" : "cursor-default"}
+          `}
+                >
+                    {opt.value}
+                </button>
+            ))}
+        </div>
+    );
+};
 
-// 1. SCALE 題型
-const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
-  // 假設選項已經按 order 排序 + options 存在
-  const options = question.options || [];
-  const selectedOptionId = currentAnswer.optionIds?.[0];
-  //console.log(`${options[0].id}, ${currentAnswer.optionIds[1]}`)
+// ----------------------------------------------------
+// 題型元件：SINGLE_CHOICE
+// ----------------------------------------------------
+const SingleChoiceQuestion: React.FC<{
+    editable: boolean;
+    question: Question;
+    currentAnswer: AnswerValue;
+    onAnswer: (answer: AnswerValue) => void;
+}> = ({ editable, question, currentAnswer, onAnswer }) => {
+    const options = question.options || [];
+    const selectedId = currentAnswer.optionIds?.[0];
 
-  return (
-    <div className="flex justify-center space-x-2 sm:space-x-4">
-      {options.map((opt) => {
-        const displayScore = opt.value; 
-        
-        return (
-          <button
-            key={opt.id}
-            onClick={() => 
-              onAnswer({ optionIds: [opt.id], score: opt.value }) 
-            }
+    return (
+        <div className={`grid gap-3 w-full sm:w-fit ${options.length >= 4 ? "grid-cols-2" : "grid-cols-1"}`}>
+            {options.map((opt) => (
+                <button
+                    key={opt.id}
+                    onClick={() => editable && onAnswer({ optionIds: [opt.id], score: opt.value })}
+                    className={`
+            ${baseOption}
+            ${selectedId === opt.id ? selectedOption : unselectedOption}
+            ${editable ? "cursor-pointer" : "cursor-default"}
+          `}
+                >
+                    {opt.text}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+// ----------------------------------------------------
+// 題型元件：MULTIPLE_CHOICE
+// ----------------------------------------------------
+const MultipleChoiceQuestion: React.FC<{
+    editable: boolean;
+    question: Question;
+    currentAnswer: AnswerValue;
+    onAnswer: (answer: AnswerValue) => void;
+}> = ({ editable, question, currentAnswer, onAnswer }) => {
+    const options = question.options || [];
+    const selectedIds = currentAnswer.optionIds || [];
+
+    const toggle = (id: number) => {
+        if (!editable) return;
+
+        const newIds = selectedIds.includes(id)
+            ? selectedIds.filter((x) => x !== id)
+            : [...selectedIds, id];
+
+        const newScore = options
+            .filter((opt) => newIds.includes(opt.id))
+            .reduce((sum, opt) => sum + Number(opt.value), 0);
+
+        onAnswer({ optionIds: newIds, score: newScore });
+    };
+
+    return (
+        <div className={`grid gap-3 w-full sm:w-fit ${options.length >= 4 ? "grid-cols-2" : "grid-cols-1"}`}>
+            {options.map((opt) => (
+                <button
+                    key={opt.id}
+                    onClick={() => toggle(opt.id)}
+                    className={`
+            ${baseOption}
+            ${selectedIds.includes(opt.id) ? selectedOption : unselectedOption}
+            ${editable ? "cursor-pointer" : "cursor-default"}
+          `}
+                >
+                    {opt.text}
+                </button>
+            ))}
+        </div>
+    );
+};
+
+// ----------------------------------------------------
+// 題型元件：TEXT
+// ----------------------------------------------------
+const TextQuestion: React.FC<{
+    editable: boolean;
+    question: Question;
+    currentAnswer: AnswerValue;
+    onAnswer: (answer: AnswerValue) => void;
+}> = ({ editable, currentAnswer, onAnswer }) => {
+    const textValue = currentAnswer.textValue || "";
+
+    return (
+        <textarea
+            rows={3}
+            value={textValue}
+            onChange={(e) => editable && onAnswer({ textValue: e.target.value })}
+            placeholder="請在此輸入您的回答..."
             className={`
-              w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold  
-              ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
-              ${selectedOptionId === opt.id ? styleSelected: styleUnselected}
-            `}
-          >
-            {displayScore}
-          </button>
-        );
-      })}
-    </div>
-  );
+        w-full p-3 rounded-lg border border-gray-300 bg-gray-50
+        transition-all resize-none
+        ${editable ? "focus:bg-white focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300" : "cursor-default"}
+      `}
+        />
+    );
 };
 
-// 2. SINGLE_CHOICE 題型
-const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
-  const options = question.options || [];
-  const selectedOptionId = currentAnswer.optionIds?.[0];
-
-  //console.log("option length", options.length)
-
-  return (
-    <div className={`gap-3 w-full sm:w-fit grid ${options.length >= 4 ? " grid-cols-2" :`${gridColNum[options.length]}`} `}>
-      {options.map(opt => (
-        <button
-          key={opt.id}
-          onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
-          className={`
-            py-2 px-2 max-w-[300px] rounded-lg
-            font-medium
-
-            sm:px-4
-            sm:min-w-[80px]
-            ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
-            ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
-        >
-          <TranslatedText text={opt.text} capitalize={ true } />
-        </button>
-      ))}
-    </div>
-  );
-};
-
-// 3. MULTIPLE_CHOICE 題型
-const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
-  const options = question.options || [];
-  const selectedOptionIds = currentAnswer.optionIds || [];
-
-  const handleOptionClick = (optionId: number) => {
-    let newSelectedOptionIds;
-    if (selectedOptionIds.includes(optionId)) {
-      // 如果已經選中，則取消選中
-      newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
-    } else {
-      // 如果未選中，則選中
-      newSelectedOptionIds = [...selectedOptionIds, optionId];
+// ----------------------------------------------------
+// 問題渲染器（依題型切換）
+// ----------------------------------------------------
+const QuestionRenderer: React.FC<{
+    editable: boolean;
+    question: Question;
+    currentAnswer: AnswerValue;
+    onAnswer: (answer: AnswerValue) => void;
+}> = (props) => {
+    switch (props.question.type) {
+        case "SCALE":
+            return <ScaleQuestion {...props} />;
+        case "SINGLE_CHOICE":
+            return <SingleChoiceQuestion {...props} />;
+        case "MULTIPLE_CHOICE":
+            return <MultipleChoiceQuestion {...props} />;
+        case "TEXT":
+            return <TextQuestion {...props} />;
+        default:
+            return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
     }
-
-    const newScore = options
-      .filter(opt => newSelectedOptionIds.includes(opt.id))
-      .reduce((sum, opt) => {
-        const optionValue = Number(opt.value);
-        return sum + optionValue;
-      }, 0); // Initiate number = 0
-    onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
-  };
-
-  return (
-    <div className={`gap-3 w-full grid sm:w-fit ${options.length >= 4 ? "grid-cols-2 " : `${gridColNum[options.length]}`}`}>
-      {options.map(opt => (
-        <button
-          key={opt.id}
-          onClick={() => handleOptionClick(opt.id)}
-          className={`
-            py-2 px-2 max-w-[300px] rounded-lg
-            font-medium
-
-            sm:px-4
-            sm:min-w-[80px]
-
-            ${editable ? (selectedOptionIds.includes(opt.id) ? editableSelected : editableUnselected): ""}
-            ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
-          }`}
-          >
-              <TranslatedText text={opt.text} capitalize={ true } />
-        </button>
-      ))}
-    </div>
-  );
-};
-
-// 4. TEXT 題型
-const TextQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
-  const textValue = currentAnswer.textValue || '';
-  
-  return (
-    <textarea
-      rows={3}
-      value={textValue}
-      onChange={(e) => onAnswer({ textValue: e.target.value })}
-      placeholder="請在此輸入您的回答..."
-      className={`
-        w-full p-3
-        rounded-lg resize-none
-        border border-gray-300 text-gray-700 bg-[#fcfcfc]
-
-        ${editable? "focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:bg-white": ""}`}
-    />
-  );
-};
-
-// ----------------------------------------------------
-// 問題渲染器：根據 type 選擇組件
-// ----------------------------------------------------
-const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
-  switch (props.question.type) {
-    case 'SCALE':
-      return <ScaleQuestion {...props} />;
-    case 'SINGLE_CHOICE':
-      return <SingleChoiceQuestion {...props} />;
-    case 'MULTIPLE_CHOICE':
-      return <MultipleChoiceQuestion {...props} />; // Placeholder
-    case 'TEXT':
-      return <TextQuestion {...props} />;
-    default:
-      return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
-  }
 };
 
 
 // ----------------------------------------------------
-// 問卷內容主組件
+// ResponseEditor 主體
 // ----------------------------------------------------
+export default function ResponseEditor({
+    curState,
+    data,
+}: {
+    curState: ViewerState;
+    data: { response: ResponseData; questionnaire: QuestionnaireData };
+}) {
+    const { i18n, t } = useTranslation();
+    const q = data.questionnaire;
+    const r = data.response;
+    const editable = curState === ViewerState.editing;
 
-export default function ResponseViewer({curState, data }: { curState: ViewerState, data:{response: ResponseData, questionnaire: QuestionnaireData}}) {
-  const { i18n, t } = useTranslation()
-  
-  const q = data.questionnaire
-  const r = data.response
-  const editable = curState === ViewerState.editing
+    // ----------------------------------------------------
+    // Category 標題與內容
+    // ----------------------------------------------------
+    const getPageTitle = (category: string): string =>
+        CATEGORY_MAP[category.toUpperCase()]?.[i18n.language]?.title || category;
 
-   // 1. 根據指標映射表獲取分頁標題
-  const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
-  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
+    const getPageContent = (category: string): string =>
+        CATEGORY_MAP[category.toUpperCase()]?.[i18n.language]?.content || "";
 
-  const p = (()=>{
-    // group by category
-    const grouped = q.questions.reduce((acc, question) => {
-      const category = question.category
-      if (!acc[category]) {
-        acc[category] = {
-          category: category,
-          pageTitle: category,
-          questions: []
-        }
-      }
-      acc[category].questions.push(question);
-      return acc
-    }, {} as Record<string, { category: string, pageTitle: string, questions: Question[]}>)
+    // ----------------------------------------------------
+    // 編輯狀態
+    // ----------------------------------------------------
+    const [isDirty, setIsDirty] = useState(false);
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [editingDescription, setEditingDescription] = useState(false);
+    const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
 
-    // sort by category, question order
-    return Object.values(grouped)
-      .sort((a, b) => {
-        const keys = Object.keys(CATEGORY_MAP)
-        const indexA = keys.indexOf(a.category.toUpperCase())
-        const indexB = keys.indexOf(b.category.toUpperCase())
-        if (indexA !== -1 && indexB !== -1)
-          return indexA - indexB
-        return 0
-      })
-      .map(page => ({
-        title: getPageTitle(page.pageTitle),
-        content: getPageContent(page.pageTitle),
-        questions: page.questions.sort((a, b) => a.order - b.order)
-      })
-    )
-  })()
+    const [questionnaire, setQuestionnaire] = useState(q);
 
-  // original answer
-  const answers: Record<number, AnswerValue> = r.answers.reduce((acc, data)=>{
-    let opts = [data.optionId]
-    if(data.question.type === 'SCALE'){
-      
-      const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
-        //console.log(`${o.value}, ${data.value}`)
-        return o.value === data.value
-      })?.id
-      if(os) opts = [os]
-      //console.log(`SCALE: ${os}`)
-    }
-    if(acc[data.questionId] && acc[data.questionId].optionIds){
-      const tmp = acc[data.questionId].optionIds as number[]
-      opts = [...opts, ...tmp]
-    }
-    const a : AnswerValue = {
-      score: data.value,
-      optionIds: opts,
-      textValue: data.textValue
-    }
-    acc[data.questionId] = a
-    return acc},  
-    {} as Record<number, AnswerValue>
-  )
+    // ----------------------------------------------------
+    // QuestionEditor（題目編輯器）
+    // ----------------------------------------------------
+    const QuestionEditor = ({
+        question,
+        onChange,
+    }: {
+        question: Question;
+        onChange: () => void;
+    }) => {
+        // 更新題目文字
+        const updateText = (value: string) => {
+            setQuestionnaire((prev) => ({
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === question.id ? { ...q, text: value } : q
+                ),
+            }));
+            onChange();
+        };
 
-  // edited answer
-  const [a, setA] = useState<Record<number, AnswerValue>>(answers)
+        // 更新選項文字
+        const updateOption = (index: number, value: string) => {
+            setQuestionnaire((prev) => ({
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === question.id
+                        ? {
+                            ...q,
+                            options: q.options?.map((opt, i) =>
+                                i === index ? { ...opt, text: value } : opt
+                            ),
+                        }
+                        : q
+                ),
+            }));
+            onChange();
+        };
 
-  const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
-    setA(prev => ({
-        ...prev,
-        [questionId]: answerValue,
-    }));
-  }
+        // 新增選項
+        const addOption = () => {
+            setQuestionnaire((prev) => ({
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === question.id
+                        ? {
+                            ...q,
+                            options: [
+                                ...(q.options || []),
+                                {
+                                    id: Date.now(),
+                                    text: "新選項",
+                                    value: 0,
+                                    order: (q.options?.length || 0) + 1,
+                                },
+                            ],
+                        }
+                        : q
+                ),
+            }));
+            onChange();
+        };
 
-  return (
-    <div className="size-full bg-white px-6 pt-13 pb-20 overflow-y-scroll overflow-x-hidden">
-      {/* 問卷題目 titleA */}
-      <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
-        <TranslatedText text={q.title} />
-      </h1>
+        // 刪除選項
+        const deleteOption = (index: number) => {
+            setQuestionnaire((prev) => ({
+                ...prev,
+                questions: prev.questions.map((q) =>
+                    q.id === question.id
+                        ? {
+                            ...q,
+                            options: q.options?.filter((_, i) => i !== index),
+                        }
+                        : q
+                ),
+            }));
+            onChange();
+        };
 
-      {/* 问卷描述 description */}
-      {q.description && (
-        <p className="text-center text-gray-500 mb-8"><TranslatedText text={q.description} /></p>
-      )}
+        return (
+            <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+                {/* 題目敘述 */}
+                <input
+                    value={question.text}
+                    onChange={(e) => updateText(e.target.value)}
+                    className="w-full border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                />
 
-      {/* 當期分頁內容 */}
-      {
-        p.map(page=>{
-          return (
-            <div key={p.indexOf(page)}>
-              <div className='
-                flex mt-7 mb-5
-              '>
-                <div className='
-                  flex justify-around w-[8px] ml-3 mr-2 bg-indigo-400 text-transparent select-none
-                '>.</div>
-                <div className='
-                  flex flex-col items-start justify-center gap-0.5
-                '>
-                  <div className="text-2xl font-bold text-gray-700 text-start">
-                      <TranslatedText text={page.title} />
-                  </div>
-                  <div className="text-md text-gray-500 text-start">
-                      <TranslatedText text={page.content} />
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {page.questions.map((question) => (
-                  <div key={question.id} className="p-4 rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]">
-                    <div className="font-semibold text-gray-700 mb-3">
-                      <TranslatedText text={question.text} />
-                      {question.required && <span className="
-                        relative inline-flex justify-center items-center w-fit
-                        text-red-500 px-2 select-none overflow-hidden
-                        hover:overflow-visible">
-                          *
-                                {(i18n.language == "en")? <div className='
-                            absolute -right-[300%] w-fit px-1.5 py-1
-                            text-center font-bold text-xs text-white whitespace-nowrap
-                            bg-red-400 rounded-full shadow shadow-gray-500'>
-                                    {t('historyPage.required')}
-                                </div> : <div className='
-                            absolute -right-[180%] w-fit px-1.5 py-1
-                            text-center font-bold text-xs text-white whitespace-nowrap
-                            bg-red-400 rounded-full shadow shadow-gray-500'>
-                                    {t('historyPage.required')}
-                                </div>}
-                        </span>}
-                    </div>
-                    
-                    {/* 根據 type 渲染不同 UI */}
-                    <div className="flex justify-start">
-                      <QuestionRenderer
-                        editable={editable}
-                        question={question}
-                        currentAnswer={a[question.id] || {}}
-                        onAnswer={(answer) => {
-                          if(editable) handleAnswer(question.id, answer)
+                {/* 選項編輯（僅選擇題顯示） */}
+                {(question.type === "SINGLE_CHOICE" ||
+                    question.type === "MULTIPLE_CHOICE" ||
+                    question.type === "SCALE") && (
+                        <div className="space-y-3">
+                            {question.options?.map((opt, idx) => (
+                                <div key={opt.id} className="flex items-center gap-2">
+                                    <input
+                                        value={opt.text}
+                                        onChange={(e) => updateOption(idx, e.target.value)}
+                                        className="flex-1 border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                                    />
+                                    <button
+                                        onClick={() => deleteOption(idx)}
+                                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                    >
+                                        刪除
+                                    </button>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={addOption}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                            >
+                                ➕ 新增選項
+                            </button>
+                        </div>
+                    )}
+
+                {/* 題目類型切換 */}
+                <div className="space-y-2">
+                    <label className="font-semibold text-gray-700">題目類型</label>
+                    <select
+                        value={question.type}
+                        onChange={(e) => {
+                            const newType = e.target.value as Question["type"];
+
+                            setQuestionnaire((prev) => ({
+                                ...prev,
+                                questions: prev.questions.map((q) => {
+                                    if (q.id !== question.id) return q;
+
+                                    // ✅ 切換成量表題 → 自動生成 1～5
+                                    if (newType === "SCALE") {
+                                        return {
+                                            ...q,
+                                            type: newType,
+                                            options: Array.from({ length: 5 }).map((_, i) => ({
+                                                id: Date.now() + i,
+                                                text: `${i + 1}`,
+                                                value: i + 1,
+                                                order: i + 1,
+                                            })),
+                                        };
+                                    }
+
+                                    // ✅ 切換成文字題 → 移除 options
+                                    if (newType === "TEXT") {
+                                        return {
+                                            ...q,
+                                            type: newType,
+                                            options: [],
+                                        };
+                                    }
+
+                                    // ✅ 切換成單選 / 多選 → 保留原 options（或你想重建也可以）
+                                    return { ...q, type: newType };
+                                }),
+                            }));
+
+                            onChange();
                         }}
-                      />
-                    </div>
-                  </div>
-                ))}
-                
-              </div>
+                        className="border px-3 py-2 rounded-lg"
+                    >
+                        <option value="SCALE">量表題</option>
+                        <option value="SINGLE_CHOICE">單選題</option>
+                        <option value="MULTIPLE_CHOICE">多選題</option>
+                        <option value="TEXT">文字題</option>
+                    </select>
+                </div>
+
+                {/* 刪除題目 */}
+                <button
+                    onClick={() => {
+                        setQuestionnaire((prev) => ({
+                            ...prev,
+                            questions: prev.questions.filter((q) => q.id !== question.id),
+                        }));
+                        setEditingQuestionId(null);
+                        onChange();
+                    }}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                    🗑 刪除題目
+                </button>
             </div>
-          )
-        })
-      }
-      <div className='h-20 w-full'>
-        {
-          curState === ViewerState.translating && (
-            <LoadingComponent message='翻譯中...' />
-          )
+        );
+    };
+
+
+    // ----------------------------------------------------
+    // 分頁（依 category 分組）
+    // ----------------------------------------------------
+    const pages = (() => {
+        const grouped = questionnaire.questions.reduce((acc, question) => {
+            const category = question.category;
+            if (!acc[category]) {
+                acc[category] = {
+                    category,
+                    questions: [],
+                };
+            }
+            acc[category].questions.push(question);
+            return acc;
+        }, {} as Record<string, { category: string; questions: Question[] }>);
+
+        return Object.values(grouped)
+            .sort((a, b) => {
+                const keys = Object.keys(CATEGORY_MAP);
+                const indexA = keys.indexOf(a.category.toUpperCase());
+                const indexB = keys.indexOf(b.category.toUpperCase());
+                return indexA - indexB;
+            })
+            .map((page) => ({
+                title: getPageTitle(page.category),
+                content: getPageContent(page.category),
+                questions: page.questions.sort((a, b) => a.order - b.order),
+            }));
+    })();
+
+    // ----------------------------------------------------
+    // 原始答案整理
+    // ----------------------------------------------------
+    const answers: Record<number, AnswerValue> = r.answers.reduce(
+        (acc, data) => {
+            let optionIds = [data.optionId];
+
+            if (data.question.type === "SCALE") {
+                const matched = q.questions
+                    .find((q) => q.id === data.questionId)
+                    ?.options?.find((o) => o.value === data.value)?.id;
+
+                if (matched) optionIds = [matched];
+            }
+
+            if (acc[data.questionId]?.optionIds) {
+                optionIds = [...optionIds, ...acc[data.questionId].optionIds!];
+            }
+
+            acc[data.questionId] = {
+                score: data.value,
+                optionIds,
+                textValue: data.textValue,
+            };
+
+            return acc;
+        },
+        {} as Record<number, AnswerValue>
+    );
+
+    // ----------------------------------------------------
+    // 編輯後答案
+    // ----------------------------------------------------
+    const [a, setA] = useState<Record<number, AnswerValue>>(answers);
+
+    const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
+        setA((prev) => ({
+            ...prev,
+            [questionId]: answerValue,
+        }));
+    };
+
+    // ----------------------------------------------------
+    // 儲存 / 取消
+    // ----------------------------------------------------
+    const onSave = async () => {
+        try {
+            const updatedPayload = {
+                groupName: questionnaire.group.name,
+                title: questionnaire.title,
+                description: questionnaire.description || "",
+                questions: questionnaire.questions
+                    .sort((a, b) => a.order - b.order)
+                    .map((q) => ({
+                        text: q.text,
+                        category: q.category,
+                        order: q.order,
+                        type: q.type,
+                        options: q.options?.map((opt) => ({
+                            text: opt.text,
+                            value: opt.value,
+                            order: opt.order,
+                        })) || [],
+                    })),
+            };
+
+            // ✅ 1. 先新增新問卷
+            const status = await createQuestionnaire(updatedPayload);
+
+            if (status !== 201 && status !== 200) {
+                alert("❌ 新問卷建立失敗，舊問卷未刪除");
+                return;
+            }
+
+            // ✅ 2. 新問卷建立成功 → 刪除舊問卷
+            await deleteQuestionnaire(questionnaire.id);
+
+            alert("✅ 問卷已成功更新");
+            setIsDirty(false);
+            window.location.reload();
+        } catch (err) {
+            console.error("❌ 儲存問卷失敗:", err);
+            alert("❌ 儲存問卷失敗，請稍後再試");
         }
-      </div>
-    </div>
-  )
+    };
+
+
+    const onCancel = () => {
+        window.location.reload();
+    };
+
+    // ----------------------------------------------------
+    // 主體 Layout
+    // ----------------------------------------------------
+    return (
+        <div
+            className="w-full h-full bg-white px-8 py-10 overflow-y-auto"
+            onClick={() => {
+                setEditingQuestionId(null);
+                setEditingTitle(false);
+                setEditingDescription(false);
+            }}
+        >
+            {/* ----------------------------------------------------
+          問卷標題
+      ---------------------------------------------------- */}
+            <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4 flex items-center justify-center gap-2">
+                {editingTitle ? (
+                    <input
+                        value={questionnaire.title}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                            setQuestionnaire((prev) => ({
+                                ...prev,
+                                title: e.target.value,
+                            }));
+                            setIsDirty(true);
+                        }}
+                        className="border px-2 py-1 rounded"
+                    />
+                ) : (
+                    questionnaire.title
+                )}
+
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingTitle(!editingTitle);
+                    }}
+                >
+                    <svg width="20" height="20" fill="gray">
+                        <path d="M3 17l3-1 11-11-2-2L4 14l-1 3z" />
+                    </svg>
+                </button>
+            </h1>
+
+            {/* ----------------------------------------------------
+          問卷描述
+      ---------------------------------------------------- */}
+            {editingDescription ? (
+                <textarea
+                    value={questionnaire.description || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                        setQuestionnaire((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                        }));
+                        setIsDirty(true);
+                    }}
+                    className="w-full max-w-2xl mx-auto border p-2 rounded mb-8"
+                />
+            ) : (
+                questionnaire.description && (
+                    <p className="text-center text-gray-500 mb-8 flex items-center justify-center gap-2">
+                        {questionnaire.description}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingDescription(true);
+                            }}
+                        >
+                            <svg width="18" height="18" fill="gray">
+                                <path d="M3 17l3-1 11-11-2-2L4 14l-1 3z" />
+                            </svg>
+                        </button>
+                    </p>
+                )
+            )}
+
+            {/* ----------------------------------------------------
+          分頁內容（Category）
+      ---------------------------------------------------- */}
+            {pages.map((page, pageIndex) => (
+                <div key={pageIndex}>
+                    {/* Category Header */}
+                    <div className="mt-10 mb-6">
+                        <div className="flex items-center justify-between">
+                            {/* 左側：分類標題 */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-6 bg-indigo-500 rounded"></div>
+                                <h2 className="text-2xl font-bold text-gray-800">{page.title}</h2>
+                            </div>
+
+                            {/* 右側：新增問題按鈕 */}
+                            <button
+                                onClick={() => {
+                                    const newId = Date.now();
+
+                                    const titleToCategory = Object.fromEntries(
+                                        Object.entries(CATEGORY_MAP).map(([key, value]) => [
+                                            value[i18n.language].title,
+                                            key,
+                                        ])
+                                    );
+                                    const category = titleToCategory[page.title];
+
+                                    setQuestionnaire((prev) => {
+                                        // 先把同一個 category 的題目抓出來，並依原本 order 排好
+                                        const sameCategory = prev.questions
+                                            .filter((q) => q.category === category)
+                                            .sort((a, b) => a.order - b.order);
+
+                                        // 新題目插在最上面（order 先給 1）
+                                        const newQuestion: Question = {
+                                            id: newId,
+                                            text: "新題目",
+                                            category,
+                                            order: 1,
+                                            type: "SINGLE_CHOICE",
+                                            required: false,
+                                            options: [
+                                                { id: newId + 1, text: "選項 1", value: 1, order: 1 },
+                                                { id: newId + 2, text: "選項 2", value: 2, order: 2 },
+                                            ],
+                                        };
+
+                                        // 其他同 category 題目往後排，order 重新編號
+                                        const reorderedSameCategory = [newQuestion, ...sameCategory].map(
+                                            (q, index) => ({
+                                                ...q,
+                                                order: index + 1,
+                                            })
+                                        );
+
+                                        // 把不同 category 的題目保留原狀
+                                        const otherQuestions = prev.questions.filter(
+                                            (q) => q.category !== category
+                                        );
+
+                                        return {
+                                            ...prev,
+                                            questions: [...otherQuestions, ...reorderedSameCategory],
+                                        };
+                                    });
+
+                                    setEditingQuestionId(newId);
+                                    setIsDirty(true);
+                                }}
+                                className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                            >
+                                ➕ 新增問題
+                            </button>
+
+                        </div>
+
+                        {/* 分類描述 */}
+                        <p className="ml-5 mt-1 text-gray-500">{page.content}</p>
+                    </div>
+
+
+                    {/* 問題列表 */}
+                    <div className="space-y-4">
+                        {page.questions.map((question) => (
+                            <div
+                                key={question.id}
+                                className={`
+                  p-5 rounded-xl border transition-all cursor-pointer
+                  ${editingQuestionId === question.id
+                                        ? "border-indigo-500 shadow-md bg-indigo-50"
+                                        : "border-gray-200 hover:border-indigo-300 hover:shadow-sm"
+                                    }
+                `}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingQuestionId(question.id);
+                                }}
+                            >
+                                {/* ✅ 如果正在編輯 → 顯示編輯介面 */}
+                                {editingQuestionId === question.id ? (
+                                    <QuestionEditor
+                                        question={question}
+                                        onChange={() => setIsDirty(true)}
+                                    />
+                                ) : (
+                                    <>
+                                        {/* ✅ 題目標題 + 必填 tooltip */}
+                                        <div className="flex justify-between items-center mb-3">
+                                            <div className="flex items-center gap-1 font-semibold text-gray-800 relative group">
+                                                <span>{question.text}</span>
+
+                                                {question.required && (
+                                                    <span className="text-red-500 font-bold relative">
+                                                        *
+                                                        {/* ✅ tooltip */}
+                                                        <span
+                                                            className="
+                  absolute left-3 top-1/2 -translate-y-1/2
+                  opacity-0 group-hover:opacity-100
+                  bg-red-500 text-white text-xs px-2 py-1 rounded
+                  whitespace-nowrap shadow transition-opacity
+                "
+                                                        >
+                                                            必填
+                                                        </span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* ✅ 題型渲染 */}
+                                        <QuestionRenderer
+                                            editable={editable}
+                                            question={question}
+                                            currentAnswer={a[question.id] || {}}
+                                            onAnswer={(ans) => handleAnswer(question.id, ans)}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+            {isDirty && (
+                <div
+                    className="
+            fixed bottom-6 right-6
+            flex gap-3
+            z-50
+        "
+                >
+                    <button
+                        onClick={onCancel}
+                        className="
+                px-4 py-2 rounded-lg border border-gray-300
+                bg-white text-gray-700 shadow
+                hover:bg-gray-50
+            "
+                    >
+                        取消更改
+                    </button>
+
+                    <button
+                        onClick={onSave}
+                        className="
+                px-5 py-2 rounded-lg
+                bg-indigo-600 text-white font-semibold shadow
+                hover:bg-indigo-700
+            "
+                    >
+                        儲存更改
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 }
+
+
+
+
+
+
