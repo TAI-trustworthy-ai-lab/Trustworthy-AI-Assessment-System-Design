@@ -343,7 +343,9 @@
       "retryLoad": "Retry Load",
       "prev": "Previous",
       "next": "Next",
-      "finishAndSubmit": "Finish and Submit"
+      "finishAndSubmit": "Finish and Submit",
+      "showDetails": "Show Details",
+      "hideDetails": "Hide Details"
     },
     "progress": {
       "page": "Page {{current}} of {{total}}"

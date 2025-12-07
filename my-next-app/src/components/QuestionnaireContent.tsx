@@ -113,6 +113,7 @@ interface Option {
 interface Question {
     id: number;
     text: string;
+    description: string;
     category: string;
     order: number;
     type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT';
@@ -484,6 +485,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
         try {
             const data = await fetchQuestionnaireService(questionnaireId); 
+            console.log(data);
             
             setQuestionnaire(data as QuestionnaireData);
             setLoadingStatus('success');
@@ -580,6 +582,38 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             }
         });
     }, [answers, currentPageData]);
+
+    // 問題描述可切換顯示組件
+    const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
+        const { t } = useTranslation();
+        const [isExpanded, setIsExpanded] = useState(false);
+
+        if (!description || description.trim() === '') {
+            return null;
+        }
+
+        return (
+            <div className="text-sm text-gray-500 mt-2 mb-3">
+                <button
+                    onClick={() => setIsExpanded(prev => !prev)}
+                    className="flex items-center text-indigo-600 hover:text-indigo-800 transition duration-150 font-medium"
+                >
+                    {/* 顯示/隱藏 圖標 */}
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+                    </svg>
+                    {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+                </button>
+                
+                {/* 展開時才顯示描述內容 */}
+                {isExpanded && (
+                    <div className="mt-2 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-md">
+                        <TranslatedText text={description} />
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     // =============
     //  不同處理
@@ -787,6 +821,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                                             {<TranslatedText text={q.text} />}
                                             {q.required && <span className="text-red-500 ml-1">*</span>}
                                         </p>
+                                        <QuestionDescriptionToggle description={q.description} />
 
                                         {/* 根據 type 渲染不同 UI */}
                                         <div className="flex justify-center sm:justify-start">

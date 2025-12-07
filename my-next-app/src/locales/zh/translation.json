@@ -345,7 +345,9 @@
       "retryLoad": "重試加載",
       "prev": "上一步",
       "next": "下一步",
-      "finishAndSubmit": "完成並提交"
+      "finishAndSubmit": "完成並提交",
+      "showDetails": "顯示詳情",
+      "hideDetails": "隱藏詳情"
     },
     "progress": {
       "page": "第 {{current}} / {{total}} 頁"
