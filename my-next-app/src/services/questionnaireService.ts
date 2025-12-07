@@ -57,7 +57,6 @@ export const fetchAllQuestionnaires = async () => {
 export const createQuestionnaire = async (payload: {
     groupName: string;
     title: string;
-    description: string;
     questions: {
         text: string;
         category: string;
