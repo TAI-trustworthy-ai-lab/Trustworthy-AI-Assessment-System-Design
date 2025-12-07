@@ -274,7 +274,7 @@ export default function AdminDashboard() {
             )}
 
             <p className="mt-8 text-sm text-gray-500">
-                * {t('adminPage.backendReminder')}
+                 {t('adminPage.backendReminder')}
             </p>
 
             
