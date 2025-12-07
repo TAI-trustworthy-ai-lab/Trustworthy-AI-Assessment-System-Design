@@ -67,10 +67,12 @@ export const createQuestionnaire = async (payload: {
     }[];
 }) => {
     try {
+        const userToken = localStorage.getItem('authToken');
         const response = await fetch(QUESTIONNAIRE_API_BASE, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
             },
             body: JSON.stringify(payload),
         });
@@ -101,11 +103,13 @@ export const duplicateQuestionnaire = async (
     }
 ) => {
     try {
+        const userToken = localStorage.getItem('authToken');
         const url = `${QUESTIONNAIRE_API_BASE}/${id}/duplicate`;
         const response = await fetch(url, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",
+                ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
             },
             body: JSON.stringify(payload),
         });
@@ -131,9 +135,13 @@ export const duplicateQuestionnaire = async (
 };
 
 export async function deleteQuestionnaire(id: number) {
+    const userToken = localStorage.getItem('authToken');
     const url = `${QUESTIONNAIRE_API_BASE}/${id}`;
     const res = await fetch(url, {
         method: "DELETE",
+        headers: {
+            ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
+        },
     });
 
     if (!res.ok) {
