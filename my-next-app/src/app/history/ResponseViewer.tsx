@@ -5,7 +5,8 @@ import {
   ResponseMeta, 
   ResponseData,
   ViewerState,
-  updateResponse
+  updateResponse,
+  generateReport
 } from "@/services/responseService";
 import { LoadingComponent, } from "@/app/history/page"
 import { ChevronUp } from 'lucide-react'
@@ -303,7 +304,7 @@ export interface QuestionnaireData {
 
 type AnswerValue = {
   score?: number; 
-  optionIds?: number[]; 
+  optionIds?: Set<number>; 
   textValue?: string; 
 };
 
@@ -348,8 +349,10 @@ const gridColNum = [
 // SCALE qustion
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   // 假設選項已經按 order 排序 + options 存在
-  const options = question.options || [];
-  const selectedOptionId = currentAnswer.optionIds?.[0];
+  if(!currentAnswer.optionIds) return
+
+  const options = question.options || []
+  const selectedOptionId = [...currentAnswer.optionIds][0]
   //console.log(`${options[0].id}, ${currentAnswer.optionIds[1]}`)
 
   return (
@@ -361,7 +364,11 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cu
           <button
             key={opt.id}
             onClick={() => 
-              onAnswer({ optionIds: [opt.id], score: opt.value }) 
+              onAnswer({
+                score: opt.value,
+                optionIds: new Set<number>().add(opt.id),
+                textValue: ''
+              }) 
             }
             className={`
               w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold  
@@ -379,16 +386,21 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cu
 
 // SINGLE_CHOICE qustion
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
- 
+  if(!currentAnswer.optionIds) return
+
   const options = question.options || [];
-  const selectedOptionId = currentAnswer.optionIds?.[0];
+  const selectedOptionId = [...currentAnswer.optionIds][0]
 
   return (
     <div className={`gap-3 w-full sm:w-fit grid ${options.length >= 4 ? " grid-cols-2" :`${gridColNum[options.length]}`} `}>
       {options.map(opt => (
         <button
           key={opt.id}
-          onClick={() => onAnswer({ optionIds: [opt.id], score: opt.value })}
+          onClick={() => onAnswer({
+            score: opt.value,
+            optionIds: new Set<number>().add(opt.id),
+            textValue: ''
+          })}
           className={`
             py-2 px-2 max-w-[300px] rounded-lg
             font-medium
@@ -407,8 +419,10 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
 
 // MULTIPLE_CHOICE qustion
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
+  if(!currentAnswer.optionIds) return
+  
   const options = question.options || [];
-  const selectedOptionIds = currentAnswer.optionIds || [];
+  const selectedOptionIds = [...currentAnswer.optionIds]
 
   const handleOptionClick = (optionId: number) => {
     let newSelectedOptionIds;
@@ -426,7 +440,11 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
         const optionValue = Number(opt.value);
         return sum + optionValue;
       }, 0); // Initiate number = 0
-    onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
+    onAnswer({
+      score: newScore,
+      optionIds: new Set<number>(newSelectedOptionIds),
+      textValue: ''
+    });
   };
 
   return (
@@ -446,7 +464,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
           }`}
           >
-              <TranslatedText text={opt.text} capitalize={ true } />
+            <TranslatedText text={opt.text} capitalize={ true } />
         </button>
       ))}
     </div>
@@ -491,6 +509,42 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
   }
 };
 
+function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+
+  if (a instanceof Set && b instanceof Set) {
+    if (a.size !== b.size) return false;
+    for (const val of a) {
+      if (!b.has(val)) return false;
+    }
+    return true;
+  }
+
+  if (a instanceof Map && b instanceof Map) {
+    if (a.size !== b.size) return false;
+    for (const [key, val] of a) {
+      if (!b.has(key)) return false;
+      if (!deepEqual(val, b.get(key))) return false;
+    }
+    return true;
+  }
+
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) {
+    return false;
+  }
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (!keysB.includes(key)) return false;
+    if (!deepEqual(a[key], b[key])) return false;
+  }
+
+  return true;
+}
 
 // ----------------------------------------------------
 // 問卷內容主組件
@@ -510,6 +564,10 @@ export default function ResponseViewer({curState, data, onEdit }: {
   const viewerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [curPage, setCurPage] = useState(0);
+
+  const [isUpdate, SetIsUpdate] = useState(false)
+  const [isComplete, SetIsComplete] = useState(true)
+  const [isReport, SetIsReport] = useState(false)
 
   const scrollToWithOffset = (element: HTMLElement, offset: number) => {
     const viewer = viewerRef.current
@@ -583,45 +641,95 @@ export default function ResponseViewer({curState, data, onEdit }: {
     )
   })()
 
+  const typeQ = q.questions.reduce<Record<number, string>>(
+    (acc, value) => {
+      acc[value.id] = value.type
+      return acc
+    }, {}
+  )
+  const [editQ, setEditQ] = useState<Record<number, boolean>>(
+    q.questions.reduce<Record<number, boolean>>(
+      (acc, value) => {
+        acc[value.id] = false
+        return acc
+      }, {}
+    )
+  )
+  const [doneQ, setDoneQ] = useState<Record<number, boolean>>(
+    q.questions.reduce<Record<number, boolean>>(
+      (acc, value) => {
+        acc[value.id] = true
+        return acc
+      }, {}
+    )
+  )
+
   // original answer
   // reminder: key is questionId
-  const answers: Record<number, AnswerValue> = r.answers.reduce((acc, data)=>{
-    let opts = [data.optionId]
+  const answers: Record<number, AnswerValue> = r.answers.reduce<Record<number, AnswerValue>>((acc, data)=>{
+    let opt = -1
     if(data.question.type === 'SCALE'){
-      
       const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
         return o.value === data.value
       })?.id
-      if(os) opts = [os]
+      if(os) opt = os
+    } else {
+      opt = data.optionId
     }
-    if(acc[data.questionId] && acc[data.questionId].optionIds){
-      const tmp = acc[data.questionId].optionIds as number[]
-      opts = [...opts, ...tmp]
+    if(acc[data.questionId]){
+      // multi choice
+      acc[data.questionId].optionIds?.add(opt)
+    } else {
+      const a : AnswerValue = {
+        score: data.value,
+        optionIds: new Set<number>().add(opt),
+        textValue: data.textValue || ''
+      }
+      acc[data.questionId] = a
     }
-    const a : AnswerValue = {
-      score: data.value,
-      optionIds: opts,
-      textValue: data.textValue
-    }
-    acc[data.questionId] = a
-    return acc},  
-    {} as Record<number, AnswerValue>
+    return acc}, {}
   )
 
   // edited answer
-  const [a, setA] = useState<Record<number, AnswerValue>>(answers)
+  const [a, setA] = useState<Record<number, AnswerValue>>({...answers})
   const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
     setA(prev => ({
       ...prev,
       [questionId]: answerValue,
     }));
+
+    // answer changed
+    //console.log("new:", answerValue, "\nold:", answers[questionId])
+    setEditQ(prev=>{
+      const p = {...prev}
+      p[questionId] = !deepEqual(answerValue, answers[questionId])
+      return p
+    })
+    
+    // question done?
+    // also need to handle text type question
+    if(typeQ[questionId] == 'MULTIPLE_CHOICE'){
+      if(!answerValue.optionIds || (answerValue.optionIds && answerValue.optionIds.size <= 0)){
+        SetIsComplete(false)
+        setDoneQ(prev=>{
+          const p = {...prev}
+          p[questionId] = false
+          return p
+        })
+      } else {
+        SetIsComplete(true)
+        setDoneQ(prev=>{
+          const p = {...prev}
+          p[questionId] = true
+          return p
+        })
+      }
+    }
   }
 
-  const [isUpdate, SetIsUpdate] = useState(false)
-  const [isComplete, SetIsComplete] = useState(true)
-  const [isReport, SetIsReport] = useState(false)
-
   const handleUpdate = async () => {
+    if(!isComplete) return
+
     SetIsUpdate(true)
     const userId = localStorage.getItem('userId') || ""
     const authToken = localStorage.getItem('authToken') || ""
@@ -633,7 +741,8 @@ export default function ResponseViewer({curState, data, onEdit }: {
         optionId: number
       }[] = []
       for (const key in a){
-        a[key].optionIds?.map(oId=>{
+        if(!a[key].optionIds) continue
+        [...a[key].optionIds].map(oId=>{
           data.push({
             questionId: Number.parseInt(key),
             value: a[key].score || 0,
@@ -643,8 +752,9 @@ export default function ResponseViewer({curState, data, onEdit }: {
         })
       }
       await updateResponse(userId, authToken, r.id, data)
+      SetIsUpdate(false)
       onEdit()
-      // await generateReport(responseId)
+      await generateReport(r.id)
       // success if it doesnt catch any error
 
     } catch (error) {
@@ -789,9 +899,17 @@ export default function ResponseViewer({curState, data, onEdit }: {
                 {page.questions.map((question) => (
                   <div
                     key={question.id}
-                    className="
+                    className={`
                       p-4
-                      rounded-lg bg-white shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]"
+                      rounded-lg shadow-[inset_0_0_5px_rgba(0,0,0,0.15)]
+                      
+                      ${editQ[question.id] == true?
+                        (doneQ[question.id] == true?
+                          "bg-yellow-100":
+                          "bg-red-100"
+                        ):
+                        "bg-white"}
+                    `}
                   >
                     <div className="font-semibold text-gray-700 mb-3">
 
