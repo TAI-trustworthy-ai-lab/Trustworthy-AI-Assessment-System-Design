@@ -31,113 +31,6 @@ interface UserResponse {
   updatedAt: string;
 }
 
-// ----------------------------------------------------
-// 2. 登入表單元件
-// ----------------------------------------------------
-
-const LoginComponent: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => {
-    const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(LOGIN_API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                let defaultMessage = `登入失敗，狀態碼: ${response.status}`;
-                
-                // 處理常見錯誤
-                if (response.status === 401) { defaultMessage = "憑證無效，請檢查電子郵件或密碼。"; } 
-                else if (response.status === 404) { defaultMessage = "查無此帳戶或請求路徑錯誤。"; }
-
-                throw new Error(defaultMessage);
-            }
-
-            // 登入成功！
-            const data = await response.json();
-            const token = data?.data?.token;
-            const user = data?.data?.user;
-
-            if (token && user?.id && user?.role) {
-                // 💥 儲存所有必需資訊到 localStorage
-                localStorage.setItem(AUTH_TOKEN_KEY, token);
-                localStorage.setItem(USER_ID_KEY, user.id.toString());
-                localStorage.setItem(USER_ROLE_KEY, user.role);
-
-                setError(`✅ 登入成功！角色: ${user.role}`);
-                setPassword('');
-                
-                // 通知父元件更新狀態
-                onLoginSuccess(); 
-            } else {
-                throw new Error("登入成功但未收到完整的授權憑證或用戶資訊");
-            }
-        } catch (err) {
-            console.error("登入失敗:", err);
-            setError(err instanceof Error ? err.message : "發生未知錯誤");
-            localStorage.clear(); // 確保錯誤時清除殘留的登入狀態
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="w-full max-w-md mx-auto p-8 bg-white rounded-xl shadow-2xl border-t-4 border-indigo-600">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6 text-center">🔐 管理員登入</h2>
-            <form onSubmit={handleLogin}>
-                <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700">電子郵件 (Email)</label>
-                    <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="請輸入 Email"
-                    />
-                </div>
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700">密碼 (Password)</label>
-                    <input
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="請輸入密碼"
-                    />
-                </div>
-
-                {error && (
-                    <p className={`mb-4 p-3 rounded text-sm font-medium ${error.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {error}
-                    </p>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full py-3 px-4 rounded-lg text-white font-bold transition duration-200 shadow-md ${
-                        loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
-                    }`}
-                >
-                    {loading ? '驗證中...' : '登入'}
-                </button>
-            </form>
-        </div>
-    );
-};
 
 // ----------------------------------------------------
 // 3. 完整儀表板元件
@@ -303,19 +196,7 @@ export default function AdminDashboard() {
             </h1>
             <div className="w-full max-w-4xl flex justify-between items-center mb-10">
                 <h1 className="text-4xl font-extrabold text-indigo-700">🌐 系統儀表板</h1>
-                {isLoggedIn && (
-                    <button
-                        onClick={handleLogout}
-                        className="px-6 py-2 bg-rose-600 text-white font-bold rounded-lg shadow-md hover:bg-rose-700 transition"
-                    >
-                        登出 ({currentUserRole})
-                    </button>
-                )}
             </div>
-
-            {!isLoggedIn && (
-                <LoginComponent onLoginSuccess={checkLoginStatus} />
-            )}
 
             {isLoggedIn && (
                 <div className="w-full max-w-4xl p-6 bg-white rounded-xl shadow-xl">
