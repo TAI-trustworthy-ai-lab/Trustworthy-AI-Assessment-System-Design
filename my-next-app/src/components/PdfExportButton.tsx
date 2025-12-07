@@ -5,63 +5,110 @@ import { jsPDF } from 'jspdf';
 interface PdfExportProps {
     contentId: string; 
     projectName: string | null;
+    modelStage: string | null; 
     preparingText: string;
     generateText: string;
     icon: React.ReactNode;
 }
 
 
-export default function PdfExportButton({ contentId, projectName, preparingText, generateText, icon }: PdfExportProps) {
+export default function PdfExportButton({ contentId, projectName, modelStage, preparingText, generateText, icon }: PdfExportProps) {
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     const addElementToPdf = async (
-        pdf: jsPDF,
-        elementId: string,
-        pdfPageWidth: number,
-        pdfPageHeight: number
+    pdf: jsPDF,
+    elementId: string,
+    pdfPageWidth: number,
+    pdfPageHeight: number
     ) => {
-        const input = document.getElementById(elementId);
-        if (!input) return;
+    const input = document.getElementById(elementId);
+    if (!input) return;
 
-        const canvas = await html2canvas(input, {
-            scale: 3,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-        });
+    // 1. 先用 html2canvas 把整個內容變成一張長圖
+    const originalCanvas = await html2canvas(input, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+    });
 
-        const imgData = canvas.toDataURL("image/jpeg", 0.98);
-        const imgProps = pdf.getImageProperties(imgData);
+    const originalWidth = originalCanvas.width;
+    const originalHeight = originalCanvas.height;
 
-        const GLOBAL_SCALE = 0.85;
+    // 2. PDF 邊界設定（單位：mm）
+    const FIRST_PAGE_TOP = 0;   // 第一頁留 3mm
+    
+    const MARGIN_LEFT = 10;
+    const MARGIN_RIGHT = 10;
+    const MARGIN_TOP = 13;
+    const MARGIN_BOTTOM = 13;
 
-        const imgWidth = pdfPageWidth * GLOBAL_SCALE;
-        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+    const pdfUsableWidth = pdfPageWidth - MARGIN_LEFT - MARGIN_RIGHT;
+    const pdfUsableHeight = pdfPageHeight - MARGIN_TOP - MARGIN_BOTTOM;
 
-        const xCenter = (pdfPageWidth - imgWidth) / 2;
+    // 3. 算出從 canvas 像素到 PDF mm 的縮放比例
+    //    （把整張圖寬度縮到 pdfUsableWidth，依比例算高度）
+    const scale = pdfUsableWidth / originalWidth;
 
-        // ⭐ 新增上下 margin
-        const TOP_MARGIN = 5;
-        const BOTTOM_MARGIN = 5;
+    // 一頁在「原始 canvas 像素座標」中可容納的高度
+    const pageHeightInCanvasPx = pdfUsableHeight / scale;
 
+    let renderedHeight = 0;
+    let pageIndex = 0;
 
-        const usablePageHeight = pdfPageHeight - TOP_MARGIN - BOTTOM_MARGIN;
+    while (renderedHeight < originalHeight) {
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = originalWidth;
 
-        let heightLeft = imgHeight;
-        let position = TOP_MARGIN;
+        const remainingHeight = originalHeight - renderedHeight;
 
-        // 第一頁
-        pdf.addImage(imgData, "JPEG", xCenter, position, imgWidth, imgHeight);
-        heightLeft -= (pdfPageHeight - TOP_MARGIN - BOTTOM_MARGIN);
+        // ⭐ 依頁數決定這一頁的上邊距
+        const topMargin = pageIndex === 0 ? FIRST_PAGE_TOP : MARGIN_TOP;
 
-        // 分頁
-        while (heightLeft > 0) {
+        // ⭐ 這一頁在 PDF 裡的「可用高度」
+        const pageUsableHeightInPdf = pdfPageHeight - topMargin - MARGIN_BOTTOM;
+
+        // ⭐ 換算成原始 canvas 的高度
+        const pageHeightInCanvasPx = pageUsableHeightInPdf / scale;
+
+        const thisPageCanvasHeight = Math.min(pageHeightInCanvasPx, remainingHeight);
+        pageCanvas.height = thisPageCanvasHeight;
+
+        const pageCtx = pageCanvas.getContext("2d");
+        if (!pageCtx) break;
+
+        pageCtx.drawImage(
+            originalCanvas,
+            0,
+            renderedHeight,
+            originalWidth,
+            thisPageCanvasHeight,
+            0,
+            0,
+            originalWidth,
+            thisPageCanvasHeight
+        );
+
+        const imgData = pageCanvas.toDataURL("image/jpeg", 0.98);
+
+        if (pageIndex > 0) {
             pdf.addPage();
-            position = TOP_MARGIN - (imgHeight - heightLeft);
-            pdf.addImage(imgData, "JPEG", xCenter, position, imgWidth, imgHeight);
-            heightLeft -= (pdfPageHeight - TOP_MARGIN - BOTTOM_MARGIN);
         }
-    };
 
+        const imgHeightInPdf = thisPageCanvasHeight * scale;
+
+        pdf.addImage(
+            imgData,
+            "JPEG",
+            MARGIN_LEFT,
+            topMargin,            // ← 這一頁的 top
+            pdfUsableWidth,
+            imgHeightInPdf
+        );
+
+        renderedHeight += thisPageCanvasHeight;
+        pageIndex += 1;
+    }
+    };
 
     const handleDownloadPdf = async () => {
         setIsGeneratingPdf(true);
@@ -79,9 +126,12 @@ export default function PdfExportButton({ contentId, projectName, preparingText,
                 pdfPageWidth,
                 pdfPageHeight
             );
-
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split("T")[0]; // yyyy-mm-dd
+            const fileName = `${projectName}_${modelStage}_${dateStr}.pdf`;
             // 5. 下載文件
-            const fileName = `${projectName || 'Report'}_Report_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`;
+            //const fileName = `${projectName || 'Report'}_Report_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.pdf`;
             pdf.save(fileName);
 
         } catch (error) {

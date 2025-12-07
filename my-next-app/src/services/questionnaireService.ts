@@ -53,11 +53,9 @@ export const fetchAllQuestionnaires = async () => {
     }
 };
 
-// 6. POST 建立新問卷
 export const createQuestionnaire = async (payload: {
     groupName: string;
     title: string;
-    description: string;
     questions: {
         text: string;
         category: string;
@@ -94,7 +92,6 @@ export const createQuestionnaire = async (payload: {
     }
 };
 
-// 7. PUT 複製指定問卷版本
 export const duplicateQuestionnaire = async (
     id: number,
     payload: {
@@ -150,3 +147,45 @@ export async function deleteQuestionnaire(id: number) {
 
     return res.json();
 }
+
+
+// 7. PUT 複製指定問卷版本
+export const updateQuestionnaireVersion = async (
+    id: number,
+    payload: {
+        title: string;
+        description: string;
+        isActive: boolean;
+    }
+) => {
+    try {
+        const userToken = localStorage.getItem('authToken');
+        const url = `${QUESTIONNAIRE_API_BASE}/${id}`;
+        const response = await fetch(url, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                ...(userToken && { 'Authorization': `Bearer ${userToken}` }),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(JSON.stringify({
+                status: response.status,
+                message: result.error || `HTTP error! Status: ${response.status}`,
+            }));
+        }
+
+        // 回傳完整物件與 statusCode
+        return {
+            statusCode: response.status,
+            data: result.data,
+        };
+    } catch (error) {
+        console.error("複製問卷版本失敗 (Service):", error);
+        throw error;
+    }
+};

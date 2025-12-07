@@ -470,5 +470,83 @@
     "title": "Email Verification Successful!",
     "message": "Your account has been activated. You can now log in.",
     "button": "Go to Login"
+  },
+  "adminPage": {
+    "notAdminCannotFetchUsers": "You are not an ADMIN and cannot retrieve the user list.",
+    "missingToken": "Missing authentication token. Please log in again.",
+    "tokenInvalidOrForbidden": "Permission error: Invalid token or API access forbidden (401/403).",
+    "unknownServerError": "Unknown server error",
+    "networkOrDataError": "Network error or data processing failed",
+
+    "enterGroupName": "Please enter the group name:",
+    "enterQuestionnaireTitle": "Please enter the questionnaire title:",
+    "enterQuestionnaireDescription": "Please enter the questionnaire description:",
+    "createSuccess": "✅ Questionnaire created successfully!",
+    "createSuccessButStatusUnexpected": "⚠️ Questionnaire created, but returned unexpected status code:",
+    "createFailed": "❌ Failed to create questionnaire:",
+
+    "dashboardTitle": "🌐 System Dashboard",
+    "allUsersList": "👑 All Users",
+    "permissionDenied": "⚠️ Permission Denied",
+    "notAllowedToViewUsers": "Sorry! Your current role {{role}} is not allowed to view this list. Please log in with an ADMIN account.",
+    "loadingUsers": "Loading user data...",
+    "loadUsersFailed": "🚨 Failed to load user data:",
+    "noUsersFound": "No user records found in the database.",
+
+    "role": "Role",
+    "createdAt": "Created At",
+    "groupName": "Group Name",
+    "versionId": "Version ID",
+    "versionNumber": "Version Number",
+    "title": "Title",
+    "activeStatus": "Active Status",
+    "actions": "Actions",
+
+    "questionnaireManagement": "📋 Questionnaire Management",
+    "addQuestionnaire": "➕ Add Questionnaire",
+
+    "active": "✅ Active",
+    "inactive": "❌ Inactive",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "duplicating": "Duplicating...",
+    "delete": "Delete",
+    "deleteSuccess": "✅ Deleted successfully",
+    "duplicateFailed": "Duplicate failed",
+    "deleteFailed": "Delete failed",
+    "confirmDeleteQuestionnaire": "Are you sure you want to delete the questionnaire \"{{title}}\"? This action cannot be undone.",
+
+    "activated": "✅ Questionnaire activated",
+    "deactivated": "✅ Questionnaire deactivated",
+    "updateFailed": "Update failed",
+
+    "close": "Close",
+    "backendReminder": "* Please ensure the backend service is running and the Login API response format is correct."
+  },
+  "questionnaireEditor": {
+    "unknownQuestionType": "Unknown question type",
+
+    "descriptionLabel": "Question description (optional)",
+    "descriptionPlaceholder": "Enter a description for this question (optional)",
+
+    "deleteOption": "Delete",
+    "addOption": "➕ Add option",
+
+    "type": {
+      "singleChoice": "Single choice",
+      "multipleChoice": "Multiple choice",
+      "scale": "Scale",
+      "text": "Text input"
+    },
+
+    "deleteQuestion": "Delete question",
+
+    "newQuestion": "New question",
+    "newOption": "New option",
+    "defaultOption1": "Option 1",
+    "defaultOption2": "Option 2",
+    "addQuestion": "➕ Add question",
+    "save": "Save changes",
+    "cancel": "Cancel changes"
   }
 }
