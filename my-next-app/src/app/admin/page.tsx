@@ -496,34 +496,37 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
 
             {/* Modal for ResponseViewer */}
             {selectedQuestionnaire && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh]">
-                        <button
-                            onClick={() => setSelectedQuestionnaire(null)}
-                            className="mb-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                        >
-                            關閉
-                        </button>
-                        <ResponseViewer
-                            curState={ViewerState.detail}
-                            data={{
-                                questionnaire: selectedQuestionnaire,
-                                response: {
-                                    answers: [],
-                                    id: 0,
-                                    userId: 0,
-                                    projectId: 0,
-                                    versionId: selectedQuestionnaire.id,
-                                    submittedAt: "",
-                                    user: { id: 0, name: "", email: "" },
-                                    project: { id: 0, name: "" },
-                                    version: { id: selectedQuestionnaire.id, title: selectedQuestionnaire.title },
-                                },
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+        {/* ✅ 固定在左上角的關閉鍵 */}
+        <button
+            onClick={() => setSelectedQuestionnaire(null)}
+            className="fixed top-4 left-4 px-4 py-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-[100]"
+        >
+            關閉
+        </button>
+
+        <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh] relative">
+            <ResponseViewer
+                curState={ViewerState.detail}
+                data={{
+                    questionnaire: selectedQuestionnaire,
+                    response: {
+                        answers: [],
+                        id: 0,
+                        userId: 0,
+                        projectId: 0,
+                        versionId: selectedQuestionnaire.id,
+                        submittedAt: "",
+                        user: { id: 0, name: "", email: "" },
+                        project: { id: 0, name: "" },
+                        version: { id: selectedQuestionnaire.id, title: selectedQuestionnaire.title },
+                    },
+                }}
+            />
+        </div>
+    </div>
+)}
         </div>
     );
 };
