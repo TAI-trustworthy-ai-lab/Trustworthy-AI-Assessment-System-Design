@@ -494,6 +494,7 @@ export default function ReportPage() {
                 <PdfExportButton
                     contentId="report-content"
                     projectName={projectName}
+                    modelStage={versionTitle}
                     preparingText={t('reportPage.button.preparingPdf')}
                     generateText={t('reportPage.button.generatePdf')}
                     icon={
