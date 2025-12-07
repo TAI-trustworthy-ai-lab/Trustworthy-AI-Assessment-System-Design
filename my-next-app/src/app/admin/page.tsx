@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
-import { createQuestionnaire, deleteQuestionnaire, fetchAllQuestionnaires, duplicateQuestionnaire } from '@/services/questionnaireService';
+import { createQuestionnaire, deleteQuestionnaire, fetchAllQuestionnaires, duplicateQuestionnaire, updateQuestionnaireVersion } from '@/services/questionnaireService';
 import ResponseViewer from "@/app/admin/QuestionnaireEditor";
 import { ViewerState } from "@/services/responseService";
 
@@ -439,6 +439,25 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
         }
     };
 
+    const handleToggleActive = async (q: any) => {
+        const newState = !q.isActive;
+
+        try {
+            // PATCH 更新後端
+            await updateQuestionnaireVersion(q.id, {
+                title: q.title,
+                description: q.description,
+                isActive: newState,
+            });
+
+            alert(`✅ 已${newState ? "啟用" : "停用"}問卷`);
+            onRefresh(); // ✅ 刷新表格
+        } catch (err: any) {
+            console.error("更新啟用狀態失敗:", err);
+            alert(err.message || "更新失敗");
+        }
+    };
+
 
     return (
         <div className="overflow-x-auto mt-4">
@@ -462,8 +481,14 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{q.id}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">v{q.versionNumber}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{q.title}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                {q.isActive ? "✅ 啟用" : "❌ 停用"}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <button
+                                    onClick={() => handleToggleActive(q)}
+                                    className={`px-3 py-1 rounded text-white font-semibold ${q.isActive ? "bg-green-600 hover:bg-green-700" : "bg-gray-500 hover:bg-gray-600"
+                                        }`}
+                                >
+                                    {q.isActive ? "✅ 啟用" : "❌ 停用"}
+                                </button>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
                                 <button
@@ -496,37 +521,37 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
 
             {/* Modal for ResponseViewer */}
             {selectedQuestionnaire && (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-        {/* ✅ 固定在左上角的關閉鍵 */}
-        <button
-            onClick={() => setSelectedQuestionnaire(null)}
-            className="fixed top-4 left-4 px-4 py-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-[100]"
-        >
-            關閉
-        </button>
+                    {/* ✅ 固定在左上角的關閉鍵 */}
+                    <button
+                        onClick={() => setSelectedQuestionnaire(null)}
+                        className="fixed top-4 left-4 px-4 py-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-[100]"
+                    >
+                        關閉
+                    </button>
 
-        <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh] relative">
-            <ResponseViewer
-                curState={ViewerState.detail}
-                data={{
-                    questionnaire: selectedQuestionnaire,
-                    response: {
-                        answers: [],
-                        id: 0,
-                        userId: 0,
-                        projectId: 0,
-                        versionId: selectedQuestionnaire.id,
-                        submittedAt: "",
-                        user: { id: 0, name: "", email: "" },
-                        project: { id: 0, name: "" },
-                        version: { id: selectedQuestionnaire.id, title: selectedQuestionnaire.title },
-                    },
-                }}
-            />
-        </div>
-    </div>
-)}
+                    <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh] relative">
+                        <ResponseViewer
+                            curState={ViewerState.detail}
+                            data={{
+                                questionnaire: selectedQuestionnaire,
+                                response: {
+                                    answers: [],
+                                    id: 0,
+                                    userId: 0,
+                                    projectId: 0,
+                                    versionId: selectedQuestionnaire.id,
+                                    submittedAt: "",
+                                    user: { id: 0, name: "", email: "" },
+                                    project: { id: 0, name: "" },
+                                    version: { id: selectedQuestionnaire.id, title: selectedQuestionnaire.title },
+                                },
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
