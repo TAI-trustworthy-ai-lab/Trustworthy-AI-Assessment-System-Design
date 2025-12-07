@@ -1583,7 +1583,10 @@ export function ResponseWindow({ state, data, onEdit }: {
             ViewerState.success
           }
         data={{ response: data.response, questionnaire: data.questionnaire }}
-        onEdit={onEdit}
+        onEdit={()=>{
+          onEdit()
+          removeState(ViewerState.editing)
+        }}
       />
     </div>
   </>)

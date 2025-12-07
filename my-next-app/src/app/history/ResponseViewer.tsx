@@ -647,6 +647,12 @@ export default function ResponseViewer({curState, data, onEdit }: {
       return acc
     }, {}
   )
+  const requiredQ = q.questions.reduce<Record<number, boolean>>(
+    (acc, value) => {
+      acc[value.id] = value.required
+      return acc
+    }, {}
+  )
   const [editQ, setEditQ] = useState<Record<number, boolean>>(
     q.questions.reduce<Record<number, boolean>>(
       (acc, value) => {
@@ -707,9 +713,13 @@ export default function ResponseViewer({curState, data, onEdit }: {
     })
     
     // question done?
+    // please handle SetIsComplete(), setDoneQ
+    // be care of it's required question or not
     // also need to handle text type question
     if(typeQ[questionId] == 'MULTIPLE_CHOICE'){
-      if(!answerValue.optionIds || (answerValue.optionIds && answerValue.optionIds.size <= 0)){
+      if(!answerValue.optionIds 
+        || (requiredQ[questionId] && answerValue.optionIds && answerValue.optionIds.size <= 0)
+      ){
         SetIsComplete(false)
         setDoneQ(prev=>{
           const p = {...prev}
@@ -729,6 +739,21 @@ export default function ResponseViewer({curState, data, onEdit }: {
 
   const handleUpdate = async () => {
     if(!isComplete) return
+    
+    { // no need to handle if no change
+      let hasEdit = false
+      for (const key in editQ){
+        if(editQ[key] == true){
+          hasEdit = true
+          break
+        }
+      }
+      if(!hasEdit){
+        console.log(" no change")
+        return
+      }
+    }
+    
 
     SetIsUpdate(true)
     const userId = localStorage.getItem('userId') || ""
@@ -753,8 +778,16 @@ export default function ResponseViewer({curState, data, onEdit }: {
       }
       await updateResponse(userId, authToken, r.id, data)
       SetIsUpdate(false)
+      setEditQ(prev=>{
+        const p = {...prev}
+        for(const key in p){
+          p[key] = false
+        }
+        return p
+      })
       onEdit()
       await generateReport(r.id)
+      console.log("report done");
       // success if it doesnt catch any error
 
     } catch (error) {
