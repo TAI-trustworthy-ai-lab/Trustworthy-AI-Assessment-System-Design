@@ -522,5 +522,31 @@
 
     "close": "Close",
     "backendReminder": "* Please ensure the backend service is running and the Login API response format is correct."
+  },
+  "questionnaireEditor": {
+    "unknownQuestionType": "Unknown question type",
+
+    "descriptionLabel": "Question description (optional)",
+    "descriptionPlaceholder": "Enter a description for this question (optional)",
+
+    "deleteOption": "Delete",
+    "addOption": "➕ Add option",
+
+    "type": {
+      "singleChoice": "Single choice",
+      "multipleChoice": "Multiple choice",
+      "scale": "Scale",
+      "text": "Text input"
+    },
+
+    "deleteQuestion": "Delete question",
+
+    "newQuestion": "New question",
+    "newOption": "New option",
+    "defaultOption1": "Option 1",
+    "defaultOption2": "Option 2",
+    "addQuestion": "➕ Add question",
+    "save": "Save changes",
+    "cancel": "Cancel changes"
   }
 }
