@@ -77,7 +77,7 @@ export default function AdminDashboard() {
     // 獲取所有用戶列表
     const fetchUsers = useCallback(async () => {
         if (currentUserRole !== ADMIN_ROLE) {
-            setListError("您不是管理員 (ADMIN)，無法獲取用戶列表。");
+            setListError(t('adminPage.notAdminCannotFetchUsers'));
             setListLoading(false);
             return;
         }
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
         
         const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
         if (!authToken) {
-            setListError("缺少認證 Token，請重新登入。");
+            setListError(t('adminPage.missingToken'));
             setListLoading(false);
             return;
         }
@@ -102,12 +102,12 @@ export default function AdminDashboard() {
             });
 
             if (response.status === 401 || response.status === 403) {
-                setListError('權限錯誤：Token 無效或後端 API 限制訪問 (401/403)。');
+                setListError(t('adminPage.tokenInvalidOrForbidden'));
                 handleLogout(); // 失敗則強制登出
                 return;
             } else if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || '未知伺服器錯誤');
+                throw new Error(errorData.message || t('adminPage.unknownServerError'));
             } else {
                 const responseBody = await response.json();
                 const data: UserResponse[] = responseBody.data || [];
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
                 setListLoading(false);
             }
         } catch (err) {
-            setListError(`網絡錯誤或資料處理失敗: ${err instanceof Error ? err.message : String(err)}`);
+            setListError(`${t('adminPage.networkOrDataError')}: ${err instanceof Error ? err.message : String(err)}`);
             setListLoading(false);
         }
     }, [currentUserRole]);
@@ -154,13 +154,13 @@ export default function AdminDashboard() {
     }, [currentUserRole]);
 
     const handleCreateQuestionnaire = async () => {
-        const groupName = prompt("請輸入群組名稱：");
+        const groupName = prompt(t('adminPage.enterGroupName'));
         if (!groupName) return;
 
-        const title = prompt("請輸入問卷標題：");
+        const title = prompt(t('adminPage.enterQuestionnaireTitle'));
         if (!title) return;
 
-        const description = prompt("請輸入問卷描述：") || "";
+        const description = prompt(t('adminPage.enterQuestionnaireDescription')) || "";
 
         // ✅ 這裡先建立一份空問卷（沒有題目）
         const payload = {
@@ -174,14 +174,14 @@ export default function AdminDashboard() {
             const status = await createQuestionnaire(payload);
 
             if (status === 201 || status === 200) {
-                alert("✅ 問卷建立成功！");
+                alert(t('adminPage.createSuccess'));
                 fetchQuestionnaires(); // ✅ 刷新列表
             } else {
-                alert("⚠️ 問卷建立成功，但回傳狀態碼異常：" + status);
+                alert(t('adminPage.createSuccessButStatusUnexpected') + status);
             }
         } catch (err: any) {
             console.error("建立問卷失敗:", err);
-            alert("❌ 建立問卷失敗：" + (err.message || "未知錯誤"));
+            alert(t('adminPage.createFailed') + (err.message || t('adminPage.unknownError')));
         }
     };
 
@@ -195,28 +195,28 @@ export default function AdminDashboard() {
             <h1 className="pt-20 text-center text-4xl font-extrabold mb-8 text-gray-900 pb-2">
             </h1>
             <div className="w-full max-w-4xl flex justify-between items-center mb-10">
-                <h1 className="text-4xl font-extrabold text-indigo-700">🌐 系統儀表板</h1>
+                <h1 className="text-4xl font-extrabold text-indigo-700">{t('adminPage.dashboardTitle')}</h1>
             </div>
 
             {isLoggedIn && (
                 <div className="w-full max-w-4xl p-6 bg-white rounded-xl shadow-xl">
                     <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-gray-800">
-                        {currentUserRole === ADMIN_ROLE ? '👑 所有用戶列表' : '⚠️ 權限受限'}
+                        {currentUserRole === ADMIN_ROLE ? t('adminPage.allUsersList') : t('adminPage.permissionDenied')}
                     </h2>
                     
                     {currentUserRole !== ADMIN_ROLE && (
                         <div className="p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg font-medium">
-                            抱歉！您當前的身份 ({currentUserRole}) 無權查看此列表。請使用 ADMIN 賬號登入。
+                            {t('adminPage.notAllowedToViewUsers', { role: currentUserRole })}
                         </div>
                     )}
 
                     {currentUserRole === ADMIN_ROLE && (
                         <>
-                            {listLoading && <p className="text-center text-indigo-600 p-4">正在加載用戶數據...</p>}
+                            {listLoading && <p className="text-center text-indigo-600 p-4">{t('adminPage.loadingUsers')}</p>}
                             
                             {listError && (
                                 <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                                    **🚨 數據加載失敗:** {listError}
+                                    **{ t('adminPage.loadUsersFailed')} ** {listError}
                                 </div>
                             )}
 
@@ -227,8 +227,8 @@ export default function AdminDashboard() {
                                             <tr>
                                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Email</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">角色 (Role)</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">創建日期</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.role')}</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.createdAt')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-100">
@@ -250,7 +250,7 @@ export default function AdminDashboard() {
                             )}
 
                             {!listLoading && !listError && users.length === 0 && (
-                                <p className="p-4 text-center text-gray-500 border border-dashed rounded-lg mt-4">目前資料庫中沒有用戶記錄。</p>
+                                <p className="p-4 text-center text-gray-500 border border-dashed rounded-lg mt-4">{t('adminPage.noUsersFound')}</p>
                             )}
                         </>
                     )}
@@ -259,13 +259,13 @@ export default function AdminDashboard() {
             {isLoggedIn && (
                 <div className="w-full max-w-4xl mt-10">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold text-gray-800">📋 問卷管理</h2>
+                        <h2 className="text-2xl font-bold text-gray-800">{t('adminPage.questionnaireManagement')}</h2>
 
                         <button
                             onClick={handleCreateQuestionnaire}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
                         >
-                            ➕ 新增問卷
+                            {t('adminPage.addQuestionnaire')}
                         </button>
                     </div>
 
@@ -274,7 +274,7 @@ export default function AdminDashboard() {
             )}
 
             <p className="mt-8 text-sm text-gray-500">
-                * 請確保後端服務 (http://localhost:3001) 正在運行，Login API 響應格式正確。
+                * {t('adminPage.backendReminder')}
             </p>
 
             
@@ -290,6 +290,7 @@ interface QuestionnaireTableProps {
 const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires, onRefresh }) => {
     const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<any | null>(null);
     const [loadingId, setLoadingId] = useState<number | null>(null);
+    const { i18n, t } = useTranslation();
 
     const handleDuplicate = async (q: any) => {
         setLoadingId(q.id);
@@ -301,22 +302,22 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
             onRefresh();
         } catch (err: any) {
             console.error("複製問卷失敗:", err);
-            alert(err.message || "複製失敗");
+            alert(err.message || t('adminPage.duplicateFailed'));
         } finally {
             setLoadingId(null);
         }
     };
 
     const handleDelete = async (q: any) => {
-        if (!confirm(`確定要刪除問卷「${q.title}」嗎？此動作無法復原`)) return;
+        if (!confirm(t('adminPage.confirmDeleteQuestionnaire', { title: q.title }))) return;
 
         try {
             await deleteQuestionnaire(q.id);
-            alert("✅ 刪除成功");
+            alert(t('adminPage.deleteSuccess'));
             onRefresh();
         } catch (err: any) {
             console.error("刪除問卷失敗:", err);
-            alert(err.message || "刪除失敗");
+            alert(err.message || t('adminPage.deleteFailed'));
         }
     };
 
@@ -331,11 +332,11 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                 isActive: newState,
             });
 
-            alert(`✅ 已${newState ? "啟用" : "停用"}問卷`);
+            alert(newState ? t('adminPage.activated') : t('adminPage.deactivated'));
             onRefresh(); // ✅ 刷新表格
         } catch (err: any) {
             console.error("更新啟用狀態失敗:", err);
-            alert(err.message || "更新失敗");
+            alert(err.message || t('adminPage.updateFailed'));
         }
     };
 
@@ -345,12 +346,12 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-indigo-600 text-white">
                     <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">群組名稱</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本 ID</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">版本號</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">標題</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">啟用狀態</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">操作</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.groupName')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.versionId')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.versionNumber')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.title')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.activeStatus')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">{t('adminPage.actions')}</th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
@@ -368,7 +369,7 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                                     className={`px-3 py-1 rounded text-white font-semibold ${q.isActive ? "bg-green-600 hover:bg-green-700" : "bg-gray-500 hover:bg-gray-600"
                                         }`}
                                 >
-                                    {q.isActive ? "✅ 啟用" : "❌ 停用"}
+                                    {q.isActive ? t('adminPage.active') : t('adminPage.inactive')}
                                 </button>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm flex gap-2">
@@ -376,7 +377,7 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                                     onClick={() => setSelectedQuestionnaire(q)}
                                     className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                                 >
-                                    編輯
+                                    {t('adminPage.edit')}
                                 </button>
 
                                 <button
@@ -385,14 +386,14 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                                     className={`px-3 py-1 rounded text-white ${loadingId === q.id ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
                                         }`}
                                 >
-                                    {loadingId === q.id ? "複製中..." : "複製"}
+                                    {loadingId === q.id ? t('adminPage.duplicating') : t('adminPage.duplicate')}
                                 </button>
 
                                 <button
                                     onClick={() => handleDelete(q)}
                                     className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                                 >
-                                    刪除
+                                    {t('adminPage.delete')}
                                 </button>
                             </td>
                         </tr>
@@ -409,7 +410,7 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
                         onClick={() => setSelectedQuestionnaire(null)}
                         className="fixed top-4 left-4 px-4 py-2 bg-red-500 text-white rounded shadow-lg hover:bg-red-600 z-[100]"
                     >
-                        關閉
+                        {t('adminPage.close')}
                     </button>
 
                     <div className="bg-white rounded-lg shadow-xl w-11/12 max-w-4xl p-6 overflow-y-auto max-h-[90vh] relative">
