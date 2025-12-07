@@ -261,12 +261,14 @@ export interface Option {
 export interface Question {
     id: number;
     text: string;
+    description?: string;
     category: string;
     order: number;
     type: "SCALE" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT";
     required: boolean;
     options?: Option[];
 }
+
 
 export interface QuestionnaireData {
     id: number;
@@ -470,6 +472,277 @@ const QuestionRenderer: React.FC<{
 
 
 // ----------------------------------------------------
+// QuestionEditor（題目編輯器）
+// ----------------------------------------------------
+const QuestionEditor = ({
+    question,
+    onChange, // 這個 onChange 現在只用於通知父層變髒 (isDirty)
+    onUpdate, // 新增：用於將局部狀態傳回父層
+    onDeleteQuestion, // 🌟 新增 Prop
+}: {
+    question: Question;
+    onChange: () => void;
+        onUpdate: (updatedQuestion: Question) => void;
+        onDeleteQuestion: (questionId: number) => void; // 🌟 新增 Prop 類型
+}) => {
+
+    const [editingQuestion, setEditingQuestion] = useState(question);
+
+    // 🌟 新增：追蹤局部是否有變動
+    const [hasLocalChange, setHasLocalChange] = useState(false);
+
+    // 🌟 使用 useEffect 來延遲觸發父元件的 onChange (setIsDirty)
+    useEffect(() => {
+        if (hasLocalChange) {
+            onChange(); // 這是父元件的 setIsDirty(true)
+            setHasLocalChange(false); // 重置標記
+        }
+    }, [hasLocalChange, onChange]);
+
+    // 💡 注意：由於 QuestionEditor 會在 editingQuestionId 改變時被重新掛載，
+    // 所以這裡不需要 useEffect 來同步 props.question。
+
+    // ✅ 2. 定義一個同步函數，用於更新局部狀態並通知父元件資料變髒
+    const updateLocalQuestion = (updater: (q: Question) => Question, shouldSave = false) => {
+        setEditingQuestion((prev) => {
+            const updated = updater(prev);
+
+            // 當需要保存時 (例如 onBlur)，將更新後的題目傳回給父元件
+            if (shouldSave) {
+                setTimeout(() => {
+                    onUpdate(updated);
+                }, 0);
+            }
+            setHasLocalChange(true);
+            return updated;
+        });
+    };
+
+    // 🌟 當輸入框失去焦點時，將局部狀態同步回頂層
+    const handleBlur = () => {
+        onUpdate(editingQuestion);
+    };
+
+
+    // 更新題目文字
+    const updateText = (e: React.ChangeEvent<HTMLInputElement>) => {
+        updateLocalQuestion((q) => ({
+            ...q,
+            text: e.target.value,
+        }));
+    };
+
+    const updateDescription = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        updateLocalQuestion((q) => ({
+            ...q,
+            description: e.target.value,
+        }));
+    };
+
+    // 更新選項文字
+    const updateOption = (index: number, value: string) => {
+        updateLocalQuestion((q) => ({
+            ...q,
+            options: q.options?.map((opt, i) =>
+                i === index ? { ...opt, text: value } : opt
+            ),
+            // 🌟 關鍵修正：移除 `, true)`
+        }));
+    };
+
+    // ✅ 新增選項
+    const addOption = () => {
+        // 使用 updateLocalQuestion 來更新局部狀態
+        updateLocalQuestion((q) => {
+            const newId = Date.now();
+            const newOption = {
+                id: newId,
+                text: "新選項",
+                value: 0,
+                order: (q.options?.length || 0) + 1,
+            };
+            return {
+                ...q,
+                options: [...(q.options || []), newOption],
+            };
+        }, true); // 🌟 立即同步保存 (shouldSave=true)，將新的 question 物件傳回父元件
+    };
+
+    // 刪除選項
+    const deleteOption = (index: number) => {
+        updateLocalQuestion((q) => ({
+            ...q,
+            options: q.options?.filter((_, i) => i !== index),
+        }), true); // 刪除後立即同步
+    };
+
+    // 🌟 處理刪除題目邏輯
+    const handleDeleteQuestion = () => {
+        // 呼叫父元件傳入的刪除函數
+        onDeleteQuestion(question.id);
+        // Note: 父元件的 deleteQuestion 會呼叫 setEditingQuestionId(null)，導致此元件被卸載。
+    };
+
+    // ----------------------------------------------------
+    // QuestionEditor 內部：changeType 函數
+    // ----------------------------------------------------
+
+    // 題型枚舉（假設您有定義 QuestionType 類型）
+    type QuestionType = "SCALE" | "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TEXT";
+
+    // ----------------------------------------------------
+    // QuestionEditor 內部：輔助函數 - 生成量表選項
+    // ----------------------------------------------------
+    // 假設 Option 結構 { id: number, text: string, value: number, order: number }
+
+    const createScaleOptions = (count: number): Option[] => {
+        const options: Option[] = [];
+        for (let i = 1; i <= count; i++) {
+            options.push({
+                id: Date.now() + i, // 確保 ID 唯一性
+                text: String(i),
+                value: i,
+                order: i,
+            });
+        }
+        return options;
+    };
+
+    const resetOptions = (type: QuestionType, currentOptions: Option[] | undefined): Option[] | undefined => {
+
+        // 1. TEXT 題型：清除選項
+        if (type === 'TEXT') {
+            return undefined; // 文本輸入題不需要選項
+        }
+
+        // 2. SCALE 題型：生成數字選項
+        if (type === 'SCALE') {
+            return createScaleOptions(5); // 預設生成 5 點量表
+        }
+
+        // 3. SINGLE_CHOICE / MULTIPLE_CHOICE：保留現有選項或初始化預設選項
+        if (type === 'SINGLE_CHOICE' || type === 'MULTIPLE_CHOICE') {
+
+            // 如果選項已存在，則保留它們
+            if (currentOptions && currentOptions.length > 0) {
+                return currentOptions;
+            }
+
+            // 否則，初始化兩個預設的文本選項
+            return [
+                { id: Date.now(), text: "選項一", value: 0, order: 1 },
+                { id: Date.now() + 1, text: "選項二", value: 0, order: 2 },
+            ];
+        }
+
+        // 預設返回 undefined（或根據您的數據結構決定）
+        return undefined;
+    };
+
+
+    // ----------------------------------------------------
+    // QuestionEditor 內部：changeType 函數（保持不變，它會呼叫 resetOptions）
+    // ----------------------------------------------------
+    const changeType = (newType: QuestionType) => {
+        // 立即儲存 (shouldSave=true)
+        updateLocalQuestion((q) => ({
+            ...q,
+            type: newType,
+            options: resetOptions(newType, q.options),
+        }), true);
+    };
+
+    return (
+        <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
+            {/* 題目敘述 */}
+            <input
+                value={editingQuestion.text}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => updateText(e)}
+                onBlur={handleBlur} // ✅ 補上 onBlur
+                className="w-full border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+            />
+
+            {/* 題目描述（可編輯） */}
+            <div className="space-y-2">
+                <label className="font-semibold text-gray-700">題目描述（可選）</label>
+                <textarea
+                    value={editingQuestion.description || ""}
+                    onChange={(e) =>
+                        updateDescription(e)
+                    }
+                    onBlur={handleBlur} // ✅ 補上 onBlur
+                    placeholder="輸入題目描述（可留空）"
+                    className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300"
+                    rows={3}
+                />
+            </div>
+
+
+            {/* 選項編輯（僅選擇題顯示） */}
+            {(editingQuestion.type === 'SINGLE_CHOICE' ||
+                editingQuestion.type === 'MULTIPLE_CHOICE' ||
+                editingQuestion.type === 'SCALE') && (
+                    <div className="space-y-3">
+                        {editingQuestion.options?.map((opt, idx) => (
+                            <div key={opt.id} className="flex items-center gap-2">
+                                <input
+                                    value={opt.text}
+                                    onChange={(e) => updateOption(idx, e.target.value)}
+                                    onBlur={handleBlur}
+                                    className="flex-1 border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                                />
+                                <button
+                                    onClick={() => deleteOption(idx)}
+                                    className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                                >
+                                    刪除
+                                </button>
+                            </div>
+                        ))}
+
+                        <button
+                            onClick={addOption}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                            ➕ 新增選項
+                        </button>
+                    </div>
+                )}
+
+            {/* 題目類型切換 */}
+            <div className="flex justify-end items-center gap-2">
+                {/* 假設您使用一個下拉選單 (Select) 來切換題型 */}
+                <select
+                    value={editingQuestion.type}
+                    onChange={(e) => changeType(e.target.value as QuestionType)}
+                    className="px-3 py-1 border rounded-lg"
+                >
+                    {/* 🌟 確保這裡的 value 字串與您的數據定義一致 */}
+                    <option value="SINGLE_CHOICE">單選題</option>
+                    <option value="MULTIPLE_CHOICE">多選題</option>
+                    <option value="SCALE">量表題</option>
+                    <option value="TEXT">文本輸入</option>
+                </select>
+
+                {/* 🌟 刪除按鈕 UI 綁定 handleDeleteQuestion */}
+                <button
+                    onClick={handleDeleteQuestion}
+                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                    刪除題目
+                </button>
+            </div>
+
+            {/* 🌟 根據題型顯示選項編輯器 */}
+            
+
+            
+        </div>
+    );
+};
+
+// ----------------------------------------------------
 // ResponseEditor 主體
 // ----------------------------------------------------
 export default function ResponseEditor({
@@ -503,194 +776,33 @@ export default function ResponseEditor({
 
     const [questionnaire, setQuestionnaire] = useState(q);
 
-    // ----------------------------------------------------
-    // QuestionEditor（題目編輯器）
-    // ----------------------------------------------------
-    const QuestionEditor = ({
-        question,
-        onChange,
-    }: {
-        question: Question;
-        onChange: () => void;
-    }) => {
-        // 更新題目文字
-        const updateText = (value: string) => {
-            setQuestionnaire((prev) => ({
-                ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === question.id ? { ...q, text: value } : q
-                ),
-            }));
-            onChange();
-        };
-
-        // 更新選項文字
-        const updateOption = (index: number, value: string) => {
-            setQuestionnaire((prev) => ({
-                ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === question.id
-                        ? {
-                            ...q,
-                            options: q.options?.map((opt, i) =>
-                                i === index ? { ...opt, text: value } : opt
-                            ),
-                        }
-                        : q
-                ),
-            }));
-            onChange();
-        };
-
-        // 新增選項
-        const addOption = () => {
-            setQuestionnaire((prev) => ({
-                ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === question.id
-                        ? {
-                            ...q,
-                            options: [
-                                ...(q.options || []),
-                                {
-                                    id: Date.now(),
-                                    text: "新選項",
-                                    value: 0,
-                                    order: (q.options?.length || 0) + 1,
-                                },
-                            ],
-                        }
-                        : q
-                ),
-            }));
-            onChange();
-        };
-
-        // 刪除選項
-        const deleteOption = (index: number) => {
-            setQuestionnaire((prev) => ({
-                ...prev,
-                questions: prev.questions.map((q) =>
-                    q.id === question.id
-                        ? {
-                            ...q,
-                            options: q.options?.filter((_, i) => i !== index),
-                        }
-                        : q
-                ),
-            }));
-            onChange();
-        };
-
-        return (
-            <div className="p-4 border rounded-lg bg-gray-50 space-y-4">
-                {/* 題目敘述 */}
-                <input
-                    value={question.text}
-                    onChange={(e) => updateText(e.target.value)}
-                    className="w-full border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-                />
-
-                {/* 選項編輯（僅選擇題顯示） */}
-                {(question.type === "SINGLE_CHOICE" ||
-                    question.type === "MULTIPLE_CHOICE" ||
-                    question.type === "SCALE") && (
-                        <div className="space-y-3">
-                            {question.options?.map((opt, idx) => (
-                                <div key={opt.id} className="flex items-center gap-2">
-                                    <input
-                                        value={opt.text}
-                                        onChange={(e) => updateOption(idx, e.target.value)}
-                                        className="flex-1 border px-3 py-2 rounded-lg focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-                                    />
-                                    <button
-                                        onClick={() => deleteOption(idx)}
-                                        className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                                    >
-                                        刪除
-                                    </button>
-                                </div>
-                            ))}
-
-                            <button
-                                onClick={addOption}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                            >
-                                ➕ 新增選項
-                            </button>
-                        </div>
-                    )}
-
-                {/* 題目類型切換 */}
-                <div className="space-y-2">
-                    <label className="font-semibold text-gray-700">題目類型</label>
-                    <select
-                        value={question.type}
-                        onChange={(e) => {
-                            const newType = e.target.value as Question["type"];
-
-                            setQuestionnaire((prev) => ({
-                                ...prev,
-                                questions: prev.questions.map((q) => {
-                                    if (q.id !== question.id) return q;
-
-                                    // ✅ 切換成量表題 → 自動生成 1～5
-                                    if (newType === "SCALE") {
-                                        return {
-                                            ...q,
-                                            type: newType,
-                                            options: Array.from({ length: 5 }).map((_, i) => ({
-                                                id: Date.now() + i,
-                                                text: `${i + 1}`,
-                                                value: i + 1,
-                                                order: i + 1,
-                                            })),
-                                        };
-                                    }
-
-                                    // ✅ 切換成文字題 → 移除 options
-                                    if (newType === "TEXT") {
-                                        return {
-                                            ...q,
-                                            type: newType,
-                                            options: [],
-                                        };
-                                    }
-
-                                    // ✅ 切換成單選 / 多選 → 保留原 options（或你想重建也可以）
-                                    return { ...q, type: newType };
-                                }),
-                            }));
-
-                            onChange();
-                        }}
-                        className="border px-3 py-2 rounded-lg"
-                    >
-                        <option value="SCALE">量表題</option>
-                        <option value="SINGLE_CHOICE">單選題</option>
-                        <option value="MULTIPLE_CHOICE">多選題</option>
-                        <option value="TEXT">文字題</option>
-                    </select>
-                </div>
-
-                {/* 刪除題目 */}
-                <button
-                    onClick={() => {
-                        setQuestionnaire((prev) => ({
-                            ...prev,
-                            questions: prev.questions.filter((q) => q.id !== question.id),
-                        }));
-                        setEditingQuestionId(null);
-                        onChange();
-                    }}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                    🗑 刪除題目
-                </button>
-            </div>
-        );
+    
+    // 🌟 新增：處理題目刪除的函數
+    const deleteQuestion = (questionId: number) => {
+        // 1. 更新頂層狀態：過濾掉被刪除的題目
+        setQuestionnaire((prev) => ({
+            ...prev,
+            questions: prev.questions.filter((q) => q.id !== questionId),
+        }));
+        // 2. 清除當前編輯中的狀態（強制 QuestionEditor 卸載）
+        setEditingQuestionId(null);
+        // 3. 標記為 Dirty
+        setIsDirty(true);
     };
 
+    // ResponseEditor 內部
+    // ...
+    const updateQuestion = (updatedQuestion: Question) => {
+        setQuestionnaire(prev => {
+            return {
+                ...prev,
+                questions: prev.questions.map(q =>
+                    q.id === updatedQuestion.id ? updatedQuestion : q
+                ),
+            };
+        });
+        setIsDirty(true);
+    };
 
     // ----------------------------------------------------
     // 分頁（依 category 分組）
@@ -772,7 +884,7 @@ export default function ResponseEditor({
             const updatedPayload = {
                 groupName: questionnaire.group.name,
                 title: questionnaire.title,
-                description: questionnaire.description || "",
+                //description: questionnaire.description || "",
                 questions: questionnaire.questions
                     .sort((a, b) => a.order - b.order)
                     .map((q) => ({
@@ -812,6 +924,40 @@ export default function ResponseEditor({
     const onCancel = () => {
         window.location.reload();
     };
+
+
+    // 問題描述可切換顯示組件
+    const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
+        const { t } = useTranslation();
+        const [isExpanded, setIsExpanded] = useState(false);
+
+        if (!description || description.trim() === '') {
+            return null;
+        }
+
+        return (
+            <div className="text-sm text-gray-500 mt-2 mb-3">
+                <button
+                    onClick={() => setIsExpanded(prev => !prev)}
+                    className="flex items-center text-indigo-600 hover:text-indigo-800 transition duration-150 font-medium"
+                >
+                    {/* 顯示/隱藏 圖標 */}
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+                    </svg>
+                    {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+                </button>
+
+                {/* 展開時才顯示描述內容 */}
+                {isExpanded && (
+                    <div className="mt-2 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-md">
+                        <TranslatedText text={description} />
+                    </div>
+                )}
+            </div>
+        );
+    };
+
 
     // ----------------------------------------------------
     // 主體 Layout
@@ -993,8 +1139,11 @@ export default function ResponseEditor({
                                 {/* ✅ 如果正在編輯 → 顯示編輯介面 */}
                                 {editingQuestionId === question.id ? (
                                     <QuestionEditor
+                                        key={question.id}
                                         question={question}
                                         onChange={() => setIsDirty(true)}
+                                        onUpdate={(updatedQuestion) => updateQuestion(updatedQuestion)}
+                                        onDeleteQuestion={deleteQuestion}
                                     />
                                 ) : (
                                     <>
@@ -1021,6 +1170,11 @@ export default function ResponseEditor({
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* 題目描述（可展開/收合） */}
+                                        {question.description && (
+                                            <QuestionDescriptionToggle description={question.description} />
+                                        )}
 
                                         {/* ✅ 題型渲染 */}
                                         <QuestionRenderer
