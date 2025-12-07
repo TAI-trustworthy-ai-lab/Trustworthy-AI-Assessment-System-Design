@@ -300,19 +300,6 @@ const selectedOption =
 const unselectedOption =
     "bg-white text-gray-700 border-gray-300 hover:border-indigo-300 hover:shadow-sm";
 
-// ----------------------------------------------------
-// Loading Indicator（保留你的版本）
-// ----------------------------------------------------
-const SubmissionLoadingIndicator: React.FC = () => (
-    <div className="flex items-center justify-center space-x-2">
-        <span className="font-bold">提交中</span>
-        <div className="flex items-end h-4 pb-0.5">
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0s" }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0.2s" }}></div>
-            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: "0.4s" }}></div>
-        </div>
-    </div>
-);
 
 // ----------------------------------------------------
 // 題型元件：SCALE
@@ -456,6 +443,7 @@ const QuestionRenderer: React.FC<{
     currentAnswer: AnswerValue;
     onAnswer: (answer: AnswerValue) => void;
 }> = (props) => {
+    const { i18n, t } = useTranslation();
     switch (props.question.type) {
         case "SCALE":
             return <ScaleQuestion {...props} />;
@@ -466,7 +454,7 @@ const QuestionRenderer: React.FC<{
         case "TEXT":
             return <TextQuestion {...props} />;
         default:
-            return <p className="text-red-500">未知問題類型: {props.question.type}</p>;
+            return <p className="text-red-500">{t('questionnaireEditor.unknownQuestionType')}: {props.question.type}</p>;
     }
 };
 
@@ -490,6 +478,7 @@ const QuestionEditor = ({
 
     // 🌟 新增：追蹤局部是否有變動
     const [hasLocalChange, setHasLocalChange] = useState(false);
+    const { i18n, t } = useTranslation();
 
     // 🌟 使用 useEffect 來延遲觸發父元件的 onChange (setIsDirty)
     useEffect(() => {
@@ -510,8 +499,8 @@ const QuestionEditor = ({
             // 當需要保存時 (例如 onBlur)，將更新後的題目傳回給父元件
             if (shouldSave) {
                 setTimeout(() => {
-                    onUpdate(updated);
-                }, 0);
+                onUpdate(updated); 
+            }, 0);
             }
             setHasLocalChange(true);
             return updated;
@@ -557,7 +546,7 @@ const QuestionEditor = ({
             const newId = Date.now();
             const newOption = {
                 id: newId,
-                text: "新選項",
+                text: t('questionnaireEditor.newOption'),
                 value: 0,
                 order: (q.options?.length || 0) + 1,
             };
@@ -630,8 +619,8 @@ const QuestionEditor = ({
 
             // 否則，初始化兩個預設的文本選項
             return [
-                { id: Date.now(), text: "選項一", value: 0, order: 1 },
-                { id: Date.now() + 1, text: "選項二", value: 0, order: 2 },
+                { id: Date.now(), text: t('questionnaireEditor.defaultOption1'), value: 0, order: 1 },
+                { id: Date.now() + 1, text: t('questionnaireEditor.defaultOption1'), value: 0, order: 2 },
             ];
         }
 
@@ -665,14 +654,14 @@ const QuestionEditor = ({
 
             {/* 題目描述（可編輯） */}
             <div className="space-y-2">
-                <label className="font-semibold text-gray-700">題目描述（可選）</label>
+                <label className="font-semibold text-gray-700">{t('questionnaireEditor.descriptionLabel')}</label>
                 <textarea
                     value={editingQuestion.description || ""}
                     onChange={(e) =>
                         updateDescription(e)
                     }
                     onBlur={handleBlur} // ✅ 補上 onBlur
-                    placeholder="輸入題目描述（可留空）"
+                    placeholder={t('questionnaireEditor.descriptionPlaceholder')}
                     className="w-full p-3 border rounded-lg bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-1 focus:ring-indigo-300"
                     rows={3}
                 />
@@ -696,7 +685,7 @@ const QuestionEditor = ({
                                     onClick={() => deleteOption(idx)}
                                     className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
                                 >
-                                    刪除
+                                    {t('questionnaireEditor.deleteOption')}
                                 </button>
                             </div>
                         ))}
@@ -705,7 +694,7 @@ const QuestionEditor = ({
                             onClick={addOption}
                             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                         >
-                            ➕ 新增選項
+                        {t('questionnaireEditor.addOption')}
                         </button>
                     </div>
                 )}
@@ -719,10 +708,10 @@ const QuestionEditor = ({
                     className="px-3 py-1 border rounded-lg"
                 >
                     {/* 🌟 確保這裡的 value 字串與您的數據定義一致 */}
-                    <option value="SINGLE_CHOICE">單選題</option>
-                    <option value="MULTIPLE_CHOICE">多選題</option>
-                    <option value="SCALE">量表題</option>
-                    <option value="TEXT">文本輸入</option>
+                    <option value="SINGLE_CHOICE">{t('questionnaireEditor.type.singleChoice')}</option>
+                    <option value="MULTIPLE_CHOICE">{t('questionnaireEditor.type.multipleChoice')}</option>
+                    <option value="SCALE">{t('questionnaireEditor.type.scale')}</option>
+                    <option value="TEXT">{t('questionnaireEditor.type.text')}</option>
                 </select>
 
                 {/* 🌟 刪除按鈕 UI 綁定 handleDeleteQuestion */}
@@ -730,7 +719,7 @@ const QuestionEditor = ({
                     onClick={handleDeleteQuestion}
                     className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
                 >
-                    刪除題目
+                    {t('questionnaireEditor.deleteQuestion')}
                 </button>
             </div>
 
@@ -1074,14 +1063,14 @@ export default function ResponseEditor({
                                         // 新題目插在最上面（order 先給 1）
                                         const newQuestion: Question = {
                                             id: newId,
-                                            text: "新題目",
+                                            text: t('questionnaireEditor.newQuestion'),
                                             category,
                                             order: 1,
                                             type: "SINGLE_CHOICE",
                                             required: false,
                                             options: [
-                                                { id: newId + 1, text: "選項 1", value: 1, order: 1 },
-                                                { id: newId + 2, text: "選項 2", value: 2, order: 2 },
+                                                { id: newId + 1, text:  t('questionnaireEditor.defaultOption1') , value: 1, order: 1 },
+                                                { id: newId + 2, text:  t('questionnaireEditor.defaultOption2') , value: 2, order: 2 },
                                             ],
                                         };
 
@@ -1109,7 +1098,7 @@ export default function ResponseEditor({
                                 }}
                                 className="px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
                             >
-                                ➕ 新增問題
+                                {t('questionnaireEditor.addQuestion')}
                             </button>
 
                         </div>
@@ -1206,7 +1195,7 @@ export default function ResponseEditor({
                 hover:bg-gray-50
             "
                     >
-                        取消更改
+                        {t('questionnaireEditor.cancel')}
                     </button>
 
                     <button
@@ -1217,7 +1206,7 @@ export default function ResponseEditor({
                 hover:bg-indigo-700
             "
                     >
-                        儲存更改
+                        {t('questionnaireEditor.save')}
                     </button>
                 </div>
             )}
