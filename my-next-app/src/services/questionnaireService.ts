@@ -58,6 +58,7 @@ export const createQuestionnaire = async (payload: {
     title: string;
     questions: {
         text: string;
+        description?: string;
         category: string;
         order: number;
         type: string;
