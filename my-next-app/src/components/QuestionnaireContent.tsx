@@ -485,7 +485,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
         try {
             const data = await fetchQuestionnaireService(questionnaireId); 
-            console.log(data);
             
             setQuestionnaire(data as QuestionnaireData);
             setLoadingStatus('success');
@@ -596,7 +595,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             <div className="text-sm text-gray-500 mt-2 mb-3">
                 <button
                     onClick={() => setIsExpanded(prev => !prev)}
-                    className="flex items-center text-indigo-600 hover:text-indigo-800 transition duration-150 font-medium"
+                    className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
                 >
                     {/* 顯示/隱藏 圖標 */}
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -607,7 +606,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 
                 {/* 展開時才顯示描述內容 */}
                 {isExpanded && (
-                    <div className="mt-2 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-md">
+                    <div className="p-3">
                         <TranslatedText text={description} />
                     </div>
                 )}
