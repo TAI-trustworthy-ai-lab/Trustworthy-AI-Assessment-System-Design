@@ -263,7 +263,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
     const handleDeleteProject = useCallback(async () => {
         setIsDeleting(true);
@@ -746,9 +746,9 @@ const Home = () => {
                 ))}
             </div>
 
-            <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-40 p-4 
-                w-full max-w-xs mx-auto                                    /* 限制容器最大寬度，避免按鈕過長 */
-                flex flex-col items-center justify-center                 /* 強制垂直排列且內容居中 */
+            <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 z-40 p-4 
+                w-full max-w-xs mx-auto                                   
+                flex flex-col items-center justify-center       
                 space-y-3">
                 <button
                     onClick={() => router.push("/history")}
