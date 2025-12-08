@@ -409,15 +409,17 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
         const sortedIndicators = [...taiOrders].sort((a, b) => a.rank - b.rank);
 
         const indicatorString = sortedIndicators
-            .map(order => {
-                // 取得中文指標名稱
-                const chineseIndicator = TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator;
-                const formattedWeight = `${(order.weight * 100).toFixed(0)}%`;
-                
-                return `${chineseIndicator} (${formattedWeight})`;
-            })
-            // 使用箭頭符號連接
-            .join(" → ");
+    .map(order => {
+        const capitalize = (s: string) =>
+            s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+        // 取得中文指標名稱
+        const langIndicator = (i18n.language == "en") ? capitalize(order.indicator) :(TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator);
+        const formattedWeight = `${(order.weight * 100).toFixed(0)}%`;
+        
+        return `${langIndicator} (${formattedWeight})`;
+    })
+    // 使用箭頭符號連接
+    .join(" → ");
 
         // 4. 渲染結果
         return (
