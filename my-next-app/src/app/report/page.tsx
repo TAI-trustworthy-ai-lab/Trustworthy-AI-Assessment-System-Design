@@ -298,6 +298,7 @@ export default function ReportPage() {
     if (loadingStatus === 'generating') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <AuthHeader />
                 <p className="text-xl font-medium text-purple-800 flex items-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -312,6 +313,7 @@ export default function ReportPage() {
     if (loadingStatus === 'error' || !report) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <AuthHeader />
                 <div className="p-8 bg-white rounded-xl shadow-lg text-center max-w-md w-full">
                     <p className="text-xl font-bold text-red-600 mb-4">{t('reportPage.error.title')}</p>
                     <p className="text-gray-600 mb-6">{errorMessage}</p>
