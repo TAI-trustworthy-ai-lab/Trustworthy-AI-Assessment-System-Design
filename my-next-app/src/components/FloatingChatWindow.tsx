@@ -1,9 +1,9 @@
-// src/components/FloatingChatWindow.tsx
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+// 1. 引入 ReactMarkdown 用於渲染 Markdown
+import ReactMarkdown from 'react-markdown'; 
 // 引入我們為非串流 LLM 設計的服務函式
 import { getLlmResponse } from '@/services/llm.chat.service'; 
 
@@ -48,41 +48,34 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         }
     }, [messages]);
 
-    // 處理使用者送出 (非串流版本，等待單一字串回應)
+    // 處理使用者送出
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         const userMessage = input.trim();
         if (!userMessage || isThinking) return;
 
-        // 1. 設置 UI 狀態和顯示使用者訊息
         setInput('');
         setIsThinking(true);
         
         const userMsgId = Date.now();
         setMessages(prev => [...prev, { id: userMsgId, text: userMessage, sender: 'user' }]);
 
-        // 2. 顯示載入中的 AI 訊息佔位符
         const loadingMsgId = userMsgId + 1;
-        // isStreaming: true 在非串流中用作 loading 標記
         setMessages(prev => [...prev, { id: loadingMsgId, text: t('Thinking...') || 'AI 正在思考...', sender: 'llm', isStreaming: true }]);
 
-
         try {
-            // --- 呼叫服務層函式 ---
             const llmResponse = await getLlmResponse(userMessage);
 
-            // 3. 移除載入中訊息，並顯示完整的 LLM 回應
             setMessages(prev => {
-                const updatedMessages = prev.filter(msg => msg.id !== loadingMsgId); // 移除載入佔位符
+                const updatedMessages = prev.filter(msg => msg.id !== loadingMsgId);
                 return [...updatedMessages, { id: loadingMsgId, text: llmResponse, sender: 'llm', isStreaming: false }];
             });
 
         } catch (error) {
             console.error('LLM 呼叫錯誤:', error);
             
-            // 4. 處理錯誤訊息
             setMessages(prev => {
-                const updatedMessages = prev.filter(msg => msg.id !== loadingMsgId); // 移除載入佔位符
+                const updatedMessages = prev.filter(msg => msg.id !== loadingMsgId);
                 return [...updatedMessages, { 
                     id: loadingMsgId, 
                     text: `[錯誤] ${error instanceof Error ? error.message : '連線失敗'}`, 
@@ -95,7 +88,6 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         }
     };
     
-    // 允許使用者按 Enter 送出
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault(); 
@@ -103,36 +95,43 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         }
     };
 
-
     return (
         <div 
-            className={`fixed bottom-20 right-4 w-full max-w-sm h-[400px] bg-white rounded-xl shadow-2xl transition-transform duration-300 transform border border-gray-200 z-50
+            className={`fixed bottom-20 right-4 w-full max-w-sm h-[400px] bg-white rounded-xl shadow-2xl transition-transform duration-300 transform border border-gray-200 z-50 flex flex-col
             ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}
         >
-            <div className="flex justify-between items-center p-3 border-b bg-indigo-600 rounded-t-xl">
+            <div className="flex justify-between items-center p-3 border-b bg-indigo-600 rounded-t-xl shrink-0">
                 <h4 className="text-white font-bold">{t('AI assistance') || 'AI 助手'}</h4>
                 <button onClick={onClose} className="text-white hover:text-gray-200 text-xl">&times;</button>
             </div>
             
-            <div ref={chatBoxRef} className="p-3 space-y-3 overflow-y-auto h-[calc(100%-120px)]">
+            <div ref={chatBoxRef} className="p-3 space-y-3 overflow-y-auto flex-grow bg-gray-50">
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] p-2 rounded-lg text-sm whitespace-pre-wrap ${
+                        <div className={`max-w-[85%] p-3 rounded-lg text-sm shadow-sm ${
                             msg.sender === 'user' 
-                                ? 'bg-indigo-100 text-indigo-800' 
+                                ? 'bg-indigo-600 text-white' 
                                 : msg.isStreaming 
-                                    ? 'bg-gray-200 text-gray-500 animate-pulse' // 載入中顏色
-                                    : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-white text-gray-500 animate-pulse border border-gray-200' 
+                                    : 'bg-white text-gray-800 border border-gray-200'
                         }`}>
-                            {msg.text}
-                            {/* 載入狀態的點點 */}
+                            {/* 2. 使用 ReactMarkdown 渲染 AI 的訊息 */}
+                            {msg.sender === 'llm' && !msg.isStreaming ? (
+                                <div className="markdown-content prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                </div>
+                            ) : (
+                                // 使用者訊息或是載入訊息保持純文字
+                                <span className="whitespace-pre-wrap">{msg.text}</span>
+                            )}
+
                             {msg.isStreaming && <span className="ml-0.5">...</span>}
                         </div>
                     </div>
                 ))}
             </div>
 
-            <form onSubmit={handleSend} className="p-3 border-t absolute bottom-0 w-full bg-white rounded-b-xl">
+            <form onSubmit={handleSend} className="p-3 border-t bg-white rounded-b-xl shrink-0">
                 <div className="flex space-x-2">
                     <textarea
                         value={input}
@@ -141,12 +140,12 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                         placeholder={t('Input something...') || '輸入您的問題...'}
                         disabled={isThinking}
                         rows={1}
-                        className="flex-grow p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                        className="flex-grow p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     />
                     <button
                         type="submit"
                         disabled={isThinking || input.trim() === ''}
-                        className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition font-medium text-sm"
                     >
                         {isThinking ? '...' : t('Send') || '發送'}
                     </button>
