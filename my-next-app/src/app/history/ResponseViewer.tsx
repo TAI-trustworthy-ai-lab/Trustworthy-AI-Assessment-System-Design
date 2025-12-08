@@ -763,30 +763,33 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     try {
       const data: {
         questionId: number,
-        value: number,
-        textValue: string,
-        optionIds: number[]
+        value?: number,
+        textValue?: string,
+        optionId?: number
+        optionIds?: number[]
       }[] = []
-      for (const key in a){
-        if(!a[key].optionIds) continue
-        
+
+      for (const key in editQ){
+        if(editQ[key] === true){
+          data.push({
+            questionId: Number.parseInt(key),
+            value: a[key].score,
+            textValue: a[key].textValue,
+            optionId: a[key].optionIds? [...a[key].optionIds][0]: undefined,
+            optionIds: a[key].optionIds? [...a[key].optionIds]: undefined
+          })
+        }
+      }
+      /* //this is old api
+        [...a[key].optionIds].map(oId=>{
         data.push({
           questionId: Number.parseInt(key),
           value: a[key].score || 0,
           textValue: a[key].textValue || "",
-          optionIds: [...a[key].optionIds]
+          optionId: oId
         })
-
-        /*[...a[key].optionIds].map(oId=>{
-          data.push({
-            questionId: Number.parseInt(key),
-            value: a[key].score || 0,
-            textValue: a[key].textValue || "",
-            optionId: oId
-          })
-        })*/
-      }
-      console.log({answers: data})
+      })*/
+      // console.log({answers: data})
       await updateResponse(r.id, {answers: data})
       SetIsUpdate(false)
       setEditQ(prev=>{
@@ -803,7 +806,8 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       // success if it doesnt catch any error
 
     } catch (error) {
-      console.error('提交錯誤:', error);
+      notify("發生錯誤", "error")
+      console.error('提交錯誤:', error)
     } finally{
       SetIsUpdate(false)
     }
