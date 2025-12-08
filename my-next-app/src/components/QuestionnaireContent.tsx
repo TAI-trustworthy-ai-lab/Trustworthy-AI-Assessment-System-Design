@@ -851,7 +851,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <button
                                 onClick={handleNext}
                                 disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
-                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
+                                className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center"
                             >
                                 {t('Questionnaire.actions.next')}
                             </button>
@@ -859,7 +859,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !isCurrentPageComplete}
-                                // 增加 min-width 以確保動畫有足夠空間
                                 className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center min-w-[150px]"
                             >
                                 {isSubmitting ? <SubmissionLoadingIndicator /> : t('Questionnaire.actions.finishAndSubmit')}

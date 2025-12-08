@@ -185,7 +185,6 @@ const getScoreColor = (score: number) => {
 // ----------------------------------------------------
 const renderTaiWeights = (taiWeightSnapshot: Record<string, number> | null) => {
     const { t, i18n } = useTranslation();
-    console.log(taiWeightSnapshot);
     if (!taiWeightSnapshot || Object.keys(taiWeightSnapshot).length === 0) {
         return (
             <div className="text-center p-4 text-gray-500 border-t mt-4">
