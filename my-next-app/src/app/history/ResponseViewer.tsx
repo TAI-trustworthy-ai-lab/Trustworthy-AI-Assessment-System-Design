@@ -765,20 +765,29 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         questionId: number,
         value: number,
         textValue: string,
-        optionId: number
+        optionIds: number[]
       }[] = []
       for (const key in a){
         if(!a[key].optionIds) continue
-        [...a[key].optionIds].map(oId=>{
+        
+        data.push({
+          questionId: Number.parseInt(key),
+          value: a[key].score || 0,
+          textValue: a[key].textValue || "",
+          optionIds: [...a[key].optionIds]
+        })
+
+        /*[...a[key].optionIds].map(oId=>{
           data.push({
             questionId: Number.parseInt(key),
             value: a[key].score || 0,
             textValue: a[key].textValue || "",
             optionId: oId
           })
-        })
+        })*/
       }
-      await updateResponse(userId, authToken, r.id, data)
+      console.log({answers: data})
+      await updateResponse(r.id, {answers: data})
       SetIsUpdate(false)
       setEditQ(prev=>{
         const p = {...prev}
