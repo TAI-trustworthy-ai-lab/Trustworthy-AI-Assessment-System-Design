@@ -878,6 +878,7 @@ export default function ResponseEditor({
                     .sort((a, b) => a.order - b.order)
                     .map((q) => ({
                         text: q.text,
+                        description: q.description,
                         category: q.category,
                         order: q.order,
                         type: q.type,
