@@ -449,7 +449,8 @@
     "button": {
       "backHome": "返回主頁",
       "generatePdf": "生成 PDF",
-      "preparingPdf": "正在準備 PDF..."
+      "preparingPdf": "正在準備 PDF...",
+      "redo": "重新測驗"
     },
     "common": {
       "notAvailable": "不適用",

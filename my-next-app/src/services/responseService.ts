@@ -194,41 +194,39 @@ export async function deleteResponse(userId: string, authToken: string, id: numb
   }
 };
 
-export async function updateResponse(userId: string, authToken: string, id: number, answers: unknown){
-  if (!userId || userId === 'fallback-user-id') {
-    console.warn('用戶 ID 無效，無法獲取回覆。');
-    return;
-  }
-  if (!authToken || authToken === 'fallback-auth-token') {
-    throw new Error('認證失敗：未提供有效的 authToken。');
-  }
-  const url = `${RESPONSE_API_BASE}/${id}`;
-  const options = { method: 'PATCH' }
+export async function updateResponse(id: number, updatePayload: { answers: unknown }) {
+    const authToken = localStorage.getItem('authToken');
 
-  const payload = {
-    "answers": answers
-  }
-  
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const result: { error?: string, message?: string } = await response.json();
-
-    if (!response.ok) {
-      const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
-      throw errorMessage;
+    if (!authToken || authToken === 'fallback-auth-token') {
+        throw new Error('認證失敗：未提供有效的 authToken。請重新登入。');
     }
-  } catch (e) {
-    console.error(`API 請求最終失敗 (${url}):`, e); 
-    throw e
-  }
+    
+    // 2. 構建 URL
+    const url = `${RESPONSE_API_BASE}/${id}`;
+    const options = { method: 'PATCH' }
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatePayload) 
+        });
+
+        const result: { id?: number, error?: string, message?: string } = await response.json();
+
+        if (!response.ok) {
+            const errorMessage = result.error || result.message || `HTTP 錯誤! 狀態碼: ${response.status}`;
+            throw errorMessage;
+        }
+        return result; 
+        
+    } catch (e) {
+        console.error(`API 請求最終失敗 (${url}):`, e); 
+        throw e
+    }
 };
 
 export function fetchResponse(userId: string, authToken: string, id: number){

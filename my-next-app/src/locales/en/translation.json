@@ -446,7 +446,8 @@
     "button": {
       "backHome": "Back to Home",
       "generatePdf": "Generate PDF",
-      "preparingPdf": "Preparing PDF..."
+      "preparingPdf": "Preparing PDF...",
+      "redo": "Retake Test"
     },
     "common": {
       "notAvailable": "N/A",

@@ -11,6 +11,7 @@ import {
     fetchQuestionnaire as fetchQuestionnaireService, 
     submitQuestionnaire as submitQuestionnaireService,
     generateReport as generateReportService,
+    updateResponse,
 } from '@/services/responseService';
 
 
@@ -654,6 +655,8 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
         const currentProjectId = localStorage.getItem('currentProjectId');
+        const isRedo = localStorage.getItem('redo') === '1'; // 檢查 redo 標誌
+        const existingResponseId = localStorage.getItem('responseId');
 
         // 錯誤處理：基本不會使用到
         if (!currentUserId || !userToken) {
@@ -689,14 +692,34 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             answers: answersPayload,
         };
 
+        const finalPayloadForUpdate = {
+            answers: answersPayload,
+        };
+
+        let responseId;
+
 
         // --- 提交問卷給後端 --- //
         try {
-            const data = await submitQuestionnaireService(finalPayload);
-            const responseId = data.id;
+            if (isRedo && existingResponseId) {
+                const parsedResponseId = parseInt(existingResponseId, 10);
+                const data = await updateResponse(parsedResponseId, finalPayloadForUpdate);
+                
+                responseId = data.id || parsedResponseId;
+                console.log('問卷已更新 (重新測驗模式)，Payload 只含 answers。');
+            }
+            else {
+                const data = await submitQuestionnaireService(finalPayload);
+                responseId = data.id;
+                console.log('問卷已提交 (新回覆)');
+            }
+
+            if (!responseId) {
+                throw new Error('提交或更新後未取得回覆 ID。');
+            }
 
             localStorage.setItem('responseId', responseId.toString());
-            localStorage.removeItem('questionnaireAnswers'); 
+            // localStorage.removeItem('questionnaireAnswers'); 
             localStorage.removeItem('questionnaireCurrentPage');
             setSubmittedResponseId(responseId);
             setIsGeneratingReport(true);

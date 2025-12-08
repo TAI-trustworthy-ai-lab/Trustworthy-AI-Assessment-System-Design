@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ResponseMeta } from '@/services/responseService'
+import { ResponseMeta, updateResponse } from '@/services/responseService'
 import AuthHeader from '@/components/AuthHeader';
 import { ReportRadarChart } from '@/components/ReportRadarChart';
 import PdfExportButton from '@/components/PdfExportButton';
@@ -546,6 +546,24 @@ export default function ReportPage() {
                         </svg>
                     }
                 />
+                {/* 重新測驗按鈕 (Redo/Retake) - 新增 Icon */}
+                <button
+                    onClick={() => router.push('/questionnaire')} 
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
+                        transition duration-150 ease-in-out 
+                        hover:bg-indigo-50 active:bg-indigo-100
+                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    {/* 新增的重做/重新整理圖標 */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
+                    </svg>
+                    <span>{t("reportPage.button.redo")}</span>
+                </button>
                 <button
                     onClick={() => router.push('/home')}
                     className={`
