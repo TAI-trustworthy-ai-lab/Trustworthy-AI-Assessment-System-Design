@@ -158,6 +158,7 @@ interface ReportData {
         version?: { title?: string };
         user?: { name?: string };
     }) | null;
+    questionStatsText?: Record<string, string>; // ⭐ 新增：後端產出的「各指標填答統計」Markdown 字串
 }
 
 // ----------------------------------------------------
@@ -239,6 +240,8 @@ export default function ReportPage() {
     const [projectName, setProjectName] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+    const [expandedIndicators, setExpandedIndicators] = useState<{ [key: string]: boolean }>({});
+
 
     const { responseId, authToken } = useMemo(() => {
         if (typeof window === 'undefined') return { responseId: null, authToken: null };
@@ -434,60 +437,101 @@ export default function ReportPage() {
 
                     {/* 各項指標細節區塊 */}
                     <section className="mb-8">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">{t('reportPage.report.detailIndicators')}</h2>
-                        <div className="space-y-4">
-                            {/* ⭐️ 迭代 TAI 指標數據 ⭐️ */}
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">
+                            {t('reportPage.report.detailIndicators')}
+                        </h2>
+
+                        <div className="space-y-5">
                             {Object.entries(TAI_INDICATOR_MAP_EN_ZH).map(([key, title]) => {
-                                const score = report.radarData[key];
-                                if (score === undefined) return null;
-                                const isNA = typeof score === 'string';
+                            const score = report.radarData[key];
+                            if (score === undefined) return null;
 
-                                const containerClasses = `flex items-center space-x-4 p-3 bg-gray-50 rounded-lg ${isNA ? 'opacity-50' : ''}`;
-                                const titleWidth = "w-1/3 sm:w-1/5";
-                                const contentWidth = "w-2/3 sm:w-4/5";
+                            const isNA = typeof score === 'string';
 
-                                return (
-                                    <div key={key} className={containerClasses}>
-                                        <div className={`${titleWidth} text-sm sm:text-base font-semibold text-gray-700`}>
-                                            {(i18n.language !== "en")
-                                                ? title
-                                                : (key.charAt(0).toUpperCase() + key.slice(1).toLowerCase())
-                                            }
-                                        </div>
+                            // 後端給的該指標統計 Markdown
+                            const axisStatsMd =
+                                report.questionStatsText && report.questionStatsText[key]
+                                ? report.questionStatsText[key]
+                                : "";
 
-                                        {/* 進度條 */}
-                                        <div className={`${contentWidth} flex items-center`}>
+                            // 這個指標目前是否展開
+                            const isExpanded = !!expandedIndicators[key];
 
-                                            {isNA ? (
-                                                // 情況 1: Score 是字串 
-                                                <>
-                                                    <div className="flex-grow text-sm text-gray-500 italic text-left">
-                                                        {t('reportPage.common.notAvailable')}
-                                                    </div>
-                                                    <span className="ml-3 text-sm font-bold w-12 text-right text-gray-800">
-                                                        {"-"}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                // 情況 2: Score 是數字
-                                                <>
-                                                    <div className="flex-grow h-3 rounded-full bg-gray-200">
-                                                        <div
-                                                            className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(score as number)}`}
-                                                            style={{ width: `${score}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">
-                                                        {(score as number).toFixed(2)}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
+                            const containerClasses = `flex items-center space-x-4 p-3 bg-gray-50 rounded-lg ${
+                                isNA ? "opacity-50" : ""
+                            }`;
+                            const titleWidth = "w-1/3 sm:w-1/5";
+                            const contentWidth = "w-2/3 sm:w-4/5";
+
+                            // 點擊時切換展開/收合
+                            const handleToggle = () => {
+                                setExpandedIndicators((prev) => ({
+                                ...prev,
+                                [key]: !prev[key],
+                                }));
+                            };
+
+                            return (
+                                <div key={key} className="space-y-2">
+                                {/* 上面這塊：標題 + 進度條 + 展開icon（可點擊） */}
+                                <button
+                                    type="button"
+                                    onClick={handleToggle}
+                                    className={`${containerClasses} w-full text-left cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-300`}
+                                >
+                                    <div
+                                    className={`${titleWidth} text-sm sm:text-base font-semibold text-gray-700 flex items-center space-x-1`}
+                                    >
+                                    <span>
+                                        {i18n.language !== "en"
+                                        ? title
+                                        : key.charAt(0).toUpperCase() + key.slice(1).toLowerCase()}
+                                    </span>
+                                    {/* 小箭頭：展開 / 收合視覺提示 */}
+                                    <span className="text-xs text-gray-400">
+                                        {isExpanded ? "▲" : "▼"}
+                                    </span>
                                     </div>
-                                );
+
+                                    <div className={`${contentWidth} flex items-center`}>
+                                    {isNA ? (
+                                        <>
+                                        <div className="flex-grow text-sm text-gray-500 italic text-left">
+                                            {t("reportPage.common.notAvailable")}
+                                        </div>
+                                        <span className="ml-3 text-sm font-bold w-12 text-right text-gray-800">
+                                            {"-"}
+                                        </span>
+                                        </>
+                                    ) : (
+                                        <>
+                                        <div className="flex-grow h-3 rounded-full bg-gray-200">
+                                            <div
+                                            className={`h-3 rounded-full transition-all duration-700 ${getScoreColor(
+                                                score as number
+                                            )}`}
+                                            style={{ width: `${score}%` }}
+                                            />
+                                        </div>
+                                        <span className="ml-3 text-sm font-bold w-10 text-right text-gray-800">
+                                            {(score as number).toFixed(2)}
+                                        </span>
+                                        </>
+                                    )}
+                                    </div>
+                                </button>
+
+                                {/* 下方這塊：只有在展開 & 有 stats 時才顯示 */}
+                                {axisStatsMd && isExpanded && (
+                                    <div className="ml-2 sm:ml-6 bg-purple-50 border border-purple-100 rounded-lg p-3 text-xs sm:text-sm text-gray-700">
+                                    <TranslatedMarkdown content={axisStatsMd} />
+                                    </div>
+                                )}
+                                </div>
+                            );
                             })}
                         </div>
-                    </section>
+                        </section>
                 </div>
             </main>
             <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
