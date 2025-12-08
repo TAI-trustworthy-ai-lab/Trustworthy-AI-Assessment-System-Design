@@ -58,6 +58,25 @@ interface SortingData{
   }
 }
 
+enum InfoState {
+  idle,
+  in,
+  out
+}
+
+class Notification{
+  static delay: number
+
+  static setDelay(delay: number){
+    Notification.delay = delay
+  }
+
+  static notify(onNotify: ()=> void, onTimeout: ()=> void) {
+    onNotify()
+    setTimeout(()=>onTimeout(), Notification.delay)
+  }
+}
+
 // ----------------------------------------------------
 // 暫存結構：中文原文 & 英文翻譯
 // ----------------------------------------------------
@@ -158,7 +177,6 @@ export default function HistoryPage() {
     number,
     ResponseData | null
   >>({})
-  const [infoText, setInfoText] = useState<string>("")
   const { i18n, t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -175,8 +193,12 @@ export default function HistoryPage() {
   const [sortType, setSortType] = useState(SortType.Date)
   const [groupType, setGroupType] = useState(GroupType.Project)
 
+  Notification.setDelay(4000)
+  const [infoText, setInfoText] = useState<React.JSX.Element[]>([])
+  const [infoNow, setInfoNow] = useState(0)
+
   const router = useRouter();
-  const menuSize = { x: 200, y: 215 }
+  const menuSize = { x: 200, y: 250 }
 
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -408,14 +430,17 @@ export default function HistoryPage() {
     if (!userId || userId === 'fallback-user-id' || !authToken) {
       return;
     }
+    notify("刪除中...", "default")
     try {
       await deleteResponse(userId, authToken, id);
+      notify("刪除成功", "success")
     } catch (e) {
       setResponseList(prev => {
         const newList = [...prev]
         newList.splice(index, 0, r)
         return newList
       })
+      notify("刪除失敗", "error")
       console.error("fail to del response", e)
     }
   }
@@ -425,9 +450,9 @@ export default function HistoryPage() {
     if (curResponse) {
       try {
         delResponse(curResponse.id)
-        setInfoText(t('historyPage.deleteSuccess'))
+        //setInfoText(t('historyPage.deleteSuccess'))
       } catch (e) {
-        setInfoText(t('historyPage.deleteFail'))
+        //setInfoText(t('historyPage.deleteFail'))
         console.error("刪除回應時發生錯誤", e)
       }
     }
@@ -489,6 +514,69 @@ export default function HistoryPage() {
         return newArr
       })
     }
+  }
+
+  function notify(text= "text", type= "default"){
+    const colors = {
+      success: "bg-green-500",
+      error: "bg-red-500",
+      default: "bg-blue-500",
+    }
+    let color = colors.default
+    if(type === "success") color = colors.success
+    else if(type === "error") color = colors.error
+
+    const item = (
+      <div className={`
+        flex justify-center items-center
+        w-fit h-full p-3
+        ${color} text-white font-bold
+        whitespace-nowrap`}
+      >
+        {text}
+      </div>
+    )
+      
+    Notification.notify(
+      ()=>{
+        setInfoText(prev=>{
+          const p = [item, ...prev]
+          if(p.length > 4) p.pop()
+          return p
+        })
+        setInfoNow(prev => prev<<1|1 )
+      },
+      ()=>{
+        setInfoNow(prev => prev>>1)
+      }
+    )
+  }
+
+  const infoItem = (index: number)=>{
+    //if(index === 0) return
+    return (
+      <div
+        key={index}
+        className='relative h-[116px]'
+      >
+        <div
+          className={`
+            absolute left-[0%]
+            w-fit h-[116px]
+            bg-white shadow-lg rounded-l-2xl
+            
+            overflow-hidden
+            
+            ${((infoNow) & (1 << index)) === 0 ?
+              " translate-x-[0%] transform transition duration-200 ease-out":
+              "-translate-x-[100%]"
+            }
+          `}
+        >
+          {infoText[index]}
+        </div>
+      </div>
+    )
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -562,7 +650,7 @@ export default function HistoryPage() {
   // 載入中狀態顯示
   if (isLoading) return (
     <div className='h-screen items-center justify-center'>
-        <LoadingComponent message={t('historyPage.loadingResponses')} />
+      <LoadingComponent message={t('historyPage.loadingResponses')} />
     </div>
   );
 
@@ -582,6 +670,19 @@ export default function HistoryPage() {
 
   return (
     <ProtectedLayout>
+      {/* notification on left side */}
+      <div
+        className='
+          fixed bottom-0 right-0 z-[70] gap-3
+          flex flex-col-reverse justify-start items-end
+          w-5 h-full pb-8
+          pointer-events-none'
+      > 
+        {infoItem(0)}
+        {infoItem(1)}
+        {infoItem(2)}
+        {infoItem(3)}
+      </div>
 
       {/* response window */}
       {isOpen && (
@@ -623,7 +724,8 @@ export default function HistoryPage() {
                 state={viewerState}
                 data={viewerData}
                 onEdit={()=>{
-                  console.log("onEdit")
+                  // console.log("onEdit")
+                  notify("回覆提交成功", "success")
                   if (curResponse) {
                     setFetchList(prev=>{
                       const p = {...prev}
@@ -632,6 +734,11 @@ export default function HistoryPage() {
                     })
                   }
                 }}
+                onReport={()=>{
+                  console.log("onReport")
+                  notify("報告產生成功", "success")
+                }}
+                notify={notify}
               />
             </div>
           </div>
@@ -715,9 +822,17 @@ export default function HistoryPage() {
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
-              setShowMenu(false)
-              setViewerState(ViewerState.editing)
-              setIsOpen(true)
+              if (curResponse) {
+                setViewerState(ViewerState.loading)
+                setIsOpen(true)
+                setShowMenu(false)
+
+                try {
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.editing)
+                } catch (e) {
+                  console.error("取得回應時發生錯誤", e)
+                }
+              }
             }}
           >
             編輯
@@ -888,10 +1003,6 @@ export default function HistoryPage() {
       </div>
     </ProtectedLayout>
   )
-}
-
-export function Notification() {
-
 }
 
 export function SortControls({ sortWay, sortType, groupType, onSortWayChange, onSortTypeChange, onGroupTypeChange }: {
@@ -1311,10 +1422,12 @@ export function formatTimeGroup(
   return t('historyPage.longAgo');;
 }
 
-export function ResponseWindow({ state, data, onEdit }: {
+export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   state: ViewerState,
   data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } ,
-  onEdit: ()=>void
+  onEdit: ()=>void,
+  onReport: ()=>void,
+  notify: (text:string, type:string)=>void, 
 }) {
   const [curState, setCurState] = useState(state)
   const router = useRouter();
@@ -1587,6 +1700,11 @@ export function ResponseWindow({ state, data, onEdit }: {
           onEdit()
           removeState(ViewerState.editing)
         }}
+        onReport={()=>{
+          onReport()
+          // removeState(ViewerState.editing)
+        }}
+        notify={notify}
       />
     </div>
   </>)

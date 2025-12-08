@@ -550,10 +550,12 @@ function deepEqual(a: any, b: any): boolean {
 // 問卷內容主組件
 // ----------------------------------------------------
 
-export default function ResponseViewer({curState, data, onEdit }: { 
+export default function ResponseViewer({curState, data, onEdit, onReport, notify }: { 
   curState: ViewerState,
   data:{response: ResponseData, questionnaire: QuestionnaireData},
-  onEdit: ()=>void
+  onEdit: ()=>void,
+  onReport: ()=>void,
+  notify: (text:string, type:string)=>void,
 }) {
   const { i18n, t } = useTranslation()
   
@@ -749,11 +751,11 @@ export default function ResponseViewer({curState, data, onEdit }: {
         }
       }
       if(!hasEdit){
-        console.log(" no change")
+        //console.log(" no change")
+        notify("無任何變更", "default")
         return
       }
     }
-    
 
     SetIsUpdate(true)
     const userId = localStorage.getItem('userId') || ""
@@ -786,8 +788,9 @@ export default function ResponseViewer({curState, data, onEdit }: {
         return p
       })
       onEdit()
+      notify("產生報告中...", "default")
       await generateReport(r.id)
-      console.log("report done");
+      onReport()
       // success if it doesnt catch any error
 
     } catch (error) {
@@ -833,10 +836,11 @@ export default function ResponseViewer({curState, data, onEdit }: {
                 py-2 px-6
                 bg-green-600 rounded-lg
                 text-white font-bold
-                pointer-events-auto
+                pointer-events-auto cursor-pointer
                 
                 hover:bg-green-500
-                disabled:opacity-50 "
+                disabled:opacity-50
+                disabled:cursor-not-allowed"
             >
               {isUpdate ? <SubmissionLoadingIndicator /> : t('Questionnaire.actions.finishAndSubmit')}
             </button>
