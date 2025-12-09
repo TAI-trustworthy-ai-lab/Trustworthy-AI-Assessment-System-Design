@@ -9,6 +9,22 @@ import { ResponseMeta, updateResponse } from '@/services/responseService'
 import AuthHeader from '@/components/AuthHeader';
 import { ReportRadarChart } from '@/components/ReportRadarChart';
 import PdfExportButton from '@/components/PdfExportButton';
+import ResponseViewer, {
+    Option,
+    Question,
+    QuestionnaireData,
+    styleSelected,
+    styleUnselected
+} from '../../components/ResponseViewer';
+import {
+    ResponseData,
+    ViewerState,
+    fetchResponseList,
+    deleteResponse,
+    fetchResponse,
+    fetchQuestionnaire
+} from '@/services/responseService'
+import { LoadingComponent } from '@/components/LoadingComponent';
 
 // ----------------------------------------------------
 // 暫存結構：中文原文 & 英文翻譯
@@ -140,6 +156,7 @@ const useRouter = () => {
 
 import { fetchReport as fetchReportService } from '@/services/reportService';
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
+import { CircleX } from 'lucide-react';
 
 // ----------------------------------------------------
 // 後端回傳資料結構定義
@@ -241,16 +258,73 @@ export default function ReportPage() {
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [expandedIndicators, setExpandedIndicators] = useState<{ [key: string]: boolean }>({});
 
+    // state for response viewer
+    const [isOpen, setIsOpen] = useState(false);
+    const isOpenRef = useRef(isOpen);
+    const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
+    const [viewerData, setViewerData] = useState<{
+        response: ResponseData | null,
+        questionnaire: QuestionnaireData | null
+    }>({ response: null, questionnaire: null });
 
-    const { responseId, authToken } = useMemo(() => {
-        if (typeof window === 'undefined') return { responseId: null, authToken: null };
+    useEffect(() => {
+        isOpenRef.current = isOpen;
+    }, [isOpen]);
+
+    // data for response viewer
+    const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null);
+    const [fetchQuestionnaireList, setFetchQuestionnaireList] = useState<Record<
+        number,
+        QuestionnaireData | null
+    >>({})
+    const [fetchList, setFetchList] = useState<Record<
+        number,
+        ResponseData | null
+    >>({})
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            //const storedUserId = localStorage.getItem('userId');
+            //const storedAuthToken = localStorage.getItem('authToken');
+            const fetchListString = localStorage.getItem("myQuestionnaire");
+            const data = fetchListString ? JSON.parse(fetchListString) : [];
+        
+            //setUserId(storedUserId);
+            //setAuthToken(storedAuthToken);
+            setFetchQuestionnaireList(data)
+        
+            //setIsSortLock(true)
+            //const sortingDataString = localStorage.getItem("sortingData");
+            //console.log("loading: ", sortingDataString)
+        
+            /*const sortingData = sortingDataString ? JSON.parse(sortingDataString) as SortingData :
+                {
+                sort: {
+                    type: SortType.Date,
+                    way: SortWay.Accend
+                },
+                group: {
+                    type: GroupType.Project,
+                    way: SortWay.Accend
+                }
+            }*/
+            //setSortType(sortingData.sort? sortingData.sort.type : SortType.Date)
+            //setSortWay(sortingData.sort? sortingData.sort.way: SortWay.Accend)
+            //setGroupType(sortingData.group? sortingData.group.type: GroupType.Project)
+            //setIsSortLock(false)
+        }
+    }, []);
+
+    const { responseId, userId, authToken } = useMemo(() => {
+        if (typeof window === 'undefined') return { responseId: null, userId: null, authToken: null };
 
         const idString = localStorage.getItem('responseId');
         const token = localStorage.getItem('authToken');
         const id = idString ? parseInt(idString, 10) : null;
+        const storedUserId = localStorage.getItem('userId');
 
         return {
             responseId: id,
+            userId: storedUserId,
             authToken: token,
         };
     }, []);
@@ -389,6 +463,89 @@ export default function ReportPage() {
         }
     };
 
+    // open
+    // get response and questionnair from response id and qId (GET API)
+    const getResponseAndQuestionnaire = async (id: number, locale: string | undefined, finalState: ViewerState) => 
+    {
+        fetchList[id] = fetchList[id] || null
+    
+        let r: ResponseData | null = null
+        let q: QuestionnaireData | null = null
+    
+        // response
+        if (fetchList[id] === null) {
+            console.log("fetch response")
+            if (!userId || userId === 'fallback-user-id' || !authToken) {
+                return;
+            }
+        
+            try {
+                r = await fetchResponse(userId, authToken, id)
+            } catch (e) {
+                setViewerState(ViewerState.fail)
+                console.error("error while fetchResponse", e)
+                throw "fail to get response"
+            }
+    
+            if (r === null || r === undefined) {
+                setViewerState(ViewerState.fail)
+                throw "fail to get response"
+            }
+            else {
+                fetchList[id] = r
+            }
+        }
+        else r = fetchList[id]
+    
+        const qChecker = (q: QuestionnaireData) => {
+            return (
+                q.description !== undefined
+                && q.group !== undefined
+                && q.id !== undefined
+                && q.title !== undefined
+                && q.questions !== undefined
+            )
+        }
+
+        const qId = r.versionId
+        fetchQuestionnaireList[qId] = fetchQuestionnaireList[qId] || null
+    
+        // questionnaire
+        if (fetchQuestionnaireList[qId] === null
+            || qChecker(fetchQuestionnaireList[qId]) === false)
+        {
+            console.log("not find q in local storage")
+            if (!userId || userId === 'fallback-user-id' || !authToken) {
+                return;
+            }
+        
+            try {
+                q = await fetchQuestionnaire(qId);
+            } catch (e) {
+                setViewerState(ViewerState.fail)
+                console.error("error while fetchResponse", e)
+                throw "fail to get response"
+            }
+        
+            if (q === null || q === undefined) {
+                setViewerState(ViewerState.fail)
+                throw "fail to get questionnaire"
+            }
+            else {
+                fetchQuestionnaireList[qId] = q
+                try {
+        
+                } catch (e) {
+                console.error("fail to translate:", e)
+                }
+            }
+        }
+        else q = fetchQuestionnaireList[qId]
+    
+        localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
+        setViewerData({ response: r, questionnaire: q })
+        setViewerState(finalState)
+    }
 
     // --- 報告成功載入後的渲染 --- 
     const markdownContent = report.analysisText;
@@ -545,45 +702,63 @@ export default function ReportPage() {
                         </section>
                 </div>
             </main>
-            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
-                <PdfExportButton
-                    contentId="report-content"
-                    projectName={projectName}
-                    modelStage={versionTitle}
-                    preparingText={t('reportPage.button.preparingPdf')}
-                    generateText={t('reportPage.button.generatePdf')}
-                    icon={
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    }
-                />
-                {/* 重新測驗按鈕 (Redo/Retake) - 新增 Icon */}
-                <button
-                    onClick= {handleRedoQuestionnaire}
-                    className={`
-                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
-                        transition duration-150 ease-in-out 
-                        hover:bg-indigo-50 active:bg-indigo-100
-                        focus:outline-none focus:ring-4 focus:ring-indigo-300
-                        flex items-center space-x-2
-                    `}
+
+            {/* response window */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
+                    onClick={() => { setIsOpen(false) }}
                 >
-                    {/* 新增的重做/重新整理圖標 */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
-                    </svg>
-                    <span>{t("reportPage.button.redo")}</span>
-                </button>
+                    <div
+                        className=" 
+                            absolute flex flex-col top-[3vh]
+                            w-full h-[90vh] max-h-[680]
+                            mx-0 p-5
+                            bg-gray-100 rounded-xl shadow-lg
+                            
+                            md:mx-20
+                            md:max-w-[800]"
+                        onClick={(e) => e.stopPropagation()} // avoid clicking background
+                    >
+                        <div className="
+                            relative h-full w-full 
+                            bg-gray-50 
+                            rounded overflow-hidden "
+                        >
+                        <div 
+                            className='absolute top-4 left-4 z-[61] size-fit'
+                            onClick={() => { setIsOpen(false) }}
+                        >
+                            <CircleX
+                                size={40}
+                                className='
+                                text-white hover:text-red-500 cursor-pointer
+                                drop-shadow-lg drop-shadow-black/45
+                                
+                                lg:hidden'
+                            />
+                        </div>
+                        <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
+                        <ResponseWindow
+                            state={viewerState}
+                            data={viewerData}
+                        />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* buttons */}
+            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print">
+                {/* 1. 返回首頁 (Secondary Style) */}
                 <button
                     onClick={() => router.push('/home')}
                     className={`
                         w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
+                        bg-white text-gray-700 shadow-2xl border border-gray-300 
                         transition duration-150 ease-in-out 
-                        hover:bg-indigo-50 active:bg-indigo-100
-                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        hover:bg-gray-50 active:bg-gray-100
+                        focus:outline-none focus:ring-4 focus:ring-gray-300
                         flex items-center space-x-2
                     `}
                 >
@@ -592,7 +767,154 @@ export default function ReportPage() {
                     </svg>
                     <span>{t("reportPage.button.backHome")}</span>
                 </button>
+                
+                <button
+                    onClick={async () => {
+                        // ... (您的邏輯)
+                        if(responseId === null) return
+                        setViewerState(ViewerState.loading)
+                        setIsOpen(true)      
+                        try {
+                            getResponseAndQuestionnaire(responseId, i18n.language, ViewerState.success)
+                        } catch (e) {
+                            console.error("取得回應時發生錯誤", e)
+                        }
+                    }} 
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-white text-gray-700 shadow-2xl border border-gray-300 
+                        transition duration-150 ease-in-out 
+                        hover:bg-gray-50 active:bg-gray-100
+                        focus:outline-none focus:ring-4 focus:ring-gray-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    {/* 新的圖標：文件或列表 */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        {/* 圖標路徑：一個帶有內容的文件圖標 (File with Content) */}
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m-6-8h6M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0015.586 5H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span>填答紀錄</span>
+                </button>
+
+                <button
+                    onClick={handleRedoQuestionnaire}
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
+                        transition duration-150 ease-in-out 
+                        hover:bg-indigo-50 active:bg-indigo-100
+                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
+                    </svg>
+                    <span>{t("reportPage.button.redo")}</span>
+                </button>
+                
+                <PdfExportButton
+                    contentId="report-content"
+                    projectName={projectName}
+                    modelStage={versionTitle}
+                    preparingText={t('reportPage.button.preparingPdf')}
+                    generateText={t('reportPage.button.generatePdf')}
+                    className={`
+                        py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-indigo-600 text-white shadow-2xl border border-indigo-700 
+                        transition duration-150 ease-in-out 
+                        hover:bg-indigo-700 active:bg-indigo-800
+                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        flex items-center space-x-2
+                    `}
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    }
+                />
             </div>
         </div>
     );
+}
+
+function ResponseWindow({state, data}:{
+    state: ViewerState,
+    data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } ,
+}){
+    const [curState, setCurState] = useState(state)
+    const { i18n, t } = useTranslation();
+    
+    useEffect(() => {
+    setCurState(state)
+    }, [state])
+
+    const switchState = (state: ViewerState)=>{
+    setCurState(prev => prev ^ state)
+    }
+
+    const addState = (state: ViewerState)=>{
+    setCurState(prev => prev | state)
+    }
+
+    const removeState = (state: ViewerState)=>{
+    setCurState(prev => prev & ~(state))
+    }
+
+    // loading
+    if (curState & ViewerState.loading) return (
+        <div className="
+            flex items-center justify-center
+            w-full h-full"
+        >
+            <LoadingComponent message={t("historyPage.loading")} />
+        </div>
+    )
+
+    // fail
+    if ((curState & ViewerState.fail)
+        || (data.response === null || data.questionnaire === null)
+    ) return (
+    <div className="
+        flex items-center justify-center
+        w-full h-full"
+    >
+        <h2 className="
+            mb-4
+            text-red-600 text-lg font-semibold"
+        >
+            {t('historyPage.fetchFail')}
+        </h2>
+    </div>
+    )
+
+    return(
+        <div className="
+            relative
+            flex flex-col items-center justify-center
+            w-full h-full"
+        >
+            <div className='
+                absolute bottom-0 z-52
+                w-[100%] h-full
+                bg-gradient-to-t from-black/10 to-transparent
+                pointer-events-none'
+            />
+
+            <div className={`
+                absolute z-[58] bottom-0
+                flex justify-center items-start space-x-4
+                h-full w-fit`
+            }>
+                <ResponseViewer
+                    curState={ViewerState.success}
+                    data={{ response: data.response, questionnaire: data.questionnaire }}
+                    onEdit={()=>{}}
+                    onReport={()=>{}}
+                    notify={()=>{}}
+                />
+            </div>
+        </div>
+    )
 }
