@@ -8,7 +8,7 @@ import {
   updateResponse,
   generateReport
 } from "@/services/responseService";
-import { LoadingComponent, } from "@/app/history/page"
+import { LoadingComponent } from '@/components/LoadingComponent';
 import { ChevronUp } from 'lucide-react'
 
 const useRouter = () => {
