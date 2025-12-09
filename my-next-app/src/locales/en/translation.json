@@ -449,6 +449,9 @@
       "preparingPdf": "Preparing PDF...",
       "redo": "Retake Test"
     },
+    "confirmation": {
+      "redo": "Are you sure you want to re-evaluate?\n\nThis action will create a completely new historical record based on the current answers, allowing you to track your progress. The old report will be retained in your history."
+    },
     "common": {
       "notAvailable": "N/A",
       "indicatorScore": "TAI Score: ",
