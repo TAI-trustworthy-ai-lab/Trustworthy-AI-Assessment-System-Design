@@ -521,11 +521,13 @@ export default function HistoryPage() {
     const colors = {
       success: "bg-green-500",
       error: "bg-red-500",
+      warning: "bg-yellow-500",
       default: "bg-blue-500",
     }
     let color = colors.default
     if(type === "success") color = colors.success
     else if(type === "error") color = colors.error
+    else if(type === "warning") color = colors.warning
 
     const item = (
       <div className={`
@@ -1651,6 +1653,10 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           ViewerState.report,
           (e) => {
             e.stopPropagation()
+            if (curState & ViewerState.noReport) {
+              notify("報告生成中，請稍後", "warning")
+              return
+            }
             if (data.response === null || data.response === undefined) return
 
             localStorage.setItem('responseId', (data.response.id).toString());
@@ -1700,10 +1706,11 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
         onEdit={()=>{
           onEdit()
           removeState(ViewerState.editing)
+          addState(ViewerState.noReport)
         }}
         onReport={()=>{
           onReport()
-          // removeState(ViewerState.editing)
+          removeState(ViewerState.noReport)
         }}
         notify={notify}
       />

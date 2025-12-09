@@ -74,8 +74,9 @@ export enum ViewerState{
   editing     = 1 << 3,
   dirty       = 1 << 4,
   detail      = 1 << 5,
-  report      = 1 << 6,
-  translating = 1 << 7,
+  noReport    = 1 << 6,
+  report      = 1 << 7,
+  translating = 1 << 8,
 }
 
 // fetch 函數  FETCH FUNCTION
