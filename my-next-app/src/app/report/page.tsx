@@ -453,6 +453,16 @@ export default function ReportPage() {
         );
     };
 
+    const handleRedoQuestionnaire = () => {
+        const isConfirmed = window.confirm(
+            t('reportPage.confirmation.redo') // 使用 i18n 翻譯的提示訊息
+        );
+
+        if (isConfirmed) {
+            router.push('/questionnaire');
+        }
+    };
+
     // open
     // get response and questionnair from response id and qId (GET API)
     const getResponseAndQuestionnaire = async (id: number, locale: string | undefined, finalState: ViewerState) => 
@@ -739,86 +749,90 @@ export default function ReportPage() {
             )}
 
             {/* buttons */}
-            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print"> 
-                <PdfExportButton
-                    contentId="report-content"
-                    projectName={projectName}
-                    modelStage={versionTitle}
-                    preparingText={t('reportPage.button.preparingPdf')}
-                    generateText={t('reportPage.button.generatePdf')}
-                    icon={
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                    }
-                />
-                {/* 重新測驗按鈕 (Redo/Retake) - 新增 Icon */}
-                <button
-                    onClick={() => {
-                        localStorage.setItem('redo', '1');
-                        router.push('/questionnaire');
-                    }}
-                    className={`
-                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
-                        transition duration-150 ease-in-out 
-                        hover:bg-indigo-50 active:bg-indigo-100
-                        focus:outline-none focus:ring-4 focus:ring-indigo-300
-                        flex items-center space-x-2
-                    `}
-                >
-                    {/* 新增的重做/重新整理圖標 */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
-                    </svg>
-                    <span>{t("reportPage.button.redo")}</span>
-                </button>
-
-                {/* view response */}
-                <button
-                    onClick={async () => {
-                        // open response viewer
-                        if(responseId === null) return
-                        setViewerState(ViewerState.loading)
-                        setIsOpen(true)        
-                        try {
-                            getResponseAndQuestionnaire(responseId, i18n.language, ViewerState.success)
-                        } catch (e) {
-                        console.error("取得回應時發生錯誤", e)
-                        }
-                    }} 
-                    className={`
-                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
-                        transition duration-150 ease-in-out 
-                        hover:bg-indigo-50 active:bg-indigo-100
-                        focus:outline-none focus:ring-4 focus:ring-indigo-300
-                        flex items-center space-x-2
-                    `}
-                >
-                    {/* 新增的重做/重新整理圖標 */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
-                    </svg>
-                    <span>填答紀錄</span>
-                </button>
-
+            <div className="flex justify-center mt-10 mb-20 space-x-4 no-print">
+                {/* 1. 返回首頁 (Secondary Style) */}
                 <button
                     onClick={() => router.push('/home')}
                     className={`
                         w-auto py-3 px-6 text-lg font-semibold rounded-full 
-                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
+                        bg-white text-gray-700 shadow-2xl border border-gray-300 
                         transition duration-150 ease-in-out 
-                        hover:bg-indigo-50 active:bg-indigo-100
-                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        hover:bg-gray-50 active:bg-gray-100
+                        focus:outline-none focus:ring-4 focus:ring-gray-300
                         flex items-center space-x-2
                     `}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l-2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6m-6 0h-2M9 17h6" />
                     </svg>
-                    <span>{t("reportPage.button.backHome")}</span>
+                    <span className = "hidden md:inline">{t("reportPage.button.backHome")}</span>
                 </button>
+                
+                <button
+                    onClick={async () => {
+                        if(responseId === null) return
+                        setViewerState(ViewerState.loading)
+                        setIsOpen(true)      
+                        try {
+                            getResponseAndQuestionnaire(responseId, i18n.language, ViewerState.success)
+                        } catch (e) {
+                            console.error("取得回應時發生錯誤", e)
+                        }
+                    }} 
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-white text-gray-700 shadow-2xl border border-gray-300 
+                        transition duration-150 ease-in-out 
+                        hover:bg-gray-50 active:bg-gray-100
+                        focus:outline-none focus:ring-4 focus:ring-gray-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    {/* 新的圖標：文件或列表 */}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        {/* 圖標路徑：一個帶有內容的文件圖標 (File with Content) */}
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m-6-8h6M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0015.586 5H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <span className = "hidden md:inline">填答紀錄</span>
+                </button>
+
+                <button
+                    onClick={handleRedoQuestionnaire}
+                    className={`
+                        w-auto py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-white text-indigo-600 shadow-2xl border border-indigo-300 
+                        transition duration-150 ease-in-out 
+                        hover:bg-indigo-50 active:bg-indigo-100
+                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        flex items-center space-x-2
+                    `}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356-2A8.001 8.001 0 004.582 17.5l-1.636 1.636M20 20v-5h-.582a8.001 8.001 0 01-15.356 2.5l1.636-1.636" />
+                    </svg>
+                    <span className = "hidden md:inline">{t("reportPage.button.redo")}</span>
+                </button>
+
+                <PdfExportButton
+                    contentId="report-content"
+                    projectName={projectName}
+                    modelStage={versionTitle}
+                    preparingText={t('reportPage.button.preparingPdf')}
+                    generateText={t('reportPage.button.generatePdf')}
+                    className={`
+                        py-3 px-6 text-lg font-semibold rounded-full 
+                        bg-indigo-600 text-white shadow-2xl border border-indigo-700 
+                        transition duration-150 ease-in-out 
+                        hover:bg-indigo-700 active:bg-indigo-800
+                        focus:outline-none focus:ring-4 focus:ring-indigo-300
+                        flex items-center space-x-2
+                    `}
+                    icon={
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    }
+                />
             </div>
         </div>
     );
