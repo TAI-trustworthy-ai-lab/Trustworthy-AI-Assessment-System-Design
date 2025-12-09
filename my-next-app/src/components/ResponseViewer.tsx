@@ -705,12 +705,20 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       ...prev,
       [questionId]: answerValue,
     }));
+    
+    let changed = false
+    if(typeQ[questionId] === 'SCALE') changed = (answerValue.score === answers[questionId].score)
+    else if (typeQ[questionId] === 'SINGLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ[questionId] === 'MULTIPLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ[questionId] === 'TEXT') changed = (answerValue.textValue === answers[questionId].textValue)
 
     // answer changed
-    //console.log("new:", answerValue, "\nold:", answers[questionId])
     setEditQ(prev=>{
       const p = {...prev}
-      p[questionId] = !deepEqual(answerValue, answers[questionId])
+      p[questionId] = changed
+      if(p[questionId] === true){
+        console.log("new:", answerValue, "\nold:", answers[questionId], "\noriginal:", answers[questionId])
+      }
       return p
     })
     
