@@ -150,9 +150,9 @@ export default function ChooseQuestionnairePage() {
 
     return (
         <ProtectedLayout>
-            <div className="min-h-screen bg-gray-50">
+            <div className="pt-20 min-h-screen bg-gray-50">
                 <AuthHeader />
-                <main className="pt-30 flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] px-4">
+                <main className="flex flex-col items-center px-4 pt-10">
                     <div className="max-w-xl text-center mb-10">
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
                             {t("choosePage.title")}
