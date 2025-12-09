@@ -11,7 +11,6 @@ import {
     fetchQuestionnaire as fetchQuestionnaireService, 
     submitQuestionnaire as submitQuestionnaireService,
     generateReport as generateReportService,
-    updateResponse,
 } from '@/services/responseService';
 
 
@@ -163,10 +162,10 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
         const question = allQuestions.find(q => q.id === questionId);
 
         if (!question) return acc;
-        const scoreToSubmit = typeof answerValue.score === 'number' ? answerValue.score : null;
+        const scoreToSubmit = (typeof answerValue.score === 'number') ? answerValue.score : null;
 
         // handle different type of questions
-        if (question.type === 'SCALE' || question.type === 'SINGLE_CHOICE') {
+        if (question.type === 'SCALE') {
             const optionId = answerValue.optionIds?.[0] ?? null;
             acc.push({
                 questionId: questionId,
@@ -176,12 +175,23 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
                 textValue: null,
             });
 
-        } else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
+        } else if (question.type === 'SINGLE_CHOICE') {
+            const optionId = answerValue.optionIds?.[0] ?? null;
+            acc.push({
+                questionId: questionId,
+                optionId: optionId,
+                optionIds: null,
+                value: null,
+                textValue: null,
+            });
+
+        } 
+        else if (question.type === 'MULTIPLE_CHOICE' && answerValue.optionIds && answerValue.optionIds.length > 0) {
             acc.push({
                 questionId: questionId,
                 optionId: null,
                 optionIds: answerValue.optionIds,
-                value: scoreToSubmit,
+                value: null,
                 textValue: null,
             });
         } else if (question.type === 'TEXT') {
@@ -655,8 +665,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
         const currentProjectId = localStorage.getItem('currentProjectId');
-        const isRedo = localStorage.getItem('redo') === '1'; // 檢查 redo 標誌
-        const existingResponseId = localStorage.getItem('responseId');
 
         // 錯誤處理：基本不會使用到
         if (!currentUserId || !userToken) {
@@ -692,27 +700,14 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             answers: answersPayload,
         };
 
-        const finalPayloadForUpdate = {
-            answers: answersPayload,
-        };
-
-        let responseId;
+        console.log(finalPayload);
 
 
         // --- 提交問卷給後端 --- //
         try {
-            if (isRedo && existingResponseId) {
-                const parsedResponseId = parseInt(existingResponseId, 10);
-                const data = await updateResponse(parsedResponseId, finalPayloadForUpdate);
-                
-                responseId = data.id || parsedResponseId;
-                console.log('問卷已更新 (重新測驗模式)，Payload 只含 answers。');
-            }
-            else {
-                const data = await submitQuestionnaireService(finalPayload);
-                responseId = data.id;
-                console.log('問卷已提交 (新回覆)');
-            }
+            const data = await submitQuestionnaireService(finalPayload);
+            const responseId = data.id;
+            console.log('問卷已提交 (新回覆)');
 
             if (!responseId) {
                 throw new Error('提交或更新後未取得回覆 ID。');

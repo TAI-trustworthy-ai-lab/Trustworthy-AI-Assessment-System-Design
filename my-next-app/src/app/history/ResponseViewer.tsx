@@ -780,17 +780,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
           })
         }
       }
-      /* //this is old api
-        [...a[key].optionIds].map(oId=>{
-        data.push({
-          questionId: Number.parseInt(key),
-          value: a[key].score || 0,
-          textValue: a[key].textValue || "",
-          optionId: oId
-        })
-      })*/
-      // console.log({answers: data})
-      await updateResponse(r.id, {answers: data})
+      await updateResponse(r.id, { answers: data })
       SetIsUpdate(false)
       setEditQ(prev=>{
         const p = {...prev}

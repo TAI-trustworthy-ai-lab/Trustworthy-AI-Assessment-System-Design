@@ -550,7 +550,10 @@ export default function ReportPage() {
                 />
                 {/* 重新測驗按鈕 (Redo/Retake) - 新增 Icon */}
                 <button
-                    onClick={() => router.push('/questionnaire')} 
+                    onClick={() => {
+                        localStorage.setItem('redo', '1');
+                        router.push('/questionnaire');
+                    }}
                     className={`
                         w-auto py-3 px-6 text-lg font-semibold rounded-full 
                         bg-white text-indigo-600 shadow-2xl border border-indigo-300 
