@@ -319,6 +319,8 @@ export default function HistoryPage() {
 
     let r: ResponseData | null = null
     let q: QuestionnaireData | null = null
+    let rRequest: Promise<ResponseData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
+    let qRequest: Promise<QuestionnaireData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
 
     // response
     if (fetchList[id] === null) {
@@ -326,22 +328,7 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-
-      try {
-        r = await fetchResponse(userId, authToken, id)
-      } catch (e) {
-        setViewerState(ViewerState.fail)
-        console.error("error while fetchResponse", e)
-        throw "fail to get response"
-      }
-
-      if (r === null || r === undefined) {
-        setViewerState(ViewerState.fail)
-        throw "fail to get response"
-      }
-      else {
-        fetchList[id] = r
-      }
+      rRequest = fetchResponse(userId, authToken, id)
     }
     else r = fetchList[id]
 
@@ -363,29 +350,31 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-
-      try {
-        q = await fetchQuestionnaire(qId);
-      } catch (e) {
-        setViewerState(ViewerState.fail)
-        console.error("error while fetchResponse", e)
-        throw "fail to get response"
-      }
-
-      if (q === null || q === undefined) {
-        setViewerState(ViewerState.fail)
-        throw "fail to get questionnaire"
-      }
-      else {
-        fetchQuestionnaireList[qId] = q
-        try {
-
-        } catch (e) {
-          console.error("fail to translate:", e)
-        }
-      }
+      qRequest = fetchQuestionnaire(qId)
     }
     else q = fetchQuestionnaireList[qId]
+    
+    if(r === null || q === null){
+      try{
+        const [fetchR, fetchQ] = await Promise.all([rRequest, qRequest])
+        if(fetchR === null || fetchR === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          r = fetchR
+          fetchList[id] = fetchR
+        }
+
+        if(fetchQ === null || fetchQ === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          q = fetchQ
+          fetchQuestionnaireList[qId] = fetchQ
+        }
+      } catch (e) {
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchData", e)
+      }
+    }
 
     //console.log(locale)
     /*

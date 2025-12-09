@@ -674,28 +674,30 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
 
   // original answer
   // reminder: key is questionId
-  const answers: Record<number, AnswerValue> = r.answers.reduce<Record<number, AnswerValue>>((acc, data)=>{
-    let opt = -1
-    if(data.question.type === 'SCALE'){
-      const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
-        return o.value === data.value
-      })?.id
-      if(os) opt = os
-    } else {
-      opt = data.optionId
-    }
-    if(acc[data.questionId]){
-      // multi choice
-      acc[data.questionId].optionIds?.add(opt)
-    } else {
-      const a : AnswerValue = {
-        score: data.value,
-        optionIds: new Set<number>().add(opt),
-        textValue: data.textValue || ''
+  const [answers, setAnswers] = useState<Record<number, AnswerValue>>(
+    r.answers.reduce<Record<number, AnswerValue>>((acc, data)=>{
+      let opt = -1
+      if(data.question.type === 'SCALE'){
+        const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
+          return o.value === data.value
+        })?.id
+        if(os) opt = os
+      } else {
+        opt = data.optionId
       }
-      acc[data.questionId] = a
-    }
-    return acc}, {}
+      if(acc[data.questionId]){
+        // multi choice
+        acc[data.questionId].optionIds?.add(opt)
+      } else {
+        const a : AnswerValue = {
+          score: data.value,
+          optionIds: new Set<number>().add(opt),
+          textValue: data.textValue || ''
+        }
+        acc[data.questionId] = a
+      }
+      return acc}, {}
+    )
   )
 
   // edited answer
@@ -716,9 +718,9 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     setEditQ(prev=>{
       const p = {...prev}
       p[questionId] = changed
-      if(p[questionId] === true){
+      /*if(p[questionId] === true){
         console.log("new:", answerValue, "\nold:", answers[questionId], "\noriginal:", answers[questionId])
-      }
+      }*/
       return p
     })
     
@@ -745,6 +747,14 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         })
       }
     }
+  }
+
+  function chunk<T>(array: T[], size: number): T[][] {
+    const result: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      result.push(array.slice(i, i + size));
+    }
+    return result;
   }
 
   const handleUpdate = async () => {
@@ -788,8 +798,11 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
           })
         }
       }
-      await updateResponse(r.id, { answers: data })
+      // console.log(data)
+      const requests = chunk(data, 3).map(chunk => updateResponse(r.id, { answers: chunk }))
+      await Promise.all(requests)
       SetIsUpdate(false)
+      setAnswers({...a}) // hint: the response updated
       setEditQ(prev=>{
         const p = {...prev}
         for(const key in p){
@@ -797,6 +810,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         }
         return p
       })
+      
       onEdit()
       notify("產生報告中...", "default")
       await generateReport(r.id)
