@@ -569,7 +569,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
 
   const [isUpdate, SetIsUpdate] = useState(false)
   const [isComplete, SetIsComplete] = useState(true)
-  const [isReport, SetIsReport] = useState(false)
 
   const scrollToWithOffset = (element: HTMLElement, offset: number) => {
     const viewer = viewerRef.current

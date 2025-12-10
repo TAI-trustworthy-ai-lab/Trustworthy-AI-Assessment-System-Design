@@ -101,3 +101,9 @@ export const deleteProject = async (projectId: number, authToken: string): Promi
         method: 'DELETE',
     }, authToken);
 };
+
+// 4. GET single project
+export const fetchProject = async (userId: string, authToken: string, id: number): Promise<ProjectData> => {
+    const url = `${PROJECT_API_BASE}/${id}`;
+    return fetchWithRetry<ProjectData>(url, { method: 'GET' }, authToken);
+};

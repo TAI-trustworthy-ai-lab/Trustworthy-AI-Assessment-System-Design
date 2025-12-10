@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
-import { } from '@/services/projectService'
+import { fetchProject, ProjectData } from '@/services/projectService'
 import {
     ResponseMeta,
     ResponseData,
@@ -165,10 +165,11 @@ export default function HistoryPage() {
   const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
   const [viewerData, setViewerData] = useState<{
     response: ResponseData | null,
-    questionnaire: QuestionnaireData | null
-  }>({ response: null, questionnaire: null });
+    questionnaire: QuestionnaireData | null,
+    project: ProjectData | null
+  }>({ response: null, questionnaire: null, project: null });
 
-  // reminder: key is response id
+  // reminder: key is Questionnaire/ response/ Project id
   // to do: store response/ questionaaire in local (seperated)
   const [fetchQuestionnaireList, setFetchQuestionnaireList] = useState<Record<
     number,
@@ -177,6 +178,10 @@ export default function HistoryPage() {
   const [fetchList, setFetchList] = useState<Record<
     number,
     ResponseData | null
+  >>({})
+  const [fetchProjectList, setFetchProjectList] = useState<Record<
+    number,
+    ProjectData | null
   >>({})
   const { i18n, t } = useTranslation();
 
@@ -211,11 +216,14 @@ export default function HistoryPage() {
       const storedUserId = localStorage.getItem('userId');
       const storedAuthToken = localStorage.getItem('authToken');
       const fetchListString = localStorage.getItem("myQuestionnaire");
-      const data = fetchListString ? JSON.parse(fetchListString) : [];
+      const fetchProjectListString = localStorage.getItem("myProject");
+      const dataQ = fetchListString ? JSON.parse(fetchListString) : [];
+      const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : [];
 
       setUserId(storedUserId);
       setAuthToken(storedAuthToken);
-      setFetchQuestionnaireList(data)
+      setFetchQuestionnaireList(dataQ)
+      setFetchProjectList(dataP)
 
       setIsSortLock(true)
       const sortingDataString = localStorage.getItem("sortingData");
@@ -312,15 +320,18 @@ export default function HistoryPage() {
 
   // open
   // get response and questionnair from response id and qId (GET API)
-  const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => 
+  const getResponseAndQuestionnaire = async (id: number, qId: number, pId: number, locale: string | undefined, finalState: ViewerState) => 
   {
     fetchList[id] = fetchList[id] || null
     fetchQuestionnaireList[qId] = fetchQuestionnaireList[qId] || null
+    fetchProjectList[pId] = fetchProjectList[pId] || null
 
     let r: ResponseData | null = null
     let q: QuestionnaireData | null = null
+    let p: ProjectData | null = null
     let rRequest: Promise<ResponseData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
     let qRequest: Promise<QuestionnaireData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
+    let pRequest: Promise<ProjectData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
 
     // response
     if (fetchList[id] === null) {
@@ -353,10 +364,22 @@ export default function HistoryPage() {
       qRequest = fetchQuestionnaire(qId)
     }
     else q = fetchQuestionnaireList[qId]
+
+    // project
+    if (fetchProjectList[pId] === null)
+    {
+      console.log("not find p in local storage")
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
+      pRequest = fetchProject(userId, authToken, pId)
+    }
+    else p = fetchProjectList[pId]
     
-    if(r === null || q === null){
+    // fetch all
+    if(r === null || q === null || p === null){
       try{
-        const [fetchR, fetchQ] = await Promise.all([rRequest, qRequest])
+        const [fetchR, fetchQ, fetchP] = await Promise.all([rRequest, qRequest, pRequest])
         if(fetchR === null || fetchR === undefined){
           setViewerState(ViewerState.fail)
         } else {
@@ -370,6 +393,14 @@ export default function HistoryPage() {
           q = fetchQ
           fetchQuestionnaireList[qId] = fetchQ
         }
+
+        if(fetchP === null || fetchP === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          p = fetchP
+          fetchProjectList[pId] = fetchP
+        }
+
       } catch (e) {
         setViewerState(ViewerState.fail)
         console.error("error while fetchData", e)
@@ -403,7 +434,8 @@ export default function HistoryPage() {
     }*/
 
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
-    setViewerData({ response: r, questionnaire: q })
+    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
+    setViewerData({ response: r, questionnaire: q, project: p })
     setViewerState(finalState)
   }
 
@@ -773,7 +805,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try {
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.success)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.success)
                 } catch (e) {
                   console.error("取得回應時發生錯誤", e)
                 }
@@ -820,7 +852,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try {
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.editing)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.editing)
                 } catch (e) {
                   console.error("取得回應時發生錯誤", e)
                 }
@@ -842,7 +874,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try {
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.detail)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.detail)
                 } catch (e) {
                   console.error("取得回應時發生錯誤", e)
                 }
@@ -970,7 +1002,7 @@ export default function HistoryPage() {
                             setIsOpen(true)
 
                             try {
-                              getResponseAndQuestionnaire(data.id, data.versionId, i18n.language, ViewerState.success)
+                              getResponseAndQuestionnaire(data.id, data.versionId, data.projectId, i18n.language, ViewerState.success)
                             }
                             catch (e) {
                               console.error("取得回應時發生錯誤", e)
@@ -1416,7 +1448,7 @@ export function formatTimeGroup(
 
 export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   state: ViewerState,
-  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } ,
+  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null, project: ProjectData | null } ,
   onEdit: ()=>void,
   onReport: ()=>void,
   notify: (text:string, type:string)=>void, 
@@ -1455,7 +1487,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
 
   // fail
   if ((curState & ViewerState.fail)
-    || (data.response === null || data.questionnaire === null)
+    || (data.response === null || data.questionnaire === null || data.project === null)
   ) return (
     <div className="
       flex items-center justify-center
@@ -1509,12 +1541,17 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           <div>{t('historyPage.questionnaireName')}</div>
           <div>{<TranslatedText text={data.response?.version?.title} />}</div>
 
-          {/* 
-          <div>{t('historyPage.label')}</div>
-          <div>{data.response?.label}</div>*/}
-
           <div>{t('historyPage.submittedAt')}</div>
           <div>{formatTime(data.response?.submittedAt)}</div>
+
+          <div>{"TAI 排序"}</div>
+          {
+            data.project?.taiOrders && (
+              <div>
+                {data.project?.taiOrders[0].indicator}
+              </div>
+            )
+          }
         </div>
       </div>
     </div>
