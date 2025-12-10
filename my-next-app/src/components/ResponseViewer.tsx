@@ -8,7 +8,7 @@ import {
   updateResponse,
   generateReport
 } from "@/services/responseService";
-import { LoadingComponent, } from "@/app/history/page"
+import { LoadingComponent } from '@/components/LoadingComponent';
 import { ChevronUp } from 'lucide-react'
 
 const useRouter = () => {
@@ -115,7 +115,7 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
 // ----------------------------------------------------
 // 定义指標解釋映射表
 // ----------------------------------------------------
-const CATEGORY_MAP: Record<
+export const CATEGORY_MAP: Record<
   string,
   Record<string, { title: string; content: string }>
 > = {
@@ -285,6 +285,7 @@ export interface Question {
   id: number;
   text: string;
   category: string;
+  description: string;
   order: number;
   type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT'; 
   required: boolean;
@@ -550,10 +551,12 @@ function deepEqual(a: any, b: any): boolean {
 // 問卷內容主組件
 // ----------------------------------------------------
 
-export default function ResponseViewer({curState, data, onEdit }: { 
+export default function ResponseViewer({curState, data, onEdit, onReport, notify }: { 
   curState: ViewerState,
   data:{response: ResponseData, questionnaire: QuestionnaireData},
-  onEdit: ()=>void
+  onEdit: ()=>void,
+  onReport: ()=>void,
+  notify: (text:string, type:string)=>void,
 }) {
   const { i18n, t } = useTranslation()
   
@@ -567,7 +570,6 @@ export default function ResponseViewer({curState, data, onEdit }: {
 
   const [isUpdate, SetIsUpdate] = useState(false)
   const [isComplete, SetIsComplete] = useState(true)
-  const [isReport, SetIsReport] = useState(false)
 
   const scrollToWithOffset = (element: HTMLElement, offset: number) => {
     const viewer = viewerRef.current
@@ -603,7 +605,7 @@ export default function ResponseViewer({curState, data, onEdit }: {
     return () => observer.disconnect()
   }, [])
 
-   // map to corresponding title and content
+  // map to corresponding title and content
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
   const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
 
@@ -672,28 +674,30 @@ export default function ResponseViewer({curState, data, onEdit }: {
 
   // original answer
   // reminder: key is questionId
-  const answers: Record<number, AnswerValue> = r.answers.reduce<Record<number, AnswerValue>>((acc, data)=>{
-    let opt = -1
-    if(data.question.type === 'SCALE'){
-      const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
-        return o.value === data.value
-      })?.id
-      if(os) opt = os
-    } else {
-      opt = data.optionId
-    }
-    if(acc[data.questionId]){
-      // multi choice
-      acc[data.questionId].optionIds?.add(opt)
-    } else {
-      const a : AnswerValue = {
-        score: data.value,
-        optionIds: new Set<number>().add(opt),
-        textValue: data.textValue || ''
+  const [answers, setAnswers] = useState<Record<number, AnswerValue>>(
+    r.answers.reduce<Record<number, AnswerValue>>((acc, data)=>{
+      let opt = -1
+      if(data.question.type === 'SCALE'){
+        const os = q.questions.find((q)=>q.id===data.questionId)?.options?.find((o)=>{
+          return o.value === data.value
+        })?.id
+        if(os) opt = os
+      } else {
+        opt = data.optionId
       }
-      acc[data.questionId] = a
-    }
-    return acc}, {}
+      if(acc[data.questionId]){
+        // multi choice
+        acc[data.questionId].optionIds?.add(opt)
+      } else {
+        const a : AnswerValue = {
+          score: data.value,
+          optionIds: new Set<number>().add(opt),
+          textValue: data.textValue || ''
+        }
+        acc[data.questionId] = a
+      }
+      return acc}, {}
+    )
   )
 
   // edited answer
@@ -703,12 +707,20 @@ export default function ResponseViewer({curState, data, onEdit }: {
       ...prev,
       [questionId]: answerValue,
     }));
+    
+    let changed = false
+    if(typeQ[questionId] === 'SCALE') changed = (answerValue.score === answers[questionId].score)
+    else if (typeQ[questionId] === 'SINGLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ[questionId] === 'MULTIPLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ[questionId] === 'TEXT') changed = (answerValue.textValue === answers[questionId].textValue)
 
     // answer changed
-    //console.log("new:", answerValue, "\nold:", answers[questionId])
     setEditQ(prev=>{
       const p = {...prev}
-      p[questionId] = !deepEqual(answerValue, answers[questionId])
+      p[questionId] = changed
+      /*if(p[questionId] === true){
+        console.log("new:", answerValue, "\nold:", answers[questionId], "\noriginal:", answers[questionId])
+      }*/
       return p
     })
     
@@ -737,6 +749,14 @@ export default function ResponseViewer({curState, data, onEdit }: {
     }
   }
 
+  function chunk<T>(array: T[], size: number): T[][] {
+    const result: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      result.push(array.slice(i, i + size));
+    }
+    return result;
+  }
+
   const handleUpdate = async () => {
     if(!isComplete) return
     
@@ -749,11 +769,11 @@ export default function ResponseViewer({curState, data, onEdit }: {
         }
       }
       if(!hasEdit){
-        console.log(" no change")
+        //console.log(" no change")
+        notify("無任何變更", "default")
         return
       }
     }
-    
 
     SetIsUpdate(true)
     const userId = localStorage.getItem('userId') || ""
@@ -761,23 +781,28 @@ export default function ResponseViewer({curState, data, onEdit }: {
     try {
       const data: {
         questionId: number,
-        value: number,
-        textValue: string,
-        optionId: number
+        value?: number,
+        textValue?: string,
+        optionId?: number
+        optionIds?: number[]
       }[] = []
-      for (const key in a){
-        if(!a[key].optionIds) continue
-        [...a[key].optionIds].map(oId=>{
+
+      for (const key in editQ){
+        if(editQ[key] === true){
           data.push({
             questionId: Number.parseInt(key),
-            value: a[key].score || 0,
-            textValue: a[key].textValue || "",
-            optionId: oId
+            value: a[key].score,
+            textValue: a[key].textValue,
+            optionId: a[key].optionIds? [...a[key].optionIds][0]: undefined,
+            optionIds: a[key].optionIds? [...a[key].optionIds]: undefined
           })
-        })
+        }
       }
-      await updateResponse(userId, authToken, r.id, data)
+      // console.log(data)
+      const requests = chunk(data, 3).map(chunk => updateResponse(r.id, { answers: chunk }))
+      await Promise.all(requests)
       SetIsUpdate(false)
+      setAnswers({...a}) // hint: the response updated
       setEditQ(prev=>{
         const p = {...prev}
         for(const key in p){
@@ -785,17 +810,51 @@ export default function ResponseViewer({curState, data, onEdit }: {
         }
         return p
       })
+      
       onEdit()
+      notify("產生報告中...", "default")
       await generateReport(r.id)
-      console.log("report done");
+      onReport()
       // success if it doesnt catch any error
 
     } catch (error) {
-      console.error('提交錯誤:', error);
+      notify("發生錯誤", "error")
+      console.error('提交錯誤:', error)
     } finally{
       SetIsUpdate(false)
     }
   }
+
+  const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
+    const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    if (!description || description.trim() === '') {
+      return null;
+    }
+
+    return (
+      <div className="text-sm text-gray-500 mt-2 mb-3">
+        <button
+          onClick={() => setIsExpanded(prev => !prev)}
+          className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
+        >
+          {/* 顯示/隱藏 圖標 */}
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+          </svg>
+          {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+        </button>
+        
+        {/* 展開時才顯示描述內容 */}
+        {isExpanded && (
+          <div className="p-3">
+              <TranslatedText text={description} />
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (<>
     <div
@@ -833,10 +892,11 @@ export default function ResponseViewer({curState, data, onEdit }: {
                 py-2 px-6
                 bg-green-600 rounded-lg
                 text-white font-bold
-                pointer-events-auto
+                pointer-events-auto cursor-pointer
                 
                 hover:bg-green-500
-                disabled:opacity-50 "
+                disabled:opacity-50
+                disabled:cursor-not-allowed"
             >
               {isUpdate ? <SubmissionLoadingIndicator /> : t('Questionnaire.actions.finishAndSubmit')}
             </button>
@@ -949,8 +1009,6 @@ export default function ResponseViewer({curState, data, onEdit }: {
                       {/* question text */}
                       <TranslatedText text={question.text} />
 
-                      {/* add question description here */}
-
                       {/* a "required" tip */}
                       {question.required &&
                         <span className="
@@ -974,6 +1032,9 @@ export default function ResponseViewer({curState, data, onEdit }: {
                         </span>
                       }
                     </div>
+
+                    {/* question description */}
+                    <QuestionDescriptionToggle description={question.description} />
                     
                     {/* render with different question type */}
                     <div className="flex justify-start">

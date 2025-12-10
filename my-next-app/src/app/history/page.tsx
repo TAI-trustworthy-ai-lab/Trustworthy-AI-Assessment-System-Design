@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
-import { } from '@/services/projectService'
+import { fetchProject, ProjectData } from '@/services/projectService'
 import {
     ResponseMeta,
     ResponseData,
@@ -17,14 +17,16 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import ResponseViewer, {
+  CATEGORY_MAP,
     Option,
     Question,
     QuestionnaireData,
     styleSelected,
     styleUnselected
-} from './ResponseViewer';
+} from '../../components/ResponseViewer';
 import { Info, Edit, FileText, ChevronDown, CircleX } from 'lucide-react'
 import { TFunction } from 'i18next';
+import { LoadingComponent } from '@/components/LoadingComponent';
 //import { Info, Edit, FileText } from 'lucide-react'
 
 enum SortWay {
@@ -55,6 +57,25 @@ interface SortingData{
   group: {
     type: GroupType,
     way: SortWay
+  }
+}
+
+enum InfoState {
+  idle,
+  in,
+  out
+}
+
+class Notification{
+  static delay: number
+
+  static setDelay(delay: number){
+    Notification.delay = delay
+  }
+
+  static notify(onNotify: ()=> void, onTimeout: ()=> void) {
+    onNotify()
+    setTimeout(()=>onTimeout(), Notification.delay)
   }
 }
 
@@ -145,10 +166,11 @@ export default function HistoryPage() {
   const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
   const [viewerData, setViewerData] = useState<{
     response: ResponseData | null,
-    questionnaire: QuestionnaireData | null
-  }>({ response: null, questionnaire: null });
+    questionnaire: QuestionnaireData | null,
+    project: ProjectData | null
+  }>({ response: null, questionnaire: null, project: null });
 
-  // reminder: key is response id
+  // reminder: key is Questionnaire/ response/ Project id
   // to do: store response/ questionaaire in local (seperated)
   const [fetchQuestionnaireList, setFetchQuestionnaireList] = useState<Record<
     number,
@@ -158,7 +180,10 @@ export default function HistoryPage() {
     number,
     ResponseData | null
   >>({})
-  const [infoText, setInfoText] = useState<string>("")
+  const [fetchProjectList, setFetchProjectList] = useState<Record<
+    number,
+    ProjectData | null
+  >>({})
   const { i18n, t } = useTranslation();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -175,8 +200,12 @@ export default function HistoryPage() {
   const [sortType, setSortType] = useState(SortType.Date)
   const [groupType, setGroupType] = useState(GroupType.Project)
 
+  Notification.setDelay(4000)
+  const [infoText, setInfoText] = useState<React.JSX.Element[]>([])
+  const [infoNow, setInfoNow] = useState(0)
+
   const router = useRouter();
-  const menuSize = { x: 200, y: 215 }
+  const menuSize = { x: 200, y: 250 }
 
   useEffect(() => {
     isOpenRef.current = isOpen;
@@ -188,11 +217,14 @@ export default function HistoryPage() {
       const storedUserId = localStorage.getItem('userId');
       const storedAuthToken = localStorage.getItem('authToken');
       const fetchListString = localStorage.getItem("myQuestionnaire");
-      const data = fetchListString ? JSON.parse(fetchListString) : [];
+      const fetchProjectListString = localStorage.getItem("myProject");
+      const dataQ = fetchListString ? JSON.parse(fetchListString) : [];
+      const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : [];
 
       setUserId(storedUserId);
       setAuthToken(storedAuthToken);
-      setFetchQuestionnaireList(data)
+      setFetchQuestionnaireList(dataQ)
+      setFetchProjectList(dataP)
 
       setIsSortLock(true)
       const sortingDataString = localStorage.getItem("sortingData");
@@ -289,13 +321,18 @@ export default function HistoryPage() {
 
   // open
   // get response and questionnair from response id and qId (GET API)
-  const getResponseAndQuestionnaire = async (id: number, qId: number, locale: string | undefined, finalState: ViewerState) => 
+  const getResponseAndQuestionnaire = async (id: number, qId: number, pId: number, locale: string | undefined, finalState: ViewerState) => 
   {
     fetchList[id] = fetchList[id] || null
     fetchQuestionnaireList[qId] = fetchQuestionnaireList[qId] || null
+    fetchProjectList[pId] = fetchProjectList[pId] || null
 
     let r: ResponseData | null = null
     let q: QuestionnaireData | null = null
+    let p: ProjectData | null = null
+    let rRequest: Promise<ResponseData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
+    let qRequest: Promise<QuestionnaireData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
+    let pRequest: Promise<ProjectData> | Promise<null> | null = new Promise<null>((resolve)=>{resolve(null)})
 
     // response
     if (fetchList[id] === null) {
@@ -303,22 +340,7 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-
-      try {
-        r = await fetchResponse(userId, authToken, id)
-      } catch (e) {
-        setViewerState(ViewerState.fail)
-        console.error("error while fetchResponse", e)
-        throw "fail to get response"
-      }
-
-      if (r === null || r === undefined) {
-        setViewerState(ViewerState.fail)
-        throw "fail to get response"
-      }
-      else {
-        fetchList[id] = r
-      }
+      rRequest = fetchResponse(userId, authToken, id)
     }
     else r = fetchList[id]
 
@@ -340,29 +362,51 @@ export default function HistoryPage() {
       if (!userId || userId === 'fallback-user-id' || !authToken) {
         return;
       }
-
-      try {
-        q = await fetchQuestionnaire(qId);
-      } catch (e) {
-        setViewerState(ViewerState.fail)
-        console.error("error while fetchResponse", e)
-        throw "fail to get response"
-      }
-
-      if (q === null || q === undefined) {
-        setViewerState(ViewerState.fail)
-        throw "fail to get questionnaire"
-      }
-      else {
-        fetchQuestionnaireList[qId] = q
-        try {
-
-        } catch (e) {
-          console.error("fail to translate:", e)
-        }
-      }
+      qRequest = fetchQuestionnaire(qId)
     }
     else q = fetchQuestionnaireList[qId]
+
+    // project
+    if (fetchProjectList[pId] === null)
+    {
+      console.log("not find p in local storage")
+      if (!userId || userId === 'fallback-user-id' || !authToken) {
+        return;
+      }
+      pRequest = fetchProject(userId, authToken, pId)
+    }
+    else p = fetchProjectList[pId]
+    
+    // fetch all
+    if(r === null || q === null || p === null){
+      try{
+        const [fetchR, fetchQ, fetchP] = await Promise.all([rRequest, qRequest, pRequest])
+        if(fetchR === null || fetchR === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          r = fetchR
+          fetchList[id] = fetchR
+        }
+
+        if(fetchQ === null || fetchQ === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          q = fetchQ
+          fetchQuestionnaireList[qId] = fetchQ
+        }
+
+        if(fetchP === null || fetchP === undefined){
+          setViewerState(ViewerState.fail)
+        } else {
+          p = fetchP
+          fetchProjectList[pId] = fetchP
+        }
+
+      } catch (e) {
+        setViewerState(ViewerState.fail)
+        console.error("error while fetchData", e)
+      }
+    }
 
     //console.log(locale)
     /*
@@ -391,7 +435,8 @@ export default function HistoryPage() {
     }*/
 
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
-    setViewerData({ response: r, questionnaire: q })
+    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
+    setViewerData({ response: r, questionnaire: q, project: p })
     setViewerState(finalState)
   }
 
@@ -408,14 +453,17 @@ export default function HistoryPage() {
     if (!userId || userId === 'fallback-user-id' || !authToken) {
       return;
     }
+    notify("刪除中...", "default")
     try {
       await deleteResponse(userId, authToken, id);
+      notify("刪除成功", "success")
     } catch (e) {
       setResponseList(prev => {
         const newList = [...prev]
         newList.splice(index, 0, r)
         return newList
       })
+      notify("刪除失敗", "error")
       console.error("fail to del response", e)
     }
   }
@@ -425,9 +473,9 @@ export default function HistoryPage() {
     if (curResponse) {
       try {
         delResponse(curResponse.id)
-        setInfoText(t('historyPage.deleteSuccess'))
+        //setInfoText(t('historyPage.deleteSuccess'))
       } catch (e) {
-        setInfoText(t('historyPage.deleteFail'))
+        //setInfoText(t('historyPage.deleteFail'))
         console.error("刪除回應時發生錯誤", e)
       }
     }
@@ -489,6 +537,71 @@ export default function HistoryPage() {
         return newArr
       })
     }
+  }
+
+  function notify(text= "text", type= "default"){
+    const colors = {
+      success: "bg-green-500",
+      error: "bg-red-500",
+      warning: "bg-yellow-500",
+      default: "bg-blue-500",
+    }
+    let color = colors.default
+    if(type === "success") color = colors.success
+    else if(type === "error") color = colors.error
+    else if(type === "warning") color = colors.warning
+
+    const item = (
+      <div className={`
+        flex justify-center items-center
+        w-fit h-full p-3
+        ${color} text-white font-bold
+        whitespace-nowrap`}
+      >
+        {text}
+      </div>
+    )
+      
+    Notification.notify(
+      ()=>{
+        setInfoText(prev=>{
+          const p = [item, ...prev]
+          if(p.length > 4) p.pop()
+          return p
+        })
+        setInfoNow(prev => prev<<1|1 )
+      },
+      ()=>{
+        setInfoNow(prev => prev>>1)
+      }
+    )
+  }
+
+  const infoItem = (index: number)=>{
+    //if(index === 0) return
+    return (
+      <div
+        key={index}
+        className='relative h-[116px]'
+      >
+        <div
+          className={`
+            absolute left-[0%]
+            w-fit h-[116px]
+            bg-white shadow-lg rounded-l-2xl
+            
+            overflow-hidden
+            
+            ${((infoNow) & (1 << index)) === 0 ?
+              " translate-x-[0%] transform transition duration-200 ease-out":
+              "-translate-x-[100%]"
+            }
+          `}
+        >
+          {infoText[index]}
+        </div>
+      </div>
+    )
   }
 
   // 2. 當 userId 或 authToken 改變時載入專案
@@ -562,7 +675,7 @@ export default function HistoryPage() {
   // 載入中狀態顯示
   if (isLoading) return (
     <div className='h-screen items-center justify-center'>
-        <LoadingComponent message={t('historyPage.loadingResponses')} />
+      <LoadingComponent message={t('historyPage.loadingResponses')} />
     </div>
   );
 
@@ -582,6 +695,19 @@ export default function HistoryPage() {
 
   return (
     <ProtectedLayout>
+      {/* notification on left side */}
+      <div
+        className='
+          fixed bottom-0 right-0 z-[70] gap-3
+          flex flex-col-reverse justify-start items-end
+          w-5 h-full pb-8
+          pointer-events-none'
+      > 
+        {infoItem(0)}
+        {infoItem(1)}
+        {infoItem(2)}
+        {infoItem(3)}
+      </div>
 
       {/* response window */}
       {isOpen && (
@@ -623,7 +749,8 @@ export default function HistoryPage() {
                 state={viewerState}
                 data={viewerData}
                 onEdit={()=>{
-                  console.log("onEdit")
+                  // console.log("onEdit")
+                  notify("回覆提交成功", "success")
                   if (curResponse) {
                     setFetchList(prev=>{
                       const p = {...prev}
@@ -632,6 +759,11 @@ export default function HistoryPage() {
                     })
                   }
                 }}
+                onReport={()=>{
+                  console.log("onReport")
+                  notify("報告產生成功", "success")
+                }}
+                notify={notify}
               />
             </div>
           </div>
@@ -674,7 +806,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try {
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.success)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.success)
                 } catch (e) {
                   console.error("取得回應時發生錯誤", e)
                 }
@@ -715,9 +847,17 @@ export default function HistoryPage() {
           <div
             className="flex items-center size-full px-4 py-2 text-gray-600 hover:bg-gray-100 cursor-pointer active:bg-gray-200"
             onClick={()=>{
-              setShowMenu(false)
-              setViewerState(ViewerState.editing)
-              setIsOpen(true)
+              if (curResponse) {
+                setViewerState(ViewerState.loading)
+                setIsOpen(true)
+                setShowMenu(false)
+
+                try {
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.editing)
+                } catch (e) {
+                  console.error("取得回應時發生錯誤", e)
+                }
+              }
             }}
           >
             編輯
@@ -735,7 +875,7 @@ export default function HistoryPage() {
                 setShowMenu(false)
 
                 try {
-                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, i18n.language, ViewerState.detail)
+                  getResponseAndQuestionnaire(curResponse.id, curResponse.versionId, curResponse.projectId, i18n.language, ViewerState.detail)
                 } catch (e) {
                   console.error("取得回應時發生錯誤", e)
                 }
@@ -863,7 +1003,7 @@ export default function HistoryPage() {
                             setIsOpen(true)
 
                             try {
-                              getResponseAndQuestionnaire(data.id, data.versionId, i18n.language, ViewerState.success)
+                              getResponseAndQuestionnaire(data.id, data.versionId, data.projectId, i18n.language, ViewerState.success)
                             }
                             catch (e) {
                               console.error("取得回應時發生錯誤", e)
@@ -888,10 +1028,6 @@ export default function HistoryPage() {
       </div>
     </ProtectedLayout>
   )
-}
-
-export function Notification() {
-
 }
 
 export function SortControls({ sortWay, sortType, groupType, onSortWayChange, onSortTypeChange, onGroupTypeChange }: {
@@ -1311,20 +1447,26 @@ export function formatTimeGroup(
   return t('historyPage.longAgo');;
 }
 
-export function ResponseWindow({ state, data, onEdit }: {
+export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   state: ViewerState,
-  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null } ,
-  onEdit: ()=>void
+  data: { response: ResponseData | null, questionnaire: QuestionnaireData | null, project: ProjectData | null } ,
+  onEdit: ()=>void,
+  onReport: ()=>void,
+  notify: (text:string, type:string)=>void, 
 }) {
   const [curState, setCurState] = useState(state)
   const router = useRouter();
   const { i18n, t } = useTranslation();
 
+  // map to corresponding title and content
+  const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
+  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
+
   useEffect(() => {
     setCurState(state)
   }, [state])
 
-  useEffect(()=>console.log(curState.toString(2).padStart(6, '0')), [curState])
+  //useEffect(()=>console.log(curState.toString(2).padStart(6, '0')), [curState])
 
   const switchState = (state: ViewerState)=>{
     setCurState(prev => prev ^ state)
@@ -1350,7 +1492,7 @@ export function ResponseWindow({ state, data, onEdit }: {
 
   // fail
   if ((curState & ViewerState.fail)
-    || (data.response === null || data.questionnaire === null)
+    || (data.response === null || data.questionnaire === null || data.project === null)
   ) return (
     <div className="
       flex items-center justify-center
@@ -1369,7 +1511,7 @@ export function ResponseWindow({ state, data, onEdit }: {
   const detailPanel = (
     <div className="
       flex flex-col items-center justify-end
-      w-full size-fit"
+      w-full h-fit pt-8 pb-23"
     >
       <div className="
         mb-7
@@ -1379,7 +1521,7 @@ export function ResponseWindow({ state, data, onEdit }: {
       </div>
       <div
         className={`
-          flex justify-center
+          flex flex-col justify-center
           w-full px-3 pb-10 
           overflow-x-auto
 
@@ -1404,13 +1546,25 @@ export function ResponseWindow({ state, data, onEdit }: {
           <div>{t('historyPage.questionnaireName')}</div>
           <div>{<TranslatedText text={data.response?.version?.title} />}</div>
 
-          {/* 
-          <div>{t('historyPage.label')}</div>
-          <div>{data.response?.label}</div>*/}
-
           <div>{t('historyPage.submittedAt')}</div>
           <div>{formatTime(data.response?.submittedAt)}</div>
         </div>
+        <div>{"TAI 排序"}</div>
+        {data.project?.taiOrders && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full rounded-lg mt-2 ">
+            {data.project.taiOrders.map((order, index) => (
+              <div key={index} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-indigo-200">
+                <span className="text-xs font-medium text-gray-500 text-center">
+                  {getPageTitle(order.indicator)}
+                </span>
+                {/* 權重百分比顯示 */}
+                <span className="text-lg font-bold text-indigo-700 mt-1">
+                  {((order.weight) * 100).toFixed(0)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1537,6 +1691,10 @@ export function ResponseWindow({ state, data, onEdit }: {
           ViewerState.report,
           (e) => {
             e.stopPropagation()
+            if (curState & ViewerState.noReport) {
+              notify("報告生成中，請稍後", "warning")
+              return
+            }
             if (data.response === null || data.response === undefined) return
 
             localStorage.setItem('responseId', (data.response.id).toString());
@@ -1551,10 +1709,11 @@ export function ResponseWindow({ state, data, onEdit }: {
 
       <div
         className={`
-          absolute -bottom-[100%] z-[52]
+          absolute top-[100%] z-[52]
           flex flex-col justify-start items-center
-          w-[100%] h-[87%]
+          w-[100%] h-[80%]
           rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
+          overflow-y-auto
           transform transition duration-200 ease-out
 
           sm:rounded-t-md
@@ -1570,7 +1729,7 @@ export function ResponseWindow({ state, data, onEdit }: {
         <div className={`
           relative
           flex justify-center items-center
-          w-[100%] h-[6%]`}
+          w-[100%] h-[6%] `}
         />
 
         {detailPanel}
@@ -1586,20 +1745,14 @@ export function ResponseWindow({ state, data, onEdit }: {
         onEdit={()=>{
           onEdit()
           removeState(ViewerState.editing)
+          addState(ViewerState.noReport)
         }}
+        onReport={()=>{
+          onReport()
+          removeState(ViewerState.noReport)
+        }}
+        notify={notify}
       />
     </div>
   </>)
-}
-
-export function LoadingComponent({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center h-full text-gray-600">
-      <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      {message}
-    </div>
-  )
 }

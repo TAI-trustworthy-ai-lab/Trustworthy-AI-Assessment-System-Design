@@ -120,6 +120,7 @@ export const useAuth = () => {
             localStorage.removeItem(CURRENT_PROJECT_ID_KEY);
             localStorage.removeItem(RESPONSE_ID_KEY);
             localStorage.removeItem("myQuestionnaire")
+            localStorage.removeItem("myProject")
         }
 
         // 3. 跳轉到登入頁面並更新狀態

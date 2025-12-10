@@ -155,7 +155,7 @@ export default function PdfExportButton({ contentId, projectName, modelStage, pr
             `}
         >
             {icon}
-            <span> {isGeneratingPdf ? preparingText : generateText} </span>
+            <span className='hidden md:inline'> {isGeneratingPdf ? preparingText : generateText} </span>
         </button>
     );
 }

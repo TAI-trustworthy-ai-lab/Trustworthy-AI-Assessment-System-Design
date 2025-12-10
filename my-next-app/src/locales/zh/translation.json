@@ -452,6 +452,9 @@
       "preparingPdf": "正在準備 PDF...",
       "redo": "重新測驗"
     },
+    "confirmation": {
+      "redo": "您確定要再次評估嗎？\n\n此操作將以本次答案為基礎，並創建一份全新的歷史記錄，以便追蹤進度。舊的報告將被保留在歷史紀錄中。"
+    },
     "common": {
       "notAvailable": "不適用",
       "indicatorScore": "指標分數：",
