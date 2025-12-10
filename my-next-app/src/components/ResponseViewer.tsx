@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  ResponseMeta, 
   ResponseData,
   ViewerState,
   updateResponse,
@@ -10,16 +9,6 @@ import {
 } from "@/services/responseService";
 import { LoadingComponent } from '@/components/LoadingComponent';
 import { ChevronUp } from 'lucide-react'
-
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
-};
 import { useTranslation } from 'react-i18next';
 
 // ----------------------------------------------------
@@ -475,6 +464,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
 // TEXT qustion
 const TextQuestion: React.FC<QuestionRendererProps> = ({ editable, question, currentAnswer, onAnswer }) => {
   const textValue = currentAnswer.textValue || '';
+  console.log(question)
   
   return (
     <textarea
@@ -776,8 +766,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     }
 
     SetIsUpdate(true)
-    const userId = localStorage.getItem('userId') || ""
-    const authToken = localStorage.getItem('authToken') || ""
     try {
       const data: {
         questionId: number,
