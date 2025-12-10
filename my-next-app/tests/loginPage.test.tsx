@@ -65,6 +65,13 @@ describe('LoginPage - Connection System Tests', () => {
         (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
         jest.clearAllMocks();
         localStorage.clear();
+        // Suppress console.error in tests to reduce noise
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        // Restore console.error after each test
+        jest.restoreAllMocks();
     });
 
     describe('Login Form - UI Rendering', () => {
