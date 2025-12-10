@@ -416,6 +416,29 @@
       "date": "時間",
       "questionnaire": "問卷",
       "none": "無"
+    },
+
+    "notify":{
+      "delete":{
+        "on": "刪除中...",
+        "success": "刪除成功",
+        "fail": "刪除失敗"
+      },
+      "response":{
+        "on": "提交回覆中...",
+        "noChange": "無任何變更",
+        "success": "提交回覆成功",
+        "fail": "提交回覆失敗"
+      },
+      "report":{
+        "on": "產生報告中，請稍後...",
+        "success": "產生報告成功",
+        "fail": "產生報告失敗"
+      },
+      "common":{
+        "success": "成功",
+        "fail": "發生錯誤"
+      }
     }
   },
   "reportPage": {
