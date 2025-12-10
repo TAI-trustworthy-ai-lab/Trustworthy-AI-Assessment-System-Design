@@ -824,6 +824,37 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     }
   }
 
+  const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
+    const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    if (!description || description.trim() === '') {
+      return null;
+    }
+
+    return (
+      <div className="text-sm text-gray-500 mt-2 mb-3">
+        <button
+          onClick={() => setIsExpanded(prev => !prev)}
+          className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
+        >
+          {/* 顯示/隱藏 圖標 */}
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+          </svg>
+          {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+        </button>
+        
+        {/* 展開時才顯示描述內容 */}
+        {isExpanded && (
+          <div className="p-3">
+              <TranslatedText text={description} />
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (<>
     <div
       className="
@@ -977,8 +1008,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                       {/* question text */}
                       <TranslatedText text={question.text} />
 
-                      {/* add question description here */}
-
                       {/* a "required" tip */}
                       {question.required &&
                         <span className="
@@ -1002,6 +1031,9 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                         </span>
                       }
                     </div>
+
+                    {/* question description */}
+                    <QuestionDescriptionToggle description={q.description} />
                     
                     {/* render with different question type */}
                     <div className="flex justify-start">

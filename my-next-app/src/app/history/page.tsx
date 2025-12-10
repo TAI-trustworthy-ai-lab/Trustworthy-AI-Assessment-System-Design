@@ -1511,7 +1511,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   const detailPanel = (
     <div className="
       flex flex-col items-center justify-end
-      w-full h-fit pt-15 pb-23"
+      w-full h-fit pt-8 pb-23"
     >
       <div className="
         mb-7
