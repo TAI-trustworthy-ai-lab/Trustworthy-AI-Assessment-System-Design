@@ -453,17 +453,17 @@ export default function HistoryPage() {
     if (!userId || userId === 'fallback-user-id' || !authToken) {
       return;
     }
-    notify("刪除中...", "default")
+    notify(t('historyPage.notify.delete.on'), "default")
     try {
       await deleteResponse(userId, authToken, id);
-      notify("刪除成功", "success")
+      notify(t('historyPage.notify.delete.success'), "success")
     } catch (e) {
       setResponseList(prev => {
         const newList = [...prev]
         newList.splice(index, 0, r)
         return newList
       })
-      notify("刪除失敗", "error")
+      notify(t('historyPage.notify.delete.on'), "error")
       console.error("fail to del response", e)
     }
   }
@@ -750,7 +750,7 @@ export default function HistoryPage() {
                 data={viewerData}
                 onEdit={()=>{
                   // console.log("onEdit")
-                  notify("回覆提交成功", "success")
+                  notify(t('historyPage.notify.response.on'), "success")
                   if (curResponse) {
                     setFetchList(prev=>{
                       const p = {...prev}
@@ -761,7 +761,7 @@ export default function HistoryPage() {
                 }}
                 onReport={()=>{
                   console.log("onReport")
-                  notify("報告產生成功", "success")
+                  notify(t('historyPage.notify.response.success'), "success")
                 }}
                 notify={notify}
               />
@@ -1692,7 +1692,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           (e) => {
             e.stopPropagation()
             if (curState & ViewerState.noReport) {
-              notify("報告生成中，請稍後", "warning")
+              notify(t('historyPage.notify.report.on'), "warning")
               return
             }
             if (data.response === null || data.response === undefined) return

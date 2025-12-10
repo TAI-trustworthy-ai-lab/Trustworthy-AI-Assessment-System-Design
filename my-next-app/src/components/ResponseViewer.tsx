@@ -760,7 +760,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       }
       if(!hasEdit){
         //console.log(" no change")
-        notify("無任何變更", "default")
+        notify(t('historyPage.notify.response.noChange'), "default")
         return
       }
     }
@@ -800,13 +800,13 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       })
       
       onEdit()
-      notify("產生報告中...", "default")
+      notify(t('historyPage.notify.report.on'), "default")
       await generateReport(r.id)
       onReport()
       // success if it doesnt catch any error
 
     } catch (error) {
-      notify("發生錯誤", "error")
+      notify(t('historyPage.notify.common.fail'), "error")
       console.error('提交錯誤:', error)
     } finally{
       SetIsUpdate(false)
