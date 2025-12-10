@@ -306,17 +306,20 @@ export const styleUnselected = 'bg-white text-gray-700 border border-gray-300 '
 // ----------------------------------------------------
 // Loading UI - 提交按鈕上的指示器
 // ----------------------------------------------------
-const SubmissionLoadingIndicator: React.FC = () => (
-  <div className="flex items-center justify-center space-x-2">
-    <span className="font-bold">提交中</span>
-    {/* Animated Dots using Tailwind's built-in animate-pulse */}
-    <div className="flex items-end h-4 pb-0.5">
-      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
-      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-      <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+const SubmissionLoadingIndicator: React.FC = () => {
+  const { t } = useTranslation()
+  return(
+    <div className="flex items-center justify-center space-x-2">
+      <span className="font-bold">{t('Questionnaire.submitting')}</span>
+      {/* Animated Dots using Tailwind's built-in animate-pulse */}
+      <div className="flex items-end h-4 pb-0.5">
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+      </div>
     </div>
-  </div>
-);
+  )
+}
 
 // ----------------------------------------------------
 // 根據 Type 渲染不同 UI
