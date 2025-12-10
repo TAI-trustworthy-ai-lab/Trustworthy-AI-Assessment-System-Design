@@ -17,6 +17,7 @@ import {
 
 import { useTranslation } from 'react-i18next';
 import ResponseViewer, {
+  CATEGORY_MAP,
     Option,
     Question,
     QuestionnaireData,
@@ -1457,6 +1458,10 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   const router = useRouter();
   const { i18n, t } = useTranslation();
 
+  // map to corresponding title and content
+  const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
+  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
+
   useEffect(() => {
     setCurState(state)
   }, [state])
@@ -1548,12 +1553,12 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
         {data.project?.taiOrders && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full rounded-lg mt-2 ">
             {data.project.taiOrders.map((order, index) => (
-              <div key={index} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-purple-200">
+              <div key={index} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-indigo-200">
                 <span className="text-xs font-medium text-gray-500 text-center">
-                  {order.indicator}
+                  {getPageTitle(order.indicator)}
                 </span>
                 {/* 權重百分比顯示 */}
-                <span className="text-lg font-bold text-purple-700 mt-1">
+                <span className="text-lg font-bold text-indigo-700 mt-1">
                   {((order.weight) * 100).toFixed(0)}%
                 </span>
               </div>

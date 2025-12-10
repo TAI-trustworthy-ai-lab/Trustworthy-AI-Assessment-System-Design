@@ -115,7 +115,7 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
 // ----------------------------------------------------
 // 定义指標解釋映射表
 // ----------------------------------------------------
-const CATEGORY_MAP: Record<
+export const CATEGORY_MAP: Record<
   string,
   Record<string, { title: string; content: string }>
 > = {
@@ -604,7 +604,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     return () => observer.disconnect()
   }, [])
 
-   // map to corresponding title and content
+  // map to corresponding title and content
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
   const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
 
