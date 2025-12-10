@@ -160,6 +160,20 @@ npm run lint
 npx tsc --noEmit
 ```
 
+### Testing
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+See [`tests/README.md`](tests/README.md) for detailed testing documentation.
+
 ## 📝 Configuration Files
 
 - [`next.config.ts`](next.config.ts) - Next.js configuration
