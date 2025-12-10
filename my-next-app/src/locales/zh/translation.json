@@ -556,6 +556,9 @@
     "addQuestion": "➕ 新增問題",
     "save": "儲存更改",
     "cancel": "取消更改"
+  },
+  "FloatingChatWindow": {
+    "InitialMessage": "您有任何疑問嗎？"
   }
 
 
