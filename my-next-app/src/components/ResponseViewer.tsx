@@ -285,6 +285,7 @@ export interface Question {
   id: number;
   text: string;
   category: string;
+  description: string;
   order: number;
   type: 'SCALE' | 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT'; 
   required: boolean;
@@ -1033,7 +1034,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                     </div>
 
                     {/* question description */}
-                    <QuestionDescriptionToggle description={q.description} />
+                    <QuestionDescriptionToggle description={question.description} />
                     
                     {/* render with different question type */}
                     <div className="flex justify-start">
