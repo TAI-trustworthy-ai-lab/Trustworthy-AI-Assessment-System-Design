@@ -41,7 +41,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
-                { id: 0, text: t('Any problem?') || '您有任何疑問嗎？', sender: 'llm' }
+                { id: 0, text: t("FloatingChatWindow.InitialMessage"), sender: 'llm' }
             ]);
         }
     }, [messages.length, t]);
@@ -177,5 +177,6 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         </div>
     );
 };
+
 
 export default FloatingChatWindow;

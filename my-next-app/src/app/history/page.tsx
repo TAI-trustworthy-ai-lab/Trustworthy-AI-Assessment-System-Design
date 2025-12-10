@@ -860,7 +860,7 @@ export default function HistoryPage() {
               }
             }}
           >
-            編輯
+            {t('historyPage.edit')}
           </div>
 
           <div
@@ -1661,7 +1661,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
       >
         {/*edit response*/}
         {toolComponent(
-          "編輯", 
+          t('historyPage.edit'), 
           (<Edit size={30} />),
           style.orange,
           ViewerState.editing,
