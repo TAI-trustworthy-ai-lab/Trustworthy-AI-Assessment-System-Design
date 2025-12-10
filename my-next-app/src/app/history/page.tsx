@@ -1564,35 +1564,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
               </div>
             ))}
           </div>
-          /**
-            <div className='
-              flex gap-x-2
-              w-full
-              overflow-x-auto'
-            >
-              {data.project.taiOrders.map((order, index)=>(
-                <div
-                  key={index}
-                  className='
-                    flex flex-col
-                    bg-gray-200'
-                >
-                  <div className='
-                    text-red-500'
-                  >
-                    {order.indicator}
-                  </div>
-                  <div className='
-                    text-black'
-                  >
-                    {`${order.weight * 100}%`}
-                  </div>
-                </div>
-              ))}
-            </div></> */
-
-          )
-        }
+        )}
       </div>
     </div>
   )
@@ -1739,7 +1711,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
         className={`
           absolute top-[100%] z-[52]
           flex flex-col justify-start items-center
-          w-[100%] h-[87%]
+          w-[100%] h-[80%]
           rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
           overflow-y-auto
           transform transition duration-200 ease-out
