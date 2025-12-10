@@ -750,7 +750,7 @@ export default function HistoryPage() {
                 data={viewerData}
                 onEdit={()=>{
                   // console.log("onEdit")
-                  notify(t('historyPage.notify.response.on'), "success")
+                  notify(t('historyPage.notify.response.success'), "success")
                   if (curResponse) {
                     setFetchList(prev=>{
                       const p = {...prev}
@@ -761,7 +761,7 @@ export default function HistoryPage() {
                 }}
                 onReport={()=>{
                   console.log("onReport")
-                  notify(t('historyPage.notify.response.success'), "success")
+                  notify(t('historyPage.notify.report.success'), "success")
                 }}
                 notify={notify}
               />
@@ -1692,7 +1692,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           (e) => {
             e.stopPropagation()
             if (curState & ViewerState.noReport) {
-              notify(t('historyPage.notify.report.on'), "warning")
+              notify(t('historyPage.notify.report.on'), "default")
               return
             }
             if (data.response === null || data.response === undefined) return

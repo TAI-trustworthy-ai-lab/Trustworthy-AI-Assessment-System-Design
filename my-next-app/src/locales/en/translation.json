@@ -413,6 +413,28 @@
       "date": "Date",
       "questionnaire": "Questionnaire",
       "none": "None"
+    },
+    "notify":{
+      "delete":{
+        "on": "Deleting...",
+        "success": "Delete successfully",
+        "fail": "Fail to Delete"
+      },
+      "response":{
+        "on": "Submitting...",
+        "noChange": "No answer changed",
+        "success": "Delete successfully",
+        "fail": "Fail to Delete"
+      },
+      "report":{
+        "on": "Generating report...",
+        "success": "Generate successfully",
+        "fail": "Fail to Generate"
+      },
+      "common":{
+        "success": "Success",
+        "fail": "Error"
+      }
     }
   },
   "reportPage": {
