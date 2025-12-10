@@ -1549,7 +1549,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           <div>{t('historyPage.submittedAt')}</div>
           <div>{formatTime(data.response?.submittedAt)}</div>
         </div>
-        <div>{"TAI 排序"}</div>
+        <div>{t('reportPage.report.indicatorWeights')}</div>
         {data.project?.taiOrders && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full rounded-lg mt-2 ">
             {data.project.taiOrders.map((order, index) => (
