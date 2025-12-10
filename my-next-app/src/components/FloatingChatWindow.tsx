@@ -77,7 +77,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         setMessages(prev => [...prev, { id: userMsgId, text: userMessage, sender: 'user' }]);
 
         const loadingMsgId = userMsgId + 1;
-        setMessages(prev => [...prev, { id: loadingMsgId, text: t('Thinking...') || 'AI 正在思考...', sender: 'llm', isStreaming: true }]);
+        setMessages(prev => [...prev, { id: loadingMsgId, text: t("FloatingChatWindow.Thinking"), sender: 'llm', isStreaming: true }]);
 
         try {
             const llmResponse = await getLlmResponse(userMessage);
@@ -115,7 +115,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
             ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}
         >
             <div className="flex justify-between items-center p-3 border-b bg-indigo-600 rounded-t-xl shrink-0">
-                <h4 className="text-white font-bold">{t('AI assistance') || 'AI 助手'}</h4>
+                <h4 className="text-white font-bold">{t("FloatingChatWindow.Assistance")}</h4>
                 <button onClick={onClose} className="text-white hover:text-gray-200 text-xl">&times;</button>
             </div>
             
@@ -160,7 +160,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder={t('Input something...') || '輸入您的問題...'}
+                        placeholder={t("FloatingChatWindow.InputPlaceholder")}
                         disabled={isThinking}
                         rows={1}
                         className="flex-grow p-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
@@ -170,7 +170,7 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                         disabled={isThinking || input.trim() === ''}
                         className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition font-medium text-sm"
                     >
-                        {isThinking ? '...' : t('Send') || '發送'}
+                        {isThinking ? '...' : t("FloatingChatWindow.Send")}
                     </button>
                 </div>
             </form>
@@ -180,3 +180,4 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
 
 
 export default FloatingChatWindow;
+
