@@ -554,6 +554,10 @@
     "cancel": "Cancel changes"
   },
   "FloatingChatWindow": {
-    "InitialMessage": "Any problem?"
+    "InitialMessage": "Any problem?",
+"Thinking": "Thinking...",
+"Assistance": "AI assistance",
+"InputPlaceholder": "Input something...",
+"Send": "Send"
   }
 }
