@@ -329,6 +329,8 @@ export default function TAISorter() {
             } else if (sortingMode === 'custom-weight') {
                 const parsedWeight = parseInt(customWeights[index], 10);
                 weightValue = isNaN(parsedWeight) ? 0 : parsedWeight;
+            } else{
+                weightValue = 1
             }
 
             return {
