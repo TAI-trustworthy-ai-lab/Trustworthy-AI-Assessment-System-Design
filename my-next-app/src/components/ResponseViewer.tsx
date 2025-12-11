@@ -399,7 +399,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
             font-medium
 
             sm:px-4
-            sm:min-w-[80px]
+            sm:min-w-20
             ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
             ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
         >
@@ -451,7 +451,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
             font-medium
 
             sm:px-4
-            sm:min-w-[80px]
+            sm:min-w-20
 
             ${editable ? (selectedOptionIds.includes(opt.id) ? editableSelected : editableUnselected): ""}
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
@@ -1043,7 +1043,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                           relative
                           inline-flex justify-center items-center
                           w-fit px-2
-                          text-red-500 
+                          text-red-500
                           select-none overflow-hidden
 
                           hover:overflow-visible"

@@ -706,7 +706,7 @@ export default function ReportPage() {
             {/* response window */}
             {isOpen && (
                 <div
-                    className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center "
+                    className="fixed inset-0 z-60 bg-black/65 flex items-center justify-center"
                     onClick={() => { setIsOpen(false) }}
                 >
                     <div
@@ -726,7 +726,7 @@ export default function ReportPage() {
                             rounded overflow-hidden "
                         >
                         <div 
-                            className='absolute top-4 left-4 z-[61] size-fit'
+                            className='absolute top-4 left-4 z-61 size-fit'
                             onClick={() => { setIsOpen(false) }}
                         >
                             <CircleX
@@ -738,7 +738,7 @@ export default function ReportPage() {
                                 lg:hidden'
                             />
                         </div>
-                        <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
+                        <div className='absolute z-53 size-full rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
                         <ResponseWindow
                             state={viewerState}
                             data={viewerData}
