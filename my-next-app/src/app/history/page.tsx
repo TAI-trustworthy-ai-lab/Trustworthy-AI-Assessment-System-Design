@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from
 import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
-import { fetchProject, ProjectData } from '@/services/projectService'
+import { fetchProject, ProjectData, TaiOrder } from '@/services/projectService'
 import {
     ResponseMeta,
     ResponseData,
@@ -229,7 +229,7 @@ export default function HistoryPage() {
     const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : {};
     setFetchQuestionnaireList(dataQ)
     setFetchProjectList(dataP)
-    console.log(dataQ, dataP)
+    //console.log(dataQ, dataP)
 
     setIsSortLock(true)
     const sortingDataString = localStorage.getItem("sortingData");
@@ -1459,12 +1459,11 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   notify: (text:string, type:string)=>void, 
 }) {
   const [curState, setCurState] = useState(state)
-  const router = useRouter();
   const { i18n, t } = useTranslation();
 
   // map to corresponding title and content
+  // for display TAI order indicator
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
-  const getPageContent = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].content || ""
 
   useEffect(() => {
     setCurState(state)
@@ -1511,6 +1510,14 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
     </div>
   )
 
+  function taiOrderChecker(orders: TaiOrder[]): boolean 
+  {
+    for(const order of orders){
+      if (order.weight >= 1) return false
+    }
+    return true
+  }
+
   // detail
   const detailPanel = (
     <div className="
@@ -1535,7 +1542,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
       >
         <div className={`
           grid grid-cols-[180px_1fr]
-          max-w-fit w-[100%] space-y-2
+          max-w-fit w-full space-y-2
           whitespace-nowrap`}
         >
           <div>{t('historyPage.user')}</div>
@@ -1553,20 +1560,43 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           <div>{t('historyPage.submittedAt')}</div>
           <div>{formatTime(data.response?.submittedAt)}</div>
         </div>
+
+        {/* weight display */}
         <div>{t('reportPage.report.indicatorWeights')}</div>
-        {data.project?.taiOrders && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full rounded-lg mt-2 ">
+        {data.project?.taiOrders && taiOrderChecker(data.project.taiOrders) ? (
+          <div className="
+            grid grid-cols-2 gap-3
+            w-full rounded-lg mt-2
+            sm:grid-cols-3"
+          >
             {data.project.taiOrders.map((order, index) => (
-              <div key={index} className="flex flex-col items-center bg-white p-3 rounded-lg shadow-sm border border-indigo-200">
-                <span className="text-xs font-medium text-gray-500 text-center">
+              <div
+                key={index}
+                className="
+                  flex flex-col items-center 
+                  p-3
+                  bg-white rounded-lg shadow-sm border border-indigo-200"
+              >
+                <span className="
+                  text-xs font-medium text-gray-500 text-center"
+                >
                   {getPageTitle(order.indicator)}
                 </span>
-                {/* 權重百分比顯示 */}
-                <span className="text-lg font-bold text-indigo-700 mt-1">
+                <span className="
+                  mt-1
+                  text-lg font-bold text-indigo-700"
+                >
                   {((order.weight) * 100).toFixed(0)}%
                 </span>
               </div>
             ))}
+          </div>
+        ):(
+          <div className='
+            mt-8
+            italic text-gray-400 text-center'
+          >
+            {t("homePage.viewProject.tai.noUse")}
           </div>
         )}
       </div>
@@ -1646,14 +1676,14 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
     >
       <div className='
         absolute bottom-0 z-52
-        w-[100%] h-[70px]
-        bg-gradient-to-t from-black/10 to-transparent
+        w-full h-[70px]
+        bg-linear-to-t from-black/10 to-transparent
         pointer-events-none'
       />
 
       <div
         className={`
-          absolute z-[58] bottom-0
+          absolute z-58 bottom-0
           flex justify-center items-start space-x-4
           h-[70px] w-fit
           pointer-events-none`
@@ -1713,9 +1743,9 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
 
       <div
         className={`
-          absolute top-[100%] z-[52]
+          absolute top-full z-52
           flex flex-col justify-start items-center
-          w-[100%] h-[80%]
+          w-full h-[80%]
           rounded-t-2xl border border-white backdrop-blur-xl  shadow-[0_0px_6px_rgba(0,0,0,0.2)]
           overflow-y-auto
           transform transition duration-200 ease-out
@@ -1724,7 +1754,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
           sm:w-[80%]
 
           ${curState & ViewerState.detail ?
-            `-translate-y-[100%] bg-white/70 overflow-hidden` :
+            `-translate-y-full bg-white/70 overflow-hidden` :
             `translate-y-0`
           }`
         }
@@ -1733,7 +1763,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
         <div className={`
           relative
           flex justify-center items-center
-          w-[100%] h-[6%] `}
+          w-full h-[6%] `}
         />
 
         {detailPanel}
