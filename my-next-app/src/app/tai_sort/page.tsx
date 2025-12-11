@@ -330,7 +330,7 @@ export default function TAISorter() {
                 const parsedWeight = parseInt(customWeights[index], 10);
                 weightValue = isNaN(parsedWeight) ? 0 : parsedWeight;
             } else{
-                weightValue = 1
+                weightValue = 100
             }
 
             return {
