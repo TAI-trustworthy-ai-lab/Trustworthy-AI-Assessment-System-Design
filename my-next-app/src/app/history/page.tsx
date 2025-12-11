@@ -218,13 +218,16 @@ export default function HistoryPage() {
       const storedAuthToken = localStorage.getItem('authToken');
       const fetchListString = localStorage.getItem("myQuestionnaire");
       const fetchProjectListString = localStorage.getItem("myProject");
-      const dataQ = fetchListString ? JSON.parse(fetchListString) : [];
-      const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : [];
+      const dataQ = fetchListString ? JSON.parse(fetchListString) : {};
+      const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : {};
+      // console.log(dataQ, dataP)
 
-      setUserId(storedUserId);
-      setAuthToken(storedAuthToken);
+      setUserId(storedUserId)
+      setAuthToken(storedAuthToken)
       setFetchQuestionnaireList(dataQ)
       setFetchProjectList(dataP)
+
+      // console.log(fetchQuestionnaireList, fetchProjectList)
 
       setIsSortLock(true)
       const sortingDataString = localStorage.getItem("sortingData");
@@ -385,21 +388,21 @@ export default function HistoryPage() {
           setViewerState(ViewerState.fail)
         } else {
           r = fetchR
-          fetchList[id] = fetchR
+          setFetchList(prev=>({...prev, [id]: fetchR}))
         }
 
         if(fetchQ === null || fetchQ === undefined){
           setViewerState(ViewerState.fail)
         } else {
           q = fetchQ
-          fetchQuestionnaireList[qId] = fetchQ
+          setFetchQuestionnaireList(prev=>({...prev, [qId]: fetchQ}))
         }
 
         if(fetchP === null || fetchP === undefined){
           setViewerState(ViewerState.fail)
         } else {
           p = fetchP
-          fetchProjectList[pId] = fetchP
+          setFetchProjectList(prev=>({...prev, [pId]: fetchP}))
         }
 
       } catch (e) {
@@ -434,6 +437,7 @@ export default function HistoryPage() {
       console.error("翻譯失敗")
     }*/
 
+    // console.log(fetchQuestionnaireList, fetchProjectList)
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
     localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
     setViewerData({ response: r, questionnaire: q, project: p })
