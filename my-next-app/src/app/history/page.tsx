@@ -29,12 +29,12 @@ import { TFunction } from 'i18next';
 import { LoadingComponent } from '@/components/LoadingComponent';
 //import { Info, Edit, FileText } from 'lucide-react'
 
-enum SortWay {
+export enum SortWay {
     Accend,
     Deccend
 }
 
-enum SortType {
+export enum SortType {
     Name,
     Date,
     Project,
@@ -42,14 +42,14 @@ enum SortType {
     Questionnaire,
 }
 
-enum GroupType {
+export enum GroupType {
     Project,
     None,
     Date,
     Questionnaire,
 }
 
-interface SortingData{
+export interface SortingData{
   sort: {
     type: SortType,
     way: SortWay
@@ -60,13 +60,13 @@ interface SortingData{
   }
 }
 
-enum InfoState {
+export enum InfoState {
   idle,
   in,
   out
 }
 
-class Notification{
+export class Notification{
   static delay: number
 
   static setDelay(delay: number){

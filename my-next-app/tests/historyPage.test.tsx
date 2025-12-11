@@ -3,8 +3,18 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import HistoryPage from '@/app/history/page'; // 假設您的組件導出
-import { ViewerState } from '@/services/responseService'; // 導入必要的類型/枚舉
+import HistoryPage, { SortType, GroupType, SortWay } from '@/app/history/page'; // 假設您的組件導出
+// HistoryPage.test.tsx (頂部)
+
+// 假設這些枚舉是從 HistoryPage.tsx 導出的，如果它們未導出，您需要將它們導出。
+// 如果它們沒有導出，或者您不方便導出，您可能需要將它們移動到一個單獨的類型文件中並在那裡導出。
+// 這裡假設它們可以從 HistoryPage 導出（如果它們是內聯定義在組件外部）。
+
+// ... 其他導入 ...
+import { ResponseData, ResponseMeta, ViewerState } from '@/services/responseService'; // 導入必要的類型/枚舉
+import { QuestionnaireData } from '@/components/ResponseViewer';
+import { TFunction } from 'i18next';
+import { ProjectData } from '@/services/projectService';
 
 // --- 1. Mock 外部依賴 ---
 
@@ -57,9 +67,48 @@ jest.mock('@/services/projectService', () => ({
 }));
 
 // Mock 輔助組件 (避免渲染複雜的 UI 或依賴)
-jest.mock('@/components/AuthHeader', () => () => <div data-testid="AuthHeader" />);
-jest.mock('@/components/ProtectedLayout', () => ({ children }: { children: React.ReactNode }) => <div data-testid="ProtectedLayout">{children}</div>);
-jest.mock('@/components/LoadingComponent', () => ({ message }: { message: string }) => <div data-testid="LoadingComponent">{message}</div>);
+// HistoryPage.test.tsx (修正後的 Mock 部分)
+
+// --- 1. 修正 AuthHeader Mock ---
+jest.mock('@/components/AuthHeader', () => {
+    // 1. 定義 Mock 組件
+    const MockAuthHeader = () => <div data-testid="AuthHeader" />;
+    // 2. 添加 displayName
+    MockAuthHeader.displayName = 'MockAuthHeader';
+    
+    return MockAuthHeader;
+});
+
+// --- 2. 修正 ProtectedLayout Mock ---
+jest.mock('@/components/ProtectedLayout', () => {
+    // 1. 定義 Mock 組件
+    const MockProtectedLayout = ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="ProtectedLayout">{children}</div>
+    );
+    // 2. 添加 displayName
+    MockProtectedLayout.displayName = 'MockProtectedLayout';
+    
+    // 由於 ProtectedLayout 是默認導出，我們直接返回組件
+    return MockProtectedLayout;
+});
+
+// --- 3. 修正 LoadingComponent Mock ---
+jest.mock('@/components/LoadingComponent', () => {
+    // 1. 定義 Mock 組件
+    const MockLoadingComponent = ({ message }: { message: string }) => (
+        <div data-testid="LoadingComponent">{message}</div>
+    );
+    // 2. 添加 displayName
+    MockLoadingComponent.displayName = 'MockLoadingComponent';
+    
+    return {
+        // 由於 LoadingComponent 是命名導出，這裡需要返回一個包含導出的物件
+        LoadingComponent: MockLoadingComponent,
+    };
+});
+
+// 注意：我假設 LoadingComponent 是命名導出 (因為它是一個輔助組件，不是頁面)。
+// 如果它是默認導出，則應像 ProtectedLayout 一樣直接 return MockLoadingComponent。
 jest.mock('../../components/ResponseViewer', () => ({
     __esModule: true,
     default: ({ state }: { state: string }) => <div data-testid={`ResponseViewer-${state}`} />,
@@ -79,41 +128,117 @@ jest.mock('../../components/ResponseViewer', () => ({
 // Mock 其他未提供的組件/函數
 jest.mock('../../components/ResponseViewer', () => ({
     __esModule: true,
-    default: ({ state, data }: any) => <div data-testid={`ResponseViewer-${state}`}>{data?.response?.id}</div>,
+    default: ({ state, data }: {
+        state: ViewerState,
+        data:{response: ResponseData, questionnaire: QuestionnaireData}
+    }) => <div data-testid={`ResponseViewer-${state}`}>{data?.response?.id}</div>,
     ViewerState: { loading: 'loading', success: 'success', editing: 'editing', detail: 'detail', fail: 'fail' },
     // ... 其他 ResponseViewer 導出
 }));
 jest.mock('../../components/ResponseViewer', () => ({
     __esModule: true,
-    default: ({ state, data }: any) => <div data-testid={`ResponseViewer-${state}`}>{data?.response?.id}</div>,
+    default: ({ state, data }: {
+        state: ViewerState,
+        data:{response: ResponseData, questionnaire: QuestionnaireData}
+    }) => <div data-testid={`ResponseViewer-${state}`}>{data?.response?.id}</div>,
     ViewerState: { loading: 'loading', success: 'success', editing: 'editing', detail: 'detail', fail: 'fail' },
     // ... 其他 ResponseViewer 導出
 }));
-jest.mock('../../components/ComfirmWindow', () => ({ comfirm, cancel }: any) => (
-    <div data-testid="ComfirmWindow">
-        <button onClick={comfirm} data-testid="confirm-btn">Confirm</button>
-        <button onClick={cancel} data-testid="cancel-btn">Cancel</button>
-    </div>
-));
-jest.mock('../../components/ContextMenuStrip', () => ({ children, position }: any) => (
-    <div data-testid="ContextMenuStrip" style={{ left: position.x, top: position.y }}>{children}</div>
-));
-jest.mock('../../components/ResponseItem', () => ({ meta, selected, setCurResponse, showMenu, t }: any) => (
-    <div
-        data-testid={`ResponseItem-${meta.id}`}
-        className={selected ? 'selected' : 'unselected'}
-        onClick={setCurResponse}
-        onContextMenu={showMenu}
-    >
-        {meta.project.name} - {meta.submittedAt}
-    </div>
-));
-jest.mock('../../components/SortControls', () => (props: any) => (
-    <div data-testid="SortControls">
-        <button onClick={() => props.onSortTypeChange(0)}>SortName</button>
-        <button onClick={() => props.onGroupTypeChange(0)}>GroupProject</button>
-    </div>
-));
+// --- 1. 修正 ComfirmWindow Mock ---
+jest.mock('../../components/ComfirmWindow', () => {
+    // 1. 定義 Mock 組件
+    const MockComfirmWindow = ({ comfirm, cancel }: {
+        comfirm: () => void,
+        cancel: () => void
+    }) => (
+        <div data-testid="ComfirmWindow">
+            <button onClick={comfirm} data-testid="confirm-btn">Confirm</button>
+            <button onClick={cancel} data-testid="cancel-btn">Cancel</button>
+        </div>
+    );
+    // 2. 添加 displayName
+    MockComfirmWindow.displayName = 'MockComfirmWindow';
+    
+    return MockComfirmWindow;
+});
+
+// --- 2. 修正 ContextMenuStrip Mock ---
+jest.mock('../../components/ContextMenuStrip', () => {
+    // 1. 定義 Mock 組件
+    const MockContextMenuStrip = ({ children, position }: {
+        position: { x: number, y: number },
+        children: React.JSX.Element[]
+    }) => (
+        <div data-testid="ContextMenuStrip" style={{ left: position.x, top: position.y }}>{children}</div>
+    );
+    // 2. 添加 displayName
+    MockContextMenuStrip.displayName = 'MockContextMenuStrip';
+    
+    return MockContextMenuStrip;
+});
+
+// --- 3. 修正 ResponseItem Mock ---
+jest.mock('../../components/ResponseItem', () => {
+    // 1. 定義 Mock 組件
+    const MockResponseItem = ({ meta, selected, setCurResponse, showMenu, t }: {
+        meta: ResponseMeta,
+        selected: boolean,
+        setCurResponse: () => void,
+        showMenu: (e: React.MouseEvent) => void
+        t: TFunction<"translation", undefined>
+    }) => (
+        <div
+            data-testid={`ResponseItem-${meta.id}`}
+            className={selected ? 'selected' : 'unselected'}
+            onClick={setCurResponse}
+            onContextMenu={showMenu}
+        >
+            {meta.project.name} - {meta.submittedAt}
+        </div>
+    );
+    // 2. 添加 displayName
+    MockResponseItem.displayName = 'MockResponseItem';
+    
+    return MockResponseItem;
+});
+
+// --- 4. 修正 SortControls Mock (已在上次回复中修正，這裡再次包含) ---
+
+// 假設 SortType 和 GroupType 已經在文件頂部被正確導入
+// import { SortType, GroupType } from './HistoryPage'; 
+
+jest.mock('../../components/SortControls', () => {
+    const MockSortControls = ({ onSortWayChange, onSortTypeChange, onGroupTypeChange }: {
+      onSortWayChange: (v: SortWay) => void;
+      onSortTypeChange: (v: SortType) => void;
+      onGroupTypeChange: (v: GroupType) => void;
+    }) => (
+        <div data-testid="SortControls">
+            {/* 使用實際的枚舉值來確保傳遞的參數是正確的 */}
+            <button 
+                onClick={() => onSortWayChange(0)}
+                data-testid="GroupProject-btn"
+            >
+                SortWay
+            </button>
+            <button 
+                onClick={() => onSortTypeChange(0)}
+                data-testid="SortName-btn"
+            >
+                SortName
+            </button>
+            <button 
+                onClick={() => onGroupTypeChange(0)}
+                data-testid="GroupProject-btn"
+            >
+                GroupProject
+            </button>
+            
+        </div>
+    );
+    MockSortControls.displayName = 'MockSortControls'; // 添加 displayName
+    return MockSortControls;
+});
 
 // Mock `translateText` (翻譯工具函式) - 模擬 API 呼叫
 const mockTranslateText = jest.fn(async (text: string) => `Translated(${text})`);
@@ -190,11 +315,11 @@ const MOCK_RESPONSE_LIST = [
         project: { name: 'Project A' },
         submittedAt: '2023-10-04T09:00:00Z',
     },
-] as any[];
+] as ResponseMeta[];
 
-const MOCK_RESPONSE_DATA = { id: 1, answers: {} } as any;
-const MOCK_QUESTIONNAIRE_DATA = { id: 101, title: 'Q Title', questions: [] } as any;
-const MOCK_PROJECT_DATA = { id: 1, name: 'Project A' } as any;
+const MOCK_RESPONSE_DATA = { id: 1, answers: {} } as ResponseData;
+const MOCK_QUESTIONNAIRE_DATA = { id: 101, title: 'Q Title', description:"", questions: [], group:{id: 2, name: ""} } as QuestionnaireData;
+const MOCK_PROJECT_DATA = { id: 1, name: 'Project A' } as ProjectData;
 
 // --- 3. 測試套件 ---
 
