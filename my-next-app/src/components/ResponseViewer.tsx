@@ -556,10 +556,20 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
   const q = data.questionnaire
   const r = data.response
   const editable = curState === ViewerState.editing
+  const qs = q.questions.reduce<Record<number, Question>>(
+    (acc, value) => {
+      acc[value.id] = value
+      return acc
+    }, {}
+  )
 
   const viewerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [curPage, setCurPage] = useState(0);
+
+  // expand / collapse state
+  // key is question id
+  const [isExpanded, SetIsExpanded] = useState<Record<number, boolean>>({})
 
   const [isUpdate, SetIsUpdate] = useState(false)
   const [isComplete, SetIsComplete] = useState(true)
@@ -597,6 +607,18 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
 
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    SetIsExpanded(
+      q.questions.reduce<Record<number, boolean>>(
+        (acc, value) => {
+          if(value.description && value.description.length > 0)
+            acc[value.id] = false
+          return acc
+        }, {}
+      )
+    )
+  }, [q.questions])
 
   // map to corresponding title and content
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
@@ -636,18 +658,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     )
   })()
 
-  const typeQ = q.questions.reduce<Record<number, string>>(
-    (acc, value) => {
-      acc[value.id] = value.type
-      return acc
-    }, {}
-  )
-  const requiredQ = q.questions.reduce<Record<number, boolean>>(
-    (acc, value) => {
-      acc[value.id] = value.required
-      return acc
-    }, {}
-  )
   const [editQ, setEditQ] = useState<Record<number, boolean>>(
     q.questions.reduce<Record<number, boolean>>(
       (acc, value) => {
@@ -701,11 +711,12 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       [questionId]: answerValue,
     }));
     
+    const typeQ = qs[questionId].type
     let changed = false
-    if(typeQ[questionId] === 'SCALE') changed = (answerValue.score === answers[questionId].score)
-    else if (typeQ[questionId] === 'SINGLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
-    else if (typeQ[questionId] === 'MULTIPLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
-    else if (typeQ[questionId] === 'TEXT') changed = (answerValue.textValue === answers[questionId].textValue)
+    if(typeQ === 'SCALE') changed = (answerValue.score === answers[questionId].score)
+    else if (typeQ === 'SINGLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ === 'MULTIPLE_CHOICE') changed = !deepEqual(answerValue.optionIds, answers[questionId].optionIds)
+    else if (typeQ === 'TEXT') changed = (answerValue.textValue === answers[questionId].textValue)
 
     // answer changed
     setEditQ(prev=>{
@@ -721,9 +732,9 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     // please handle SetIsComplete(), setDoneQ
     // be care of it's required question or not
     // also need to handle text type question
-    if(typeQ[questionId] == 'MULTIPLE_CHOICE'){
+    if(typeQ == 'MULTIPLE_CHOICE'){
       if(!answerValue.optionIds 
-        || (requiredQ[questionId] && answerValue.optionIds && answerValue.optionIds.size <= 0)
+        || (qs[questionId].required && answerValue.optionIds && answerValue.optionIds.size <= 0)
       ){
         SetIsComplete(false)
         setDoneQ(prev=>{
@@ -816,36 +827,62 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     }
   }
 
-  const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
-    const { t } = useTranslation();
-    const [isExpanded, setIsExpanded] = useState(false);
+  const QuestionDescriptionToggle: React.FC<{qId: number}> = ({qId}) => {
+    const { t } = useTranslation()
 
+    const isExpandedState = isExpanded[qId] || false
+    const description = qs[qId].description
     if (!description || description.trim() === '') {
-      return null;
+      return null
     }
 
     return (
-      <div className="text-sm text-gray-500 mt-2 mb-3">
+      <div className="
+        mt-2 mb-3
+        text-sm text-black/50"
+      >
         <button
-          onClick={() => setIsExpanded(prev => !prev)}
-          className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
+          onClick={() => SetIsExpanded(prev => ({
+            ...prev,
+            [qId]: !isExpandedState
+          }))}
+          className="
+            flex items-center 
+            text-black/40 font-medium
+            cursor-pointer"
         >
-          {/* 顯示/隱藏 圖標 */}
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+          {/* hide / show */}
+          <svg 
+            className="w-4 h-4 mr-1"
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={isExpandedState ?
+                "M5 15l7-7 7 7" :
+                "M19 9l-7 7-7-7"
+              } 
+            />
           </svg>
-          {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+          {t(isExpandedState ? 
+            'Questionnaire.actions.hideDetails' : 
+            'Questionnaire.actions.showDetails')
+          }
         </button>
         
-        {/* 展開時才顯示描述內容 */}
-        {isExpanded && (
-          <div className="p-3">
-              <TranslatedText text={description} />
+        {/* show description */}
+        {isExpandedState && (
+          <div className="mx-3 mt-2">
+            <TranslatedText text={description} />
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   return (<>
     <div
@@ -877,7 +914,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
               onClick={handleUpdate}
               disabled={isUpdate || !isComplete}
               className="
-                absolute z-[51] top-5 right-6
+                absolute z-51 top-5 right-6
                 flex items-center justify-center
                 min-w-[150px]
                 py-2 px-6
@@ -894,7 +931,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
           )}
           <div
             className="
-              absolute z-[51] bottom-5 right-6
+              absolute z-51 bottom-5 right-6
               pointer-events-auto"
           >
             {/* jump to page */}
@@ -956,7 +993,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                 {/* blue line for decoration */}
                 <div className='
                   flex justify-around
-                  w-[8px] ml-3 mr-2
+                  w-2 ml-3 mr-2
                   bg-indigo-400
                   text-transparent
                   select-none'
@@ -1025,7 +1062,9 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                     </div>
 
                     {/* question description */}
-                    <QuestionDescriptionToggle description={question.description} />
+                    {question.description && question.description.length > 0 &&
+                      <QuestionDescriptionToggle qId={question.id}/>
+                    }
                     
                     {/* render with different question type */}
                     <div className="flex justify-start">
@@ -1047,12 +1086,11 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         })
       }
 
-      {/* "translating..." tip */}
+      {/* "translating..." tip, temporary no use */}
       <div className='h-20 w-full'>
         {
-          // temporary no use
           ((curState & ViewerState.translating) !== 0) && (
-            <LoadingComponent message='翻譯中...' />
+            <LoadingComponent message='Translating...' />
           )
         }
       </div>
@@ -1072,7 +1110,7 @@ export function ClickAwaySelect<T>({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // 點擊畫面空白收起
+  // collase when click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
