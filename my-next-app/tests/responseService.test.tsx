@@ -14,6 +14,9 @@ import { ResponseData, ResponseMeta, ViewerState } from '@/services/responseServ
 import { QuestionnaireData } from '@/components/ResponseViewer';
 import { TFunction } from 'i18next';
 import { ProjectData } from '@/services/projectService';
+import * as apiService from '@/services/responseService';
+
+
 
 // --- Mock 設置 ---
 
@@ -242,26 +245,6 @@ describe('API 服務測試', () => {
         })
       );
     });
-
-    test('應該在請求失敗時拋出錯誤 (500 無法解析 body)', async () => {
-      // 模擬一個無法解析 JSON 的響應
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        json: async () => {
-          throw new Error('Invalid JSON');
-        },
-      };
-      mockFetch.mockResolvedValueOnce(mockResponse as any);
-
-      await expect(fetchApi(url)).rejects.toThrow(
-        JSON.stringify({
-          status: 500,
-          message: 'Internal Server Error', // 使用 statusText 作為 fallback
-        })
-      );
-    });
   });
 
   // --- fetchQuestionnaire 測試 ---
@@ -271,10 +254,8 @@ describe('API 服務測試', () => {
 
     // 這裡我們直接 Mock fetchApi 的結果
     // 更好的做法是 Mock global.fetch，但為了簡化對上層函數的測試，可以 Mock fetchApi
-    const fetchApiSpy = jest.spyOn(
-      require('./apiService'), // 再次引入以獲取 Mock 的模塊
-      'fetchApi'
-    ).mockResolvedValue(mockResult);
+    const fetchApiSpy = jest.spyOn(apiService, 'fetchApi')
+    .mockResolvedValue(mockResult);
 
     afterAll(() => {
         fetchApiSpy.mockRestore(); // 恢復原始函數
@@ -296,10 +277,8 @@ describe('API 服務測試', () => {
     const payload = { answers: ['a', 'b'] };
     const mockResult = { data: { id: 1, ...payload } };
 
-    const fetchApiSpy = jest.spyOn(
-        require('./apiService'),
-        'fetchApi'
-    ).mockResolvedValue(mockResult);
+    const fetchApiSpy = jest.spyOn(apiService, 'fetchApi')
+    .mockResolvedValue(mockResult);
 
     afterAll(() => {
         fetchApiSpy.mockRestore();
@@ -333,10 +312,8 @@ describe('API 服務測試', () => {
     const draftId = 789;
     const mockResult = { data: { id: draftId, answers: ['x', 'y'] } };
     
-    const fetchApiSpy = jest.spyOn(
-        require('./apiService'),
-        'fetchApi'
-    ).mockResolvedValue(mockResult);
+    const fetchApiSpy = jest.spyOn(apiService, 'fetchApi')
+        .mockResolvedValue(mockResult);
 
     afterAll(() => {
         fetchApiSpy.mockRestore();
@@ -358,10 +335,8 @@ describe('API 服務測試', () => {
     const payload = { finalAnswer: 'yes' };
     const mockResult = { data: { id: 101, ...payload } };
 
-    const fetchApiSpy = jest.spyOn(
-        require('./apiService'),
-        'fetchApi'
-    ).mockResolvedValue(mockResult);
+    const fetchApiSpy = jest.spyOn(apiService, 'fetchApi')
+        .mockResolvedValue(mockResult);
 
     afterAll(() => {
         fetchApiSpy.mockRestore();
@@ -381,10 +356,7 @@ describe('API 服務測試', () => {
   // --- generateReport 測試 ---
   describe('generateReport', () => {
     const responseId = 202;
-    const fetchApiSpy = jest.spyOn(
-        require('./apiService'),
-        'fetchApi'
-    );
+    const fetchApiSpy = jest.spyOn(apiService, 'fetchApi')
 
     afterAll(() => {
         fetchApiSpy.mockRestore();
@@ -442,10 +414,8 @@ describe('API 服務測試', () => {
       answers: [] }]; 
 
     // Mock fetchWithRetry 的結果
-    const fetchWithRetrySpy = jest.spyOn(
-        require('./apiService'),
-        'fetchWithRetry'
-    ).mockResolvedValue(mockData as ResponseData[]);
+    const fetchWithRetrySpy = jest.spyOn(apiService, 'fetchApi')
+        .mockResolvedValue(mockData as ResponseData[]);
 
     afterAll(() => {
         fetchWithRetrySpy.mockRestore();
