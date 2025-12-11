@@ -613,7 +613,7 @@ export default function HistoryPage() {
       loadResponses()
     } else {
       setIsLoading(false)
-      router.push('/login')
+      // router.push('/login')
     }
   }, [userId, authToken])
 
