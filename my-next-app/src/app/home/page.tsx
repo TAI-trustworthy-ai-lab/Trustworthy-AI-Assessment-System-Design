@@ -568,7 +568,10 @@ const Home = () => {
                 "userId",
                 "userRole",
                 "authExpiry",
-                "preferredLanguage"
+                "preferredLanguage",
+                "myQuestionnaire",
+                "myProject",
+                "sortingData"
             ];
 
             const allKeys = Object.keys(localStorage);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import { fetchProject, ProjectData } from '@/services/projectService'
@@ -157,7 +157,6 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
 };
 
 export default function HistoryPage() {
-  const pathname = usePathname()
 
   const [userId, setUserId] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -215,7 +214,6 @@ export default function HistoryPage() {
 
   // get userId authToken from localStorage
   useEffect(() => {
-    console.log("hello")
     const storedUserId = localStorage.getItem('userId');
     const storedAuthToken = localStorage.getItem('authToken');
     setUserId(storedUserId)
@@ -223,12 +221,8 @@ export default function HistoryPage() {
     settingHandler()
   }, []);
 
-  useEffect(() => {
-    settingHandler()
-  }, [pathname]);
-
+  // get myQuestionnaire, myProject, sortingData from localStorage
   const settingHandler = () =>{
-    console.log("load setting")
     const fetchListString = localStorage.getItem("myQuestionnaire");
     const fetchProjectListString = localStorage.getItem("myProject");
     const dataQ = fetchListString ? JSON.parse(fetchListString) : {};
