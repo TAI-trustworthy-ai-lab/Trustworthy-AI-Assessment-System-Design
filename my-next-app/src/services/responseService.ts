@@ -80,7 +80,7 @@ export enum ViewerState{
 }
 
 // fetch 函數  FETCH FUNCTION
-async function fetchApi(url: string, options: RequestInit = {}) {
+export async function fetchApi(url: string, options: RequestInit = {}) {
     const userToken = localStorage.getItem('authToken');
 
     const headers = {
