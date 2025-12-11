@@ -611,8 +611,9 @@ export default function HistoryPage() {
       // setIsLoading(false)
 
       loadResponses()
-    } else if (userId !== null && authToken !== null) {
+    } else {
       setIsLoading(false)
+      router.push('/login')
     }
   }, [userId, authToken])
 
