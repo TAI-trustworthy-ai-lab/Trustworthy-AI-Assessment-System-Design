@@ -9,17 +9,41 @@ import {
   fetchResponseList,
   deleteResponse,
   updateResponse,
-  fetchResponse,
-  fetchWithRetry,
 } from '@/services/responseService'; // 請根據您的文件路徑修改
+import { ResponseData, ResponseMeta, ViewerState } from '@/services/responseService'; // 導入必要的類型/枚舉
+import { QuestionnaireData } from '@/components/ResponseViewer';
+import { TFunction } from 'i18next';
+import { ProjectData } from '@/services/projectService';
 
 // --- Mock 設置 ---
 
 // Mock 全局的 fetch 函數
-const mockFetch = jest.fn();
+
 // 假設您在 Node 環境下使用 jest-fetch-mock 或類似工具
 // 如果在瀏覽器環境下測試，可能需要手動將 global.fetch 設置為 mockFetch
-global.fetch = mockFetch as any;
+// HistoryPage.test.tsx (頂部附近)
+
+// ...
+
+// Mock 瀏覽器 API
+// ...
+
+// 確保 mockFetch 類型正確 (使用 typeof window.fetch)
+// ⚠️ 注意: 這裡的 mockFetch 應該是對應 translateText 中使用的 fetch 
+const mockFetch = jest.fn(async () => {
+    // 模擬成功的翻譯響應
+    return {
+        ok: true,
+        json: async () => ({ translatedText: "Mocked Translation" }),
+        text: async () => JSON.stringify({ translatedText: "Mocked Translation" }),
+        // ... 添加其他需要的屬性以滿足 Response 介面
+    } as Response; // 這裡斷言為 Response
+});
+
+// 使用 typeof window.fetch 類型斷言，這通常比 as any 更有說服力
+global.fetch = mockFetch as typeof window.fetch;
+
+// ...
 
 // Mock localStorage
 const mockLocalStorage = (() => {
@@ -91,16 +115,42 @@ beforeEach(() => {
 // --- 輔助函數 ---
 
 // 創建一個 Mock Response 對象
+// 定義一個 Mock 響應的幫助函數
 const createMockResponse = (
-  status: number,
-  data: any,
-  ok: boolean = true,
-  statusText: string = 'OK'
-) => ({
-  ok: ok,
-  status: status,
-  statusText: statusText,
-  json: async () => data,
+    status: number,
+    data: ResponseData,
+    ok: boolean = true,
+    statusText: string = 'OK',
+): Response => ({
+    ok: ok,
+    status: status,
+    statusText: statusText,
+    json: async () => data,
+
+    // --- 新增: 滿足 Response 介面要求的缺失屬性 ---
+    headers: new Headers(),
+    redirected: false,
+    url: '',
+    type: 'default',
+    body: null,
+    bodyUsed: false,
+    // 模擬 text() 方法，用於某些 API 錯誤或非 JSON 響應
+    text: async () => JSON.stringify(data),
+
+    // 模擬 clone() 方法，這是 Response 類型所必需的
+    clone: () => createMockResponse(status, data, ok, statusText) as unknown as Response,
+    arrayBuffer: function (): Promise<ArrayBuffer> {
+        throw new Error('Function not implemented.');
+    },
+    blob: function (): Promise<Blob> {
+        throw new Error('Function not implemented.');
+    },
+    bytes: function (): Promise<Uint8Array<ArrayBuffer>> {
+        throw new Error('Function not implemented.');
+    },
+    formData: function (): Promise<FormData> {
+        throw new Error('Function not implemented.');
+    }
 });
 
 // --- 測試套件 ---
@@ -109,7 +159,26 @@ describe('API 服務測試', () => {
   // --- fetchApi 函數測試 ---
   describe('fetchApi', () => {
     const url = '/test-endpoint';
-    const mockData = { message: 'Success' };
+    const mockData:ResponseData = {
+        id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] };
 
     test('應該成功發送請求並返回 JSON 數據 (無 token)', async () => {
       mockFetch.mockResolvedValueOnce(createMockResponse(200, mockData));
@@ -142,7 +211,26 @@ describe('API 服務測試', () => {
     });
 
     test('應該在請求失敗時拋出錯誤 (404 帶有錯誤信息)', async () => {
-      const errorData = { message: 'Not Found Custom' };
+      const errorData :ResponseData = {
+        id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] };
       mockFetch.mockResolvedValueOnce(
         createMockResponse(404, errorData, false, 'Not Found')
       );
@@ -150,7 +238,7 @@ describe('API 服務測試', () => {
       await expect(fetchApi(url)).rejects.toThrow(
         JSON.stringify({
           status: 404,
-          message: errorData.message,
+          message: "errorData.message",
         })
       );
     });
@@ -329,18 +417,35 @@ describe('API 服務測試', () => {
     });
   });
 
-
   // --- fetchResponseList 測試 (依賴 fetchWithRetry) ---
   describe('fetchResponseList', () => {
     const userId = 'user-123';
     const authToken = 'valid-token';
-    const mockData = [{ id: 1, status: 'completed' }]; 
+    const mockData = [{ id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] }]; 
 
     // Mock fetchWithRetry 的結果
     const fetchWithRetrySpy = jest.spyOn(
         require('./apiService'),
         'fetchWithRetry'
-    ).mockResolvedValue(mockData as any);
+    ).mockResolvedValue(mockData as ResponseData[]);
 
     afterAll(() => {
         fetchWithRetrySpy.mockRestore();
@@ -376,7 +481,25 @@ describe('API 服務測試', () => {
 
     test('刪除成功時，不應拋出錯誤', async () => {
       // 成功響應：200 OK 且 body 包含 message
-      mockFetch.mockResolvedValueOnce(createMockResponse(200, { message: 'Deleted' }));
+      mockFetch.mockResolvedValueOnce(createMockResponse(200, {id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] }));
 
       await expect(deleteResponse(userId, authToken, responseId)).resolves.toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(`${RESPONSE_API_BASE}/${responseId}`, {
@@ -395,7 +518,25 @@ describe('API 服務測試', () => {
     });
 
     test('API 錯誤時 (400)，應拋出錯誤', async () => {
-      const errorResponse = { error: 'Bad Request' };
+      const errorResponse = {id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] };
       mockFetch.mockResolvedValueOnce(createMockResponse(400, errorResponse, false, 'Bad Request'));
 
       await expect(deleteResponse(userId, authToken, responseId)).rejects.toThrow('Bad Request');
@@ -406,7 +547,25 @@ describe('API 服務測試', () => {
   describe('updateResponse', () => {
     const responseId = 404;
     const payload = { answers: { q1: 'new_a' } };
-    const mockResult = { id: responseId, message: 'Updated' };
+    const mockResult = { id: 0,
+      userId: 0,
+      projectId: 0,
+      versionId: 0,
+      submittedAt: "",
+      user: {
+        id: 0,
+        name: "string",
+        email: "string"
+      },
+      project: {
+        id: 3,
+        name: "string"
+      },
+      version: {
+        id: 2,
+        title: "string"
+      },
+      answers: [] };
     const authToken = 'test-token-404';
 
     beforeEach(() => {
