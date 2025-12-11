@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import { fetchProject, ProjectData } from '@/services/projectService'
@@ -157,6 +157,8 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
 };
 
 export default function HistoryPage() {
+  const pathname = usePathname()
+
   const [userId, setUserId] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
 
@@ -213,43 +215,46 @@ export default function HistoryPage() {
 
   // get userId authToken from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUserId = localStorage.getItem('userId');
-      const storedAuthToken = localStorage.getItem('authToken');
-      const fetchListString = localStorage.getItem("myQuestionnaire");
-      const fetchProjectListString = localStorage.getItem("myProject");
-      const dataQ = fetchListString ? JSON.parse(fetchListString) : {};
-      const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : {};
-      // console.log(dataQ, dataP)
-
-      setUserId(storedUserId)
-      setAuthToken(storedAuthToken)
-      setFetchQuestionnaireList(dataQ)
-      setFetchProjectList(dataP)
-
-      // console.log(fetchQuestionnaireList, fetchProjectList)
-
-      setIsSortLock(true)
-      const sortingDataString = localStorage.getItem("sortingData");
-      //console.log("loading: ", sortingDataString)
-
-      const sortingData = sortingDataString ? JSON.parse(sortingDataString) as SortingData :
-        {
-          sort: {
-            type: SortType.Date,
-            way: SortWay.Accend
-          },
-          group: {
-            type: GroupType.Project,
-            way: SortWay.Accend
-          }
-        }
-      setSortType(sortingData.sort? sortingData.sort.type : SortType.Date)
-      setSortWay(sortingData.sort? sortingData.sort.way: SortWay.Accend)
-      setGroupType(sortingData.group? sortingData.group.type: GroupType.Project)
-      setIsSortLock(false)
-    }
+    console.log("hello")
+    const storedUserId = localStorage.getItem('userId');
+    const storedAuthToken = localStorage.getItem('authToken');
+    setUserId(storedUserId)
+    setAuthToken(storedAuthToken)
+    settingHandler()
   }, []);
+
+  useEffect(() => {
+    settingHandler()
+  }, [pathname]);
+
+  const settingHandler = () =>{
+    console.log("load setting")
+    const fetchListString = localStorage.getItem("myQuestionnaire");
+    const fetchProjectListString = localStorage.getItem("myProject");
+    const dataQ = fetchListString ? JSON.parse(fetchListString) : {};
+    const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : {};
+    setFetchQuestionnaireList(dataQ)
+    setFetchProjectList(dataP)
+    console.log(dataQ, dataP)
+
+    setIsSortLock(true)
+    const sortingDataString = localStorage.getItem("sortingData");
+    const sortingData = sortingDataString ? JSON.parse(sortingDataString) as SortingData :
+      {
+        sort: {
+          type: SortType.Date,
+          way: SortWay.Accend
+        },
+        group: {
+          type: GroupType.Project,
+          way: SortWay.Accend
+        }
+      }
+    setSortType(sortingData.sort? sortingData.sort.type : SortType.Date)
+    setSortWay(sortingData.sort? sortingData.sort.way: SortWay.Accend)
+    setGroupType(sortingData.group? sortingData.group.type: GroupType.Project)
+    setIsSortLock(false)
+  }
 
   // load all response from user id (GET API)
   const loadResponses = useCallback(async () => {
