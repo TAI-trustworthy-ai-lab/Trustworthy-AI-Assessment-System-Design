@@ -1,9 +1,10 @@
 import { QUESTIONNAIRE_API_BASE } from "@/config/apiConfig"; 
 
-const QUESTIONNAIRE_LATEST_URL = `${QUESTIONNAIRE_API_BASE}/group/latest`;
-const QUESTIONNAIRE_ALL_URL = `${QUESTIONNAIRE_API_BASE}/all`;
+// API Endpoints
+const QUESTIONNAIRE_LATEST_URL = `${QUESTIONNAIRE_API_BASE}/group/latest`; // Latest versions by group
+const QUESTIONNAIRE_ALL_URL = `${QUESTIONNAIRE_API_BASE}/all`; // All questionnaire versions
 
-
+// 1. Fetch Latest Questionnaires by Group (GET)
 export const fetchLatestQuestionnaires = async () => {
     try {
         const response = await fetch(QUESTIONNAIRE_LATEST_URL, { 
@@ -20,14 +21,14 @@ export const fetchLatestQuestionnaires = async () => {
                 message: result.error || `HTTP error! Status: ${response.status}` 
             }));
         }
-        return result.data;
+        return result.data; // Returns grouped latest versions
     } catch (error) {
         console.error("獲取最新問卷列表失敗 (Service):", error);
         throw error;
     }
 };
 
-
+// 2. Fetch All Questionnaire Versions (GET)
 export const fetchAllQuestionnaires = async () => {
     try {
         const response = await fetch(QUESTIONNAIRE_ALL_URL, {
@@ -45,14 +46,14 @@ export const fetchAllQuestionnaires = async () => {
             }));
         }
 
-        // 這裡回傳的是 result.data.items
-        return result.data?.items || [];
+        return result.data?.items || []; // Returns all versions/items
     } catch (error) {
         console.error("獲取所有問卷列表失敗 (Service):", error);
         throw error;
     }
 };
 
+// 3. Create New Questionnaire (POST)
 export const createQuestionnaire = async (payload: {
     groupName: string;
     title: string;
@@ -76,7 +77,7 @@ export const createQuestionnaire = async (payload: {
             body: JSON.stringify(payload),
         });
 
-        const result = await response.json().catch(() => ({}));
+        const result = await response.json().catch(() => ({})); // Safe JSON parse
 
         if (!response.ok) {
             throw new Error(JSON.stringify({
@@ -85,14 +86,14 @@ export const createQuestionnaire = async (payload: {
             }));
         }
 
-        // 回傳 statusCode
-        return response.status;
+        return response.status; // Return status code on success
     } catch (error) {
         console.error("建立問卷失敗 (Service):", error);
         throw error;
     }
 };
 
+// 4. Duplicate Existing Questionnaire Version (PUT)
 export const duplicateQuestionnaire = async (
     id: number,
     payload: {
@@ -121,7 +122,7 @@ export const duplicateQuestionnaire = async (
             }));
         }
 
-        // 回傳完整物件與 statusCode
+        // Return status code and new version data
         return {
             statusCode: response.status,
             data: result.data,
@@ -132,6 +133,7 @@ export const duplicateQuestionnaire = async (
     }
 };
 
+// 5. Delete Questionnaire Version (DELETE)
 export async function deleteQuestionnaire(id: number) {
     const userToken = localStorage.getItem('authToken');
     const url = `${QUESTIONNAIRE_API_BASE}/${id}`;
@@ -149,8 +151,7 @@ export async function deleteQuestionnaire(id: number) {
     return res.json();
 }
 
-
-// 7. PUT 複製指定問卷版本
+// 6. Update Questionnaire Version Details (PATCH)
 export const updateQuestionnaireVersion = async (
     id: number,
     payload: {
@@ -180,7 +181,7 @@ export const updateQuestionnaireVersion = async (
             }));
         }
 
-        // 回傳完整物件與 statusCode
+        // Return status code and updated data
         return {
             statusCode: response.status,
             data: result.data,
