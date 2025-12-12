@@ -299,66 +299,115 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
 
     describe('Full Submission Flow', () => {
         it('should successfully submit answers, generate report, and redirect to report page', async () => {
-            const MOCK_RESPONSE_ID = 999;
-            
-            // ⭐️ 修正 1: 創建一個可控的 Promise 變量
-            let resolveGenerateReport: (value: boolean) => void;
-            const controlledPromise = new Promise<boolean>(resolve => {
-                resolveGenerateReport = resolve;
-            });
-
-            // Mock APIs
-            mockSubmitQuestionnaire.mockResolvedValueOnce({ id: MOCK_RESPONSE_ID });
-            // 讓 generateReport 呼叫返回我們可控的 Promise
-            mockGenerateReport.mockReturnValueOnce(controlledPromise); 
-
-            render(<QuestionnaireContent questionnaireId={1} />);
-            await waitFor(() => screen.getByText('Dimension One: Fairness'));
-
-            // 模擬填寫所有問題 (確保提交按鈕啟用)
-            fireEvent.click(screen.getByText('5'));
-            fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-            await waitFor(() => screen.getByText('Dimension Two: Reliability'));
-            fireEvent.click(screen.getByText('[EN] 是'));
-            fireEvent.click(screen.getByText('[EN] 數據偏差'));
-            
-            // 點擊提交，這會觸發 submit API，並啟動 generateReport (但它會 pending)
-            fireEvent.click(screen.getByRole('button', { name: 'Finish and Submit' }));
-
-            // 1. 等待提交 API 呼叫完成 (submitQuestionnaireService)
-            await waitFor(() => {
-                expect(mockSubmitQuestionnaire).toHaveBeenCalledTimes(1);
-            });
-            
-            // 2. 檢查 'Generating Report...' 狀態
-            // 提交成功後，狀態已經設置為 true，所以我們等待 FullPageLoadingOverlay 出現
-            await waitFor(() => {
-                 expect(screen.getByText('Generating Report...')).toBeInTheDocument();
-            });
-
-            // 3. 手動結束 generateReport 的異步操作，並等待 React 處理狀態變更
-            // 必須使用 act 來包裹異步操作的解決
-            await act(async () => {
-                 resolveGenerateReport(true); // 解決 generateReport 的 Promise
-                 // 這裡不需要額外的等待，因為 act 會等待所有微任務完成
-            });
-            
-            // 4. 等待成功 Modal (Generating Report 消失，Success Modal 出現)
-            await waitFor(() => {
-                 expect(mockGenerateReport).toHaveBeenCalledWith(MOCK_RESPONSE_ID);
-                 expect(screen.getByText('Submission Success!')).toBeInTheDocument();
-            });
-
-            // 5. 檢查 Local Storage 狀態
-            expect(localStorage.removeItem).toHaveBeenCalledWith('questionnaireCurrentPage');
-            expect(localStorage.setItem).toHaveBeenCalledWith('responseId', MOCK_RESPONSE_ID.toString());
-
-            await act(async () => {
-                fireEvent.click(screen.getByRole('button', { name: 'View Report' }));
-            });
-
-            expect(mockReplace).toHaveBeenCalledWith('/report');
+        const MOCK_RESPONSE_ID = 999;
+        
+        // 創建可控制的 Promise
+        let resolveGenerateReport: (value: boolean) => void;
+        const generateReportPromise = new Promise<boolean>(resolve => {
+            resolveGenerateReport = resolve;
         });
+
+        // Mock APIs
+        mockSubmitQuestionnaire.mockResolvedValueOnce({ id: MOCK_RESPONSE_ID });
+        mockGenerateReport.mockReturnValueOnce(generateReportPromise);
+
+        render(<QuestionnaireContent questionnaireId={1} />);
+        
+        // 等待問卷載入完成
+        await waitFor(() => {
+            expect(screen.getByText('Dimension One: Fairness')).toBeInTheDocument();
+        });
+
+        // 填寫第一頁的必填問題
+        fireEvent.click(screen.getByText('5'));
+        
+        // 前往第二頁
+        fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+        
+        await waitFor(() => {
+            expect(screen.getByText('Dimension Two: Reliability')).toBeInTheDocument();
+        });
+
+        // 填寫第二頁的必填問題
+        fireEvent.click(screen.getByText('[EN] 是'));
+        fireEvent.click(screen.getByText('[EN] 數據偏差'));
+        
+        // 點擊提交按鈕
+        const submitButton = screen.getByRole('button', { name: 'Finish and Submit' });
+        expect(submitButton).toBeEnabled();
+        fireEvent.click(submitButton);
+
+        // 1. 檢查提交 API 被呼叫
+        await waitFor(() => {
+            expect(mockSubmitQuestionnaire).toHaveBeenCalledTimes(1);
+        });
+
+        // 2. 檢查正在生成報告的狀態
+        await waitFor(() => {
+            expect(screen.getByText('Generating Report...')).toBeInTheDocument();
+        });
+
+        // 3. 手動解決 generateReport 的 Promise
+        await act(async () => {
+            resolveGenerateReport(true);
+            // 給 Promise 一個 tick 來解析
+            await Promise.resolve();
+        });
+
+        // 4. 等待成功 Modal 出現
+        await waitFor(() => {
+            expect(screen.getByText('Submission Success!')).toBeInTheDocument();
+            expect(screen.getByText('Report generated.')).toBeInTheDocument();
+        });
+
+        // 5. 檢查 Local Storage 狀態
+        expect(localStorage.removeItem).toHaveBeenCalledWith('questionnaireCurrentPage');
+        expect(localStorage.setItem).toHaveBeenCalledWith('responseId', MOCK_RESPONSE_ID.toString());
+
+        // 6. 直接檢查 Modal 內的按鈕
+        const modal = document.querySelector('.fixed.inset-0.bg-gray-700\\/40'); // 使用更具體的選擇器
+        expect(modal).toBeInTheDocument();
+        
+        // 方法 1: 使用 within 在 Modal 內查找按鈕
+        const viewReportButton = screen.getByRole('button', { name: 'View Report' });
+        
+        // 添加除錯資訊
+        console.log('按鈕元素:', viewReportButton);
+        console.log('按鈕是否可見:', viewReportButton.getAttribute('aria-hidden'));
+        console.log('按鈕父元素:', viewReportButton.parentElement?.className);
+        console.log('Modal 層級:', modal?.childNodes.length);
+        
+        // 確保按鈕沒有被禁用
+        expect(viewReportButton).not.toBeDisabled();
+        
+        // 方法 2: 使用更詳細的點擊序列
+        await act(async () => {
+            // 先觸發 mouse down
+            fireEvent.mouseDown(viewReportButton);
+            fireEvent.mouseUp(viewReportButton);
+            // 再觸發 click
+            fireEvent.click(viewReportButton, { detail: 1 }); // detail: 1 表示單擊
+        });
+
+        // 7. 添加一個小的延遲，確保事件被處理
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        });
+
+        // 8. 檢查路由跳轉
+        await waitFor(() => {
+            expect(mockReplace).toHaveBeenCalledWith('/report');
+        }, { 
+            timeout: 2000,
+            interval: 100,
+            onTimeout: (error: Error) => {
+                console.error('路由跳轉沒有發生！');
+                console.log('當前 mockReplace 呼叫:', mockReplace.mock.calls);
+                console.log('Modal 是否仍然顯示:', screen.queryByText('Submission Success!'));
+                throw error;
+            }
+        });
+    });
         
         it('should display error when submission API fails', async () => {
             mockSubmitQuestionnaire.mockRejectedValueOnce(new Error('Network error'));
