@@ -1,20 +1,16 @@
-// src/components/FloatingChatWindow.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getLlmResponse } from '@/services/llm.chat.service'; 
 
-// --- 1. 引入 ReactMarkdown 與相關插件 ---
 import ReactMarkdown from 'react-markdown'; 
-import remarkMath from 'remark-math';    // 數學公式語法支援
-import rehypeKatex from 'rehype-katex';  // 數學公式渲染
-import remarkGfm from 'remark-gfm';      // 表格、刪除線等 GitHub 風格 Markdown 支援
-import 'katex/dist/katex.min.css';       // 數學公式樣式
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import 'katex/dist/katex.min.css';
 
-// ----------------------------------------------------
-// LLM 相關介面
-// ----------------------------------------------------
 interface ChatMessage {
     id: number;
     text: string;
@@ -22,9 +18,6 @@ interface ChatMessage {
     isStreaming?: boolean; 
 }
 
-// ----------------------------------------------------
-// FloatingChatWindow 組件定義
-// ----------------------------------------------------
 interface FloatingChatWindowProps {
     onClose: () => void;
     isVisible: boolean;
@@ -37,7 +30,6 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
     const [isThinking, setIsThinking] = useState(false);
     const chatBoxRef = useRef<HTMLDivElement>(null);
 
-    // 初始訊息
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
@@ -46,25 +38,20 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         }
     }, [messages.length, t]);
 
-    // 自動捲動到最新訊息
     useEffect(() => {
         if (chatBoxRef.current) {
             chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
         }
     }, [messages]);
 
-    // --- 2. LaTeX 預處理函式 ---
-    // 目的：將 LLM 輸出的 \[ ... \] 轉為 $$ ... $$ 以便正確渲染數學公式
     const preprocessLaTeX = useCallback((content: string) => {
         if (!content) return '';
         return content
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // 轉換區塊公式
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // 轉換行內公式
-            // 寬鬆處理：針對你截圖中可能出現的 [ ... ] 且內部包含數學特徵的情況
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
             .replace(/\[\s*(\\?[a-zA-Z]+\^[\s\S]*?)\s*\]/g, '$$$1$$');
     }, []);
 
-    // 處理使用者送出
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
         const userMessage = input.trim();
@@ -130,22 +117,21 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                                     : 'bg-white text-gray-800 border border-gray-200'
                         }`}>
                             {msg.sender === 'llm' && !msg.isStreaming ? (
-                                <div className="markdown-content prose prose-sm max-w-none 
-                                    prose-p:my-1 prose-ul:my-1 prose-li:my-0
-                                    /* --- 3. 表格樣式優化 --- */
-                                    prose-table:border-collapse prose-table:border prose-table:w-full 
-                                    prose-th:border prose-th:border-gray-300 prose-th:bg-gray-100 prose-th:p-2 prose-th:text-xs
-                                    prose-td:border prose-td:border-gray-300 prose-td:p-2 prose-td:text-xs">
-                                    
+                                <div className="markdown-content prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-table:border-collapse prose-table:border prose-table:w-full prose-th:border prose-th:border-gray-300 prose-th:bg-gray-100 prose-th:p-2 prose-th:text-xs prose-td:border prose-td:border-gray-300 prose-td:p-2 prose-td:text-xs">
                                     <ReactMarkdown 
-                                        remarkPlugins={[remarkMath, remarkGfm]} // 同時加入數學與表格插件
-                                        rehypePlugins={[rehypeKatex]}
+                                        remarkPlugins={[remarkMath, remarkGfm]} 
+                                        rehypePlugins={[rehypeKatex, rehypeRaw]} 
                                     >
-                                        {preprocessLaTeX(msg.text)}
+                                        {String(preprocessLaTeX(msg.text))}
                                     </ReactMarkdown>
                                 </div>
                             ) : (
-                                <span className="whitespace-pre-wrap">{msg.text}</span>
+                                <ReactMarkdown 
+                                    remarkPlugins={[remarkMath, remarkGfm]} 
+                                    rehypePlugins={[rehypeKatex, rehypeRaw]}
+                                >
+                                    {String(msg.text)}
+                                </ReactMarkdown>
                             )}
 
                             {msg.isStreaming && <span className="ml-0.5">...</span>}
@@ -178,6 +164,4 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
     );
 };
 
-
 export default FloatingChatWindow;
-
