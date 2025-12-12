@@ -302,7 +302,7 @@ export default function TAISorter() {
                     router.push('/choose_questionnaire'); 
                 } else {
                     setIsLoading(false); 
-                    setCustomWeights(DEFAULT_WEIGHTS);
+                    setCustomWeights(DEFAULT_WEIGHTS.map(weight => String(weight)));
                 }
             } catch (error: any) {
                 console.error("檢查 TAI 狀態失敗:", error);
