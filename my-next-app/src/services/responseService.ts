@@ -80,7 +80,7 @@ export enum ViewerState{
 }
 
 // fetch 函數  FETCH FUNCTION
-async function fetchApi(url: string, options: RequestInit = {}) {
+export async function fetchApi(url: string, options: RequestInit = {}) {
     const userToken = localStorage.getItem('authToken');
 
     const headers = {
@@ -111,7 +111,7 @@ export const fetchQuestionnaire = async (questionnaireId: string | number) => {
 };
 
 // 2. POST / PATCH update user's answer
-export const saveDraft = async (payload: any, draftId: number | null) => {
+export const saveDraft = async (payload: unknown, draftId: number | null) => {
     const method = draftId ? 'PATCH' : 'POST';
     const url = draftId 
         ? `${RESPONSE_API_BASE}/${draftId}`
@@ -133,7 +133,7 @@ export const loadDraft = async (draftId: number) => {
 };
 
 // 4. POST sve the answer back to bckend
-export const submitQuestionnaire = async (payload: any) => {
+export const submitQuestionnaire = async (payload: unknown) => {
     const url = RESPONSE_API_BASE;
     const result = await fetchApi(url, {
         method: 'POST',
