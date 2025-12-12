@@ -49,30 +49,23 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
         }
     }, [messages]);
 
-    // --- 修改重點 1: 增強預處理函數，解決紅色代碼塊問題 ---
+    // --- 增強版 LaTeX 預處理 (解決紅字問題) ---
     const preprocessLaTeX = useCallback((content: string) => {
         if (!content) return '';
         
         let processed = content;
 
-        // 步驟 A: 移除被錯誤包裹在 Markdown 行內代碼 (`) 中的 LaTeX 標記
-        // 這會將 `\[ ... \]` 還原為 \[ ... \]，讓數學渲染器能讀取到
+        // 移除被錯誤包裹在 code block (`) 中的 LaTeX
         processed = processed
-            .replace(/`(\\\[[\s\S]*?\\\])`/g, '$1')   // 處理 `\[...\]`
-            .replace(/`(\\\([\s\S]*?\\\))`/g, '$1')   // 處理 `\(...\)`
-            .replace(/`(\$\$[\s\S]*?\$\$)`/g, '$1')   // 處理 `$$...$$`
-            .replace(/`(\$[\s\S]*?\$ )`/g, '$1');     // 處理 `$...$`
+            .replace(/`(\\\[[\s\S]*?\\\])`/g, '$1')
+            .replace(/`(\\\([\s\S]*?\\\))`/g, '$1')
+            .replace(/`(\$\$[\s\S]*?\$\$)`/g, '$1')
+            .replace(/`(\$[\s\S]*?\$ )`/g, '$1');
 
-        // 步驟 B: 標準化 LaTeX 分隔符
+        // 標準化 LaTeX 分隔符
         return processed
-            // 將 \[ ... \] 轉為 $$...$$ (區塊公式 Display Mode)
-            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
-            
-            // 將 \( ... \) 轉為 $...$ (行內公式 Inline Mode)
-            // 注意：原本您的代碼轉為 $$，這會導致行內公式強制換行。改為 $ 更符合閱讀習慣。
-            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') 
-            
-            // 處理可能出現的特殊括號格式
+            .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$') // Display mode
+            .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$') // Inline mode (改為 $ 避免換行)
             .replace(/\[\s*(\\?[a-zA-Z]+\^[\s\S]*?)\s*\]/g, '$$$1$$');
     }, []);
 
@@ -184,7 +177,6 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                                 <div className="markdown-content prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-table:border-collapse prose-table:border prose-table:w-full prose-th:border prose-th:border-gray-300 prose-th:bg-gray-100 prose-th:p-2 prose-th:text-xs prose-td:border prose-td:border-gray-300 prose-td:p-2 prose-td:text-xs">
                                     <ReactMarkdown 
                                         remarkPlugins={[remarkMath, remarkGfm]} 
-                                        // --- 修改重點 2: 加入 { strict: false } 提高容錯率 ---
                                         rehypePlugins={[[rehypeKatex, { strict: false }], rehypeRaw]} 
                                     >
                                         {String(preprocessLaTeX(msg.text))}
@@ -193,14 +185,18 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                             ) : (
                                 <ReactMarkdown 
                                     remarkPlugins={[remarkMath, remarkGfm]} 
-                                    // 同步修改這裡的設定
                                     rehypePlugins={[[rehypeKatex, { strict: false }], rehypeRaw]}
+                                    // --- 修改重點: 將 p 標籤轉為 span，避免 ... 換行 ---
+                                    components={{
+                                        p: ({node, ...props}) => <span {...props} />
+                                    }}
                                 >
                                     {String(msg.text)}
                                 </ReactMarkdown>
                             )}
 
-                            {msg.isStreaming && <span className="ml-0.5">...</span>}
+                            {/* isStreaming 狀態下的省略號 */}
+                            {msg.isStreaming && <span className="ml-1 animate-pulse">...</span>}
                         </div>
                     </div>
                 ))}
