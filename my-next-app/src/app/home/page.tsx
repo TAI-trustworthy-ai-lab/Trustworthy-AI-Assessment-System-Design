@@ -10,23 +10,6 @@ import { useTranslation } from 'react-i18next';
 // ----------------------------------------------------
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
-
-
-
-
-
-// homePage.dashboard.adminPanel: 管理員面板
-
-
-
-
-
-
-
-
-
-
-
 // ----------------------------------------------------
 //   資料結構 DATA STRUCTURE FROM SERVICES
 // ----------------------------------------------------
@@ -396,8 +379,9 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             );
         }
 
-        const allWeightsAreZero = taiOrders.every(order => order.weight === 0);
-        if (allWeightsAreZero) {
+        const firstWeight = taiOrders.length > 0 ? taiOrders[0].weight : null;
+        const allWeightsAreSame = taiOrders.every(order => order.weight === firstWeight);
+        if (allWeightsAreSame) {
             return (
                 <p className="text-sm text-orange-600">
                     {t("homePage.viewProject.tai.noUse")}

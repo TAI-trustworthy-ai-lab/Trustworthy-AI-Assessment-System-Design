@@ -302,7 +302,7 @@ export default function TAISorter() {
                     router.push('/choose_questionnaire'); 
                 } else {
                     setIsLoading(false); 
-                    setCustomWeights(DEFAULT_WEIGHTS);
+                    setCustomWeights(DEFAULT_WEIGHTS.map(weight => String(weight)));
                 }
             } catch (error: any) {
                 console.error("檢查 TAI 狀態失敗:", error);
@@ -329,8 +329,8 @@ export default function TAISorter() {
             } else if (sortingMode === 'custom-weight') {
                 const parsedWeight = parseInt(customWeights[index], 10);
                 weightValue = isNaN(parsedWeight) ? 0 : parsedWeight;
-            } else{
-                weightValue = 100
+            } else {
+                weightValue = 100 / indicators.length;
             }
 
             return {
