@@ -1,20 +1,7 @@
 // 假設您的 API 服務文件名為 'apiService.ts'
 import {
   fetchApi,
-  fetchQuestionnaire,
-  saveDraft,
-  loadDraft,
-  submitQuestionnaire,
-  generateReport,
-  fetchResponseList,
-  deleteResponse,
-  updateResponse,
-} from '@/services/responseService'; // 請根據您的文件路徑修改
-import { ResponseData, ResponseMeta, ViewerState } from '@/services/responseService'; // 導入必要的類型/枚舉
-import { QuestionnaireData } from '@/components/ResponseViewer';
-import { TFunction } from 'i18next';
-import { ProjectData } from '@/services/projectService';
-import * as apiService from '@/services/responseService';
+} from '@/services/responseService';
 
 // ----------------------------------------------------
 // I. Mock 外部依賴
@@ -32,7 +19,6 @@ const mockLocalStorage = {
     clear: jest.fn(),
 };
 Object.defineProperty(global, 'localStorage', { value: mockLocalStorage });
-
 
 // ----------------------------------------------------
 // II. 測試數據和輔助函數

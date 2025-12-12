@@ -50,3 +50,14 @@ const localStorageMock = (() => {
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
+
+// 完整 mock i18next 本身，避免任何地方直接 import i18next 也出錯
+jest.mock('i18next', () => ({
+  use: () => jest.requireActual('i18next'),
+  init: jest.fn(),
+  t: (k: string) => k,
+  language: 'zh',
+}));
+
+// 這一行很重要！讓所有 import 'react-i18next' 的地方都走我們剛剛寫的 __mocks__/react-i18next.ts
+jest.mock('react-i18next', () => jest.requireActual('/__mocks__/react-i18next'));
