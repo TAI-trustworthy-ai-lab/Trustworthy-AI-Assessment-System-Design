@@ -5,14 +5,10 @@ import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
 
-// ----------------------------------------------------
-//  指標從後端英文翻成中文 TAI INDICATOR ENG TO CHI
-// ----------------------------------------------------
+// TAI Indicator Mapping (EN to ZH)
 import { TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 
-// ----------------------------------------------------
-//   資料結構 DATA STRUCTURE FROM SERVICES
-// ----------------------------------------------------
+// Data Services Imports
 import { 
     fetchProjects, 
     createProject, 
@@ -23,7 +19,7 @@ import {
 
 
 // ----------------------------------------------------
-//  專案卡片元件處理 CARD UI
+// Project Card Component
 // ----------------------------------------------------
 
 interface ProjectCardProps {
@@ -36,7 +32,7 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({ index, projectName, projectDescription, onClick }) => {
     const { t } = useTranslation();
 
-    // Cards' color
+    // Card background colors
     const colors = [
         "bg-sky-400", "bg-cyan-400", "bg-blue-400", "bg-indigo-400",
         "bg-sky-500", "bg-cyan-500", "bg-blue-500", "bg-indigo-500",
@@ -76,7 +72,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ index, projectName, projectDe
 
 
 // ----------------------------------------------------
-//  新增專案處理 CREATE PROJECT
+// Add Project Modal
 // ----------------------------------------------------
 
 interface AddProjectModalProps {
@@ -99,7 +95,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // When Modal is open, load
+    // Reset state on open/check limit
     useEffect(() => {
         if (isModalOpen) {
             setProjectName('');
@@ -112,7 +108,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
         }
     }, [isModalOpen, currentProjectCount]);
 
-    // When create, 
+    // Form submit handler
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -124,11 +120,10 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
         setIsLoading(true);
         try {
-            // Create successfully
             await onAddProject(projectName.trim(), projectDescription.trim());
-            closeModal();
+            closeModal(); // Close on success
         } catch (error: any) {
-            console.error('新增專案失敗 (Modal 捕獲):', error.message);
+            console.error('新增專案失敗：', error.message);
             setError(`新增失敗: ${error.message}`);
         } finally {
             setIsLoading(false);
@@ -143,11 +138,11 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
-            {/* Modal Iinformation box */}
+            {/* Modal Container */}
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 mx-4 sm:mx-0 animate-in fade-in zoom-in duration-300">
                 <h2 className="text-center text-2xl font-bold mb-4 text-gray-800">新增專案</h2>
 
-                {/* hint / info for user */}
+                {/* Info and Warning */}
                 <div className="mb-6 space-y-2">
                     <p className={`text-sm ${limitTextColor} border-l-4 ${limitBorderColor} pl-2`}>
                         <b>{t('homePage.系統限制')}：</b> {t('homePage.最多可新增')} <b>{MAX_PROJECTS}</b> {t('homePage.個專案')} ({t('homePage.當前')}: <b>{currentProjectCount}</b> {t('homePage.個')})
@@ -157,7 +152,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                     </p>
                 </div>
 
-                {/* error box */}
+                {/* Error Box */}
                 {error && (
                     <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                         <span className="block sm:inline">{error}</span>
@@ -165,7 +160,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    {/* Project name */}
+                    {/* Project Name Input */}
                     <label htmlFor="projectName" className="block text-sm font-medium text-gray-700 mb-1">{t("homePage.專案名稱")}<span className="text-red-500"> *</span></label>
                     <input
                         id="projectName"
@@ -178,7 +173,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         required
                     />
 
-                    {/* Project description */}
+                    {/* Project Description Input */}
                     <label htmlFor="projectDescription" className="block text-sm font-medium text-gray-700 mb-1">{t("homePage.專案描述")}</label>
                     <textarea
                         id="projectDescription"
@@ -190,7 +185,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                         disabled={isLoading}
                     />
 
-                    {/* Buttons */}
+                    {/* Action Buttons */}
                     <div className="flex justify-end space-x-3">
                         <button
                             type="button"
@@ -205,6 +200,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 disabled:bg-blue-400 flex items-center"
                             disabled={isLoading || !projectName.trim() || currentProjectCount >= MAX_PROJECTS}
                         >
+                            {/* Loading Spinner */}
                             {isLoading ? (
                                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -222,7 +218,7 @@ const AddProjectModal: React.FC<AddProjectModalProps> = ({
 
 
 // ----------------------------------------------------
-//  顯示專案内容處理 PROJECT MODAL
+// View Project Modal
 // ----------------------------------------------------
 
 interface ViewProjectModalProps {
@@ -248,6 +244,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const { t, i18n } = useTranslation();
 
+    // Project delete logic
     const handleDeleteProject = useCallback(async () => {
         setIsDeleting(true);
         setDeleteError(null);
@@ -256,9 +253,11 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             if (!projectData || !authToken) {
                 throw new Error(t("homePage.viewProject.error.missingData"));
             }
+            // Delete API call
             await deleteProject(projectData.id, authToken);
             closeModal();
             setIsDeleteConfirmOpen(false);
+            // Reload after slight delay to ensure modal close transition finishes
             setTimeout(() => {
                 reloadProjects();
             }, 100);
@@ -270,6 +269,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
 
     if (!isModalOpen || !projectData) return null;
 
+    // Format timestamp
     const formatDate = (dateString: string | null | undefined): string => {
         if (!dateString) return t("homePage.viewProject.noDate");
         try {
@@ -291,7 +291,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
     };
 
     // ----------------------------------------------------
-    //  刪除專案處理 DELETE PROJECT
+    // Delete Confirmation Modal
     // ----------------------------------------------------
 
     interface ConfirmDeleteModalProps {
@@ -339,6 +339,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-150 disabled:bg-red-400 flex items-center"
                             disabled={isLoading}
                         >
+                            {/* Loading Spinner */}
                             {isLoading ? (
                                 <svg
                                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -369,7 +370,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
         );
     };
 
-    // cont.
+    // Render TAI indicators
     const renderTaiOrders = (taiOrders: TaiOrder[] | undefined) => {
         if (!taiOrders || taiOrders.length === 0) {
             return (
@@ -379,6 +380,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             );
         }
 
+        // Check if all weights are the same
         const firstWeight = taiOrders.length > 0 ? taiOrders[0].weight : null;
         const allWeightsAreSame = taiOrders.every(order => order.weight === firstWeight);
         if (allWeightsAreSame) {
@@ -389,23 +391,23 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
             );
         }
 
-        // 複製陣列並根據 rank 排序
+        // Sort indicators by rank
         const sortedIndicators = [...taiOrders].sort((a, b) => a.rank - b.rank);
 
+        // Format indicator string
         const indicatorString = sortedIndicators
-    .map(order => {
-        const capitalize = (s: string) =>
-            s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-        // 取得中文指標名稱
-        const langIndicator = (i18n.language == "en") ? capitalize(order.indicator) :(TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator);
-        const formattedWeight = `${(order.weight * 100).toFixed(0)}%`;
-        
-        return `${langIndicator} (${formattedWeight})`;
-    })
-    // 使用箭頭符號連接
-    .join(" → ");
+        .map(order => {
+            const capitalize = (s: string) =>
+                s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+            // Get translated indicator name
+            const langIndicator = (i18n.language == "en") ? capitalize(order.indicator) :(TAI_INDICATOR_MAP_EN_ZH[order.indicator] || order.indicator);
+            const formattedWeight = `${(order.weight * 100).toFixed(0)}%`;
+            
+            return `${langIndicator} (${formattedWeight})`;
+        })
+        .join(" → "); // Join with arrow
 
-        // 4. 渲染結果
+        // Render result
         return (
             <div className="text-sm p-3 bg-gray-50 rounded-lg border border-gray-200 overflow-x-auto">
                 <p className="whitespace-nowrap font-mono text-gray-700 tracking-wider text-base">
@@ -428,7 +430,9 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                         {t("homePage.viewProject.title")}
                     </h2>
 
+                    {/* Project Details */}
                     <div className="space-y-4 border-t border-b border-blue-200 py-4">
+                        {/* Project Name */}
                         <div>
                             <p className="text-md font-semibold text-gray-500">
                                 {t("homePage.viewProject.nameLabel")}
@@ -436,6 +440,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                             <p className="text-base font-bold text-gray-900">{projectData.name}</p>
                         </div>
 
+                        {/* Description */}
                         <div>
                             <p className="text-md font-semibold text-gray-500">
                                 {t("homePage.viewProject.descriptionLabel")}
@@ -445,6 +450,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                             </p>
                         </div>
 
+                        {/* TAI Orders */}
                         <div>
                             <p className="text-md font-semibold text-gray-500">
                                 {t("homePage.viewProject.tai.label")}
@@ -452,6 +458,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                             {renderTaiOrders(projectData.taiOrders)}
                         </div>
 
+                        {/* Creation Date */}
                         <div>
                             <p className="text-md font-semibold text-gray-500">
                                 {t("homePage.viewProject.createdAtLabel")}
@@ -462,6 +469,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                         </div>
                     </div>
 
+                    {/* Delete Error Message */}
                     {deleteError && (
                         <div
                             className="mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
@@ -471,6 +479,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                         </div>
                     )}
 
+                    {/* Action Buttons (Delete, Close, Enter) */}
                     <div className="flex justify-between space-x-3 mt-8">
                         <button
                             type="button"
@@ -503,6 +512,7 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
                 </div>
             </div>
 
+            {/* Delete Confirmation Sub-Modal */}
             <ConfirmDeleteModal
                 isModalOpen={isDeleteConfirmOpen}
                 closeModal={() => {
@@ -520,22 +530,27 @@ const ViewProjectModal: React.FC<ViewProjectModalProps> = ({
 
 
 // ----------------------------------------------------
-//  主頁元件  MAIN UI  XD
+// Main Home Page Component
 // ----------------------------------------------------
 
 const Home = () => {
+    // Auth and User State
     const [userId, setUserId] = useState<string | null>(null);
     const [authToken, setAuthToken] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+    // Project Data State
     const [projects, setProjects] = useState<ProjectData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    // Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    
     const router = useRouter();
     const { t } = useTranslation();
 
+    // Initialization and Local Storage Cleanup
     useEffect(() => {
         if (typeof window !== "undefined") {
             const storedUserId = localStorage.getItem("userId");
@@ -546,6 +561,7 @@ const Home = () => {
             setAuthToken(storedAuthToken);
             setUserRole(storedUserRole);
 
+            // Keys to keep in localStorage
             const keysToKeep = [
                 "userName",
                 "authToken",
@@ -560,6 +576,7 @@ const Home = () => {
 
             const allKeys = Object.keys(localStorage);
 
+            // Cleanup: remove non-essential keys
             for (const key of allKeys) {
                 if (!keysToKeep.includes(key)) {
                     localStorage.removeItem(key);
@@ -570,6 +587,7 @@ const Home = () => {
         }
     }, []);
 
+    // Fetch user projects
     const loadProjects = useCallback(async () => {
         if (!userId || !authToken) {
             setIsLoading(false);
@@ -580,6 +598,7 @@ const Home = () => {
 
         try {
             const data = await fetchProjects(userId, authToken);
+            // Sort by ID descending (latest first)
             const sortedData = (data as ProjectData[]).sort((a, b) => b.id - a.id);
             setProjects(sortedData);
         } catch (error) {
@@ -589,11 +608,13 @@ const Home = () => {
         }
     }, [userId, authToken, t]);
 
+    // Trigger project loading after auth state is set
     useEffect(() => {
         if (userId && authToken) loadProjects();
         else if (userId !== null && authToken !== null) setIsLoading(false);
     }, [loadProjects, userId, authToken]);
 
+    // Project creation handler
     const handleAddProject = useCallback(
         async (name: string, description: string) => {
             if (!userId || !authToken) {
@@ -601,7 +622,7 @@ const Home = () => {
             }
             try {
                 await createProject(name, userId, description, authToken);
-                await loadProjects();
+                await loadProjects(); // Reload projects list
             } catch (error) {
                 console.error(t("homePage.error.addProjectFailed"), error);
                 throw error;
@@ -610,11 +631,13 @@ const Home = () => {
         [userId, authToken, loadProjects, t]
     );
 
+    // Open view modal
     const handleProjectClick = (project: ProjectData) => {
         setCurrentProject(project);
         setIsViewModalOpen(true);
     };
 
+    // Confirm entry, save ID, and navigate
     const handleConfirmEnterProject = (project: ProjectData) => {
         const projectId = project.id;
         localStorage.setItem("currentProjectId", projectId.toString());
@@ -623,6 +646,7 @@ const Home = () => {
         router.push("/tai_sort");
     };
 
+    // Initializing State UI
     if (!isInitialized) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
@@ -631,6 +655,7 @@ const Home = () => {
         ); 
     }
 
+    // Authentication Error UI
     if (!userId || !authToken) {
         return (
             <div className="p-8 bg-red-50 min-h-screen font-sans flex items-center justify-center">
@@ -652,9 +677,11 @@ const Home = () => {
         );
     }
 
+    // Loading Projects UI
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
+                {/* Loading Spinner */}
                 <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5"
                     xmlns="http://www.w3.org/2000/svg"
@@ -681,7 +708,7 @@ const Home = () => {
     }
 
     
-
+    // Main Content Render
     return (
         <div className="p-8 bg-gray-50 min-h-screen font-sans">
             <AuthHeader />
@@ -689,7 +716,9 @@ const Home = () => {
                 {t("homePage.dashboard.title")}
             </h1>
 
+            {/* Project Grid */}
             <div className="grid gap-6 sm:gap-8 auto-rows-fr grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 max-w-7xl mx-auto">
+                {/* Add Project Card */}
                 <div
                     className="p-4 h-48 rounded-2xl border-4 border-dashed border-gray-300 hover:border-blue-500 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between items-center text-gray-500 hover:text-blue-600 bg-white"
                     onClick={() => setIsAddModalOpen(true)}
@@ -717,10 +746,12 @@ const Home = () => {
                     </div>
                 </div>
 
+                {/* Render Existing Project Cards */}
                 {projects.map((project, index) => (
                     <ProjectCard
                         key={project.id}
-                        index={projects.length - index}
+                        // Index is calculated to show latest project as index 1
+                        index={projects.length - index} 
                         projectName={
                             project.name ||
                             t("homePage.dashboard.unnamedProject", {
@@ -733,10 +764,13 @@ const Home = () => {
                 ))}
             </div>
 
+            {/* Fixed Bottom Buttons (History/Admin) */}
             <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 z-40 p-4 
-                w-full max-w-xs mx-auto                                   
-                flex flex-col items-center justify-center       
+                w-full max-w-xs mx-auto                                   
+                flex flex-col items-center justify-center     
                 space-y-3">
+                
+                {/* View History Button */}
                 <button
                     onClick={() => router.push("/history")}
                     className={`
@@ -765,6 +799,7 @@ const Home = () => {
                     <span>{t("homePage.dashboard.viewHistory")}</span>
                 </button>
 
+                {/* Admin Panel Button (Admin only) */}
                 {userRole === 'ADMIN' && (
                     <button
                         onClick={() => router.push("/admin")}
@@ -794,6 +829,7 @@ const Home = () => {
                 )}
             </div>
 
+            {/* Modals */}
             <AddProjectModal
                 isModalOpen={isAddModalOpen}
                 closeModal={() => setIsAddModalOpen(false)}
