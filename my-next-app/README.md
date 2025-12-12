@@ -68,7 +68,7 @@ my-next-app/
 │   │   ├── home/              # Project dashboard
 │   │   ├── tai_sort/          # TAI indicator prioritization
 │   │   ├── choose_questionnaire/ # Questionnaire stage selection
-│   │   ├── model/             # Questionnaire pages (before/during/after)
+│   │   ├── questionnaire/             # Questionnaire pages 
 │   │   ├── report/            # Assessment report viewer
 │   │   ├── history/           # Response history
 │   │   └── admin/             # Admin dashboard
@@ -98,9 +98,7 @@ my-next-app/
 - [`/home`](src/app/home/page.tsx) - Project dashboard (create/view/delete projects)
 - [`/tai_sort`](src/app/tai_sort/page.tsx) - Drag-and-drop TAI indicator prioritization
 - [`/choose_questionnaire`](src/app/choose_questionnaire/page.tsx) - Select assessment stage
-- [`/model/before`](src/app/model/before/page.tsx) - Pre-modeling questionnaire
-- [`/model/during`](src/app/model/during/page.tsx) - Mid-modeling questionnaire
-- [`/model/after`](src/app/model/after/page.tsx) - Post-modeling questionnaire
+- [`/questionnaire`](src/app/questionnaire/page.tsx) - Auto fetch pre-modeling, mid-modeling and post-modeling questionnaire
 - [`/report`](src/app/report/page.tsx) - View detailed assessment report
 - [`/history`](src/app/history/page.tsx) - Browse all past responses
 
@@ -138,7 +136,7 @@ User authentication is handled via:
 1. **Create Project** - Define your AI project in [`/home`](src/app/home/page.tsx)
 2. **Set TAI Priority** - Rank indicators at [`/tai_sort`](src/app/tai_sort/page.tsx)
 3. **Choose Stage** - Select assessment stage at [`/choose_questionnaire`](src/app/choose_questionnaire/page.tsx)
-4. **Complete Questionnaire** - Answer questions at `/model/{stage}`
+4. **Complete Questionnaire** - Answer questions at `/questionnaire`
 5. **View Report** - See results at [`/report`](src/app/report/page.tsx)
 6. **Review History** - Access past assessments at [`/history`](src/app/history/page.tsx)
 
