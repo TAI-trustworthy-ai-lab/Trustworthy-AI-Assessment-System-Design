@@ -644,7 +644,7 @@ export default function HistoryPage() {
     }
     localStorage.setItem("sortingData", JSON.stringify(data))
     //console.log("saved: ", localStorage.getItem("sortingData"))
-  }, [sortWay, sortType, groupType, responseList, t])
+  }, [sortWay, sortType, groupType, responseList])
 
   const handleContextMenu = (e: React.MouseEvent) => {
     const { innerWidth, innerHeight } = window;
