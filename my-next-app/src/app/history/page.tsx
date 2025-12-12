@@ -1512,10 +1512,8 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
 
   function taiOrderChecker(orders: TaiOrder[]): boolean 
   {
-    for(const order of orders){
-      if (order.weight >= 1) return false
-    }
-    return true
+    const firstWeight = orders[0].weight
+    return !orders.every(order => order.weight === firstWeight)
   }
 
   // detail

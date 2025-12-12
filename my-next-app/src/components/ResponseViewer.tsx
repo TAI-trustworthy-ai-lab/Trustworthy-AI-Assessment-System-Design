@@ -555,13 +555,17 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
   
   const q = data.questionnaire
   const r = data.response
-  const editable = curState === ViewerState.editing
   const qs = q.questions.reduce<Record<number, Question>>(
     (acc, value) => {
       acc[value.id] = value
       return acc
     }, {}
   )
+
+  const [editable, setEditable] = useState(false)
+  useEffect(()=>{
+    setEditable((curState & ViewerState.editing) !== 0)
+  }, [curState])
 
   const viewerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -780,6 +784,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     }
 
     SetIsUpdate(true)
+    setEditable(false)
     try {
       const data: {
         questionId: number,
@@ -820,10 +825,10 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       // success if it doesnt catch any error
 
     } catch (error) {
+      // if any error, revert to editable
       notify(t('historyPage.notify.common.fail'), "error")
+      setEditable(true)
       console.error('提交錯誤:', error)
-    } finally{
-      SetIsUpdate(false)
     }
   }
 
