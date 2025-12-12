@@ -437,6 +437,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [isFinalizedProgress, setIsFinalizedProgress] = useState(false);
     // 👇👇👇 補上這一行，紅字就會消失了 👇👇👇
     const [isChatVisible, setIsChatVisible] = useState(false);
 
@@ -567,8 +568,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     //   分頁進度
     // =============
     const progressPercent = useMemo(() => {
+        if (isFinalizedProgress) return 100;
+
         return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
-    }, [currentPage, TOTAL_PAGES]);
+    }, [currentPage, TOTAL_PAGES, isFinalizedProgress]);
 
     const isCurrentPageComplete = useMemo(() => {
         if (!currentPageData) return false;
@@ -661,6 +664,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmissionError(null);
+        setIsFinalizedProgress(true);
 
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
@@ -714,7 +718,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             }
 
             localStorage.setItem('responseId', responseId.toString());
-            // localStorage.removeItem('questionnaireAnswers'); 
             localStorage.removeItem('questionnaireCurrentPage');
             setSubmittedResponseId(responseId);
             setIsGeneratingReport(true);
