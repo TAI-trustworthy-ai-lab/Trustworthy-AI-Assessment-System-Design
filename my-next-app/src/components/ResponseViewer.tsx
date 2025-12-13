@@ -1010,9 +1010,9 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                   flex flex-col gap-0.5 items-start justify-center'
                 >
                   {/* page title */}
-                  <div className="text-2xl font-bold text-gray-700 text-start">
+                  <h2 className="text-2xl font-bold text-gray-700 text-start">
                     <TranslatedText text={page.title} />
-                  </div>
+                  </h2>
                   {/* page content text */}
                   <div className="text-md text-gray-500 text-start">
                     <TranslatedText text={page.content} />
@@ -1135,7 +1135,8 @@ export function ClickAwaySelect<T>({
         relative w-13 select-none
         sm:w-40"
     >
-      <div
+      <button
+        type="button"
         className="
           flex justify-center items-center 
           px-3 py-2
@@ -1149,7 +1150,7 @@ export function ClickAwaySelect<T>({
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>
           <ChevronUp/>
         </span>
-      </div>
+      </button>
 
       {open && (
         <div className="
