@@ -74,7 +74,7 @@ export default function AdminDashboard() {
     }, []);
 
     // 登出處理
-    const handleLogout = () => {
+    const handleLogout = useCallback(() => {
         localStorage.clear();
         setCurrentUserRole(null);
         setUsers([]);
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
         // 通常這裡會用 router.replace('/') 跳轉到登入頁，這裡僅清理狀態
         // ✅ 立即導向登入頁
         router.replace('/login');
-    };
+    }, [router]);
 
     // 獲取所有用戶列表
     const fetchUsers = useCallback(async () => {
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
             setListError(`${t('adminPage.networkOrDataError')}: ${err instanceof Error ? err.message : String(err)}`);
             setListLoading(false);
         }
-    }, [currentUserRole, router, t]);
+    }, [currentUserRole, t]);
 
     // 初始化：檢查登入狀態
     useEffect(() => {
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         if (currentUserRole) {
             fetchUsers();
         }
-    }, [currentUserRole, fetchUsers]);
+    }, [currentUserRole]);
 
     // 抓問卷資料
     const fetchQuestionnaires = async () => {
@@ -502,7 +502,11 @@ const QuestionnaireTable: React.FC<QuestionnaireTableProps> = ({ questionnaires,
 
             {/* Modal for ResponseViewer */}
             {selectedQuestionnaire && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+                    // ✅ Fix: Add the missing data-testid for the test to locate the modal container.
+                    data-testid="ResponseViewer-Modal"
+                >
 
                     {/* ✅ 固定在左上角的關閉鍵 */}
                     <button
