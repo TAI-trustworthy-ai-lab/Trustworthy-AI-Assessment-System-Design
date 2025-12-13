@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AuthHeader from '@/components/AuthHeader';
 import { useTranslation } from 'react-i18next';
+// ✅ 新增：從 next/navigation 引入 useRouter
+import { useRouter } from 'next/navigation';
 import { createQuestionnaire, deleteQuestionnaire, fetchAllQuestionnaires, duplicateQuestionnaire, updateQuestionnaireVersion } from '@/services/questionnaireService';
 import ResponseViewer from "@/app/admin/QuestionnaireEditor";
 import { ViewerState } from "@/services/responseService";
@@ -10,7 +12,7 @@ import { ViewerState } from "@/services/responseService";
 // API 常量
 const API_BASE_URL = "http://localhost:3001/api";
 const USER_LIST_API_URL = `${API_BASE_URL}/user`;
-const LOGIN_API_URL = `${API_BASE_URL}/user/login`; 
+const LOGIN_API_URL = `${API_BASE_URL}/user/login`;
 
 // localStorage Key 常量
 const AUTH_TOKEN_KEY = 'authToken';
@@ -23,12 +25,12 @@ const ADMIN_ROLE = 'ADMIN';
 // ----------------------------------------------------
 
 interface UserResponse {
-  id: number;
-  name?: string;
-  email: string;
-  role: string;
-  createdAt: string;
-  updatedAt: string;
+    id: number;
+    name?: string;
+    email: string;
+    role: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 
@@ -45,6 +47,11 @@ export default function AdminDashboard() {
     const [questionnaires, setQuestionnaires] = useState<any[]>([]);
     const [qLoading, setQLoading] = useState(false);
     const [qError, setQError] = useState<string | null>(null);
+    // ✅ 新增：追蹤初始化狀態
+    const [isInitialized, setIsInitialized] = useState(false);
+    // ✅ 新增：獲取 router 實例
+    const router = useRouter();
+
 
     // 格式化日期時間顯示
     const formatDateTime = (dateString: string) => {
@@ -60,6 +67,8 @@ export default function AdminDashboard() {
         if (typeof window !== 'undefined') {
             const role = localStorage.getItem(USER_ROLE_KEY);
             setCurrentUserRole(role);
+            // ✅ 在檢查完畢後設置為已初始化
+            setIsInitialized(true);
         }
         setListLoading(false);
     }, []);
@@ -72,8 +81,10 @@ export default function AdminDashboard() {
         setListLoading(false);
         setListError(null);
         // 通常這裡會用 router.replace('/') 跳轉到登入頁，這裡僅清理狀態
+        // ✅ 立即導向登入頁
+        router.replace('/login');
     };
-    
+
     // 獲取所有用戶列表
     const fetchUsers = useCallback(async () => {
         if (currentUserRole !== ADMIN_ROLE) {
@@ -84,7 +95,7 @@ export default function AdminDashboard() {
 
         setListLoading(true);
         setListError(null);
-        
+
         const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
         if (!authToken) {
             setListError(t('adminPage.missingToken'));
@@ -94,9 +105,9 @@ export default function AdminDashboard() {
 
         try {
             const response = await fetch(USER_LIST_API_URL, {
-                method: "GET", 
+                method: "GET",
                 headers: {
-                    "Authorization": `Bearer ${authToken}`, 
+                    "Authorization": `Bearer ${authToken}`,
                     "Content-Type": "application/json",
                 },
             });
@@ -118,7 +129,7 @@ export default function AdminDashboard() {
             setListError(`${t('adminPage.networkOrDataError')}: ${err instanceof Error ? err.message : String(err)}`);
             setListLoading(false);
         }
-    }, [currentUserRole]);
+    }, [currentUserRole, router, t]);
 
     // 初始化：檢查登入狀態
     useEffect(() => {
@@ -188,6 +199,89 @@ export default function AdminDashboard() {
 
     // ------------------- 渲染 -------------------
     const isLoggedIn = !!currentUserRole;
+    const isAdmin = currentUserRole === ADMIN_ROLE;
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+
+    // ✅ Render Guard 1: 檢查初始化狀態 (仿照 homepage.tsx)
+    if (!isInitialized) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
+                {t("homePage.loading.initializing")}
+            </div>
+        );
+    }
+
+    // ✅ Render Guard 2: 檢查登入/權限失敗 (仿照 homepage.tsx)
+    if (!authToken || !isLoggedIn || !isAdmin) {
+        let titleKey, messageKey, isForbidden = false;
+
+        if (!authToken || !isLoggedIn) {
+            // 登入訊息認證失敗（無 Token 或未登入）
+            titleKey = "homePage.error.authFailedTitle";
+            // 假設 adminPage.error.missingToken 是自定義的 i18n key
+            messageKey = "adminPage.error.missingToken";
+        } else if (!isAdmin) {
+            // 管理員權限認證失敗
+            titleKey = "adminPage.error.permissionDeniedTitle";
+            // 假設 adminPage.error.notAdminCannotView 是自定義的 i18n key
+            messageKey = "adminPage.error.notAdminCannotView";
+            isForbidden = true;
+        }
+
+        return (
+            <div className="p-8 bg-red-50 min-h-screen font-sans flex items-center justify-center">
+                <div className="max-w-md w-full p-8 bg-white rounded-3xl shadow-2xl border border-red-200">
+                    <h1 className="text-3xl font-bold mb-4 text-red-600 leading-tight">
+                        {titleKey && t(titleKey)}
+                    </h1>
+                    <p className="text-red-500 text-lg mb-6 leading-relaxed">
+                        {messageKey && t(messageKey)}
+                    </p>
+                    <button
+                        onClick={() => router.replace("/login")}
+                        className="w-full bg-indigo-600 text-white py-3 px-4 rounded-xl font-bold text-lg hover:bg-indigo-700 transition duration-300 shadow-lg transform hover:scale-[1.01]"
+                    >
+                        {t("homePage.error.loginButton")}
+                    </button>
+                    {isForbidden && (
+                        <p className="mt-4 text-center text-sm text-gray-500">
+                            {t("adminPage.error.accessAttemptLogged")}
+                        </p>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ Render Guard 3: 載入中狀態 (仿照 homepage.tsx)
+    if (listLoading && !listError) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
+                <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                    ></circle>
+                    <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                </svg>
+                {t("adminPage.loadingDashboard")}
+            </div>
+        );
+    }
+
 
     return (
         <div className="min-h-screen flex flex-col items-center bg-gray-100 p-8">
@@ -198,12 +292,13 @@ export default function AdminDashboard() {
                 <h1 className="text-4xl font-extrabold text-indigo-700">{t('adminPage.dashboardTitle')}</h1>
             </div>
 
-            {isLoggedIn && (
+            {/* 原本的 isAdmin 判斷可以保留，但外層的 Render Guard 已經處理了非 Admin 的情況 */}
+            {isAdmin && (
                 <div className="w-full max-w-4xl p-6 bg-white rounded-xl shadow-xl">
                     <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-gray-800">
                         {currentUserRole === ADMIN_ROLE ? t('adminPage.allUsersList') : t('adminPage.permissionDenied')}
                     </h2>
-                    
+
                     {currentUserRole !== ADMIN_ROLE && (
                         <div className="p-4 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg font-medium">
                             {t('adminPage.notAllowedToViewUsers', { role: currentUserRole })}
@@ -212,11 +307,11 @@ export default function AdminDashboard() {
 
                     {currentUserRole === ADMIN_ROLE && (
                         <>
-                            {listLoading && <p className="text-center text-indigo-600 p-4">{t('adminPage.loadingUsers')}</p>}
-                            
+                            {/* listLoading 的處理已經被上面的 Render Guard 處理，這裡可以移除 listLoading 判斷，只留 listError */}
+
                             {listError && (
                                 <div className="p-4 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                                    **{ t('adminPage.loadUsersFailed')} ** {listError}
+                                    **{t('adminPage.loadUsersFailed')} ** {listError}
                                 </div>
                             )}
 
@@ -256,7 +351,7 @@ export default function AdminDashboard() {
                     )}
                 </div>
             )}
-            {isLoggedIn && (
+            {isAdmin && (
                 <div className="w-full max-w-4xl mt-10">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-gray-800">{t('adminPage.questionnaireManagement')}</h2>
@@ -274,10 +369,10 @@ export default function AdminDashboard() {
             )}
 
             <p className="mt-8 text-sm text-gray-500">
-                 {t('adminPage.backendReminder')}
+                {t('adminPage.backendReminder')}
             </p>
 
-            
+
         </div>
     );
 }
