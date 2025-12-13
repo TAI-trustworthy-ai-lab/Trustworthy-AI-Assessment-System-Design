@@ -281,7 +281,7 @@ export interface QuestionnaireData {
     };
 }
 
-type AnswerValue = {
+export type AnswerValue = {
     score?: number;
     optionIds?: number[];
     textValue?: string;
