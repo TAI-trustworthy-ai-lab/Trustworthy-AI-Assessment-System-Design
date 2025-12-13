@@ -1293,7 +1293,23 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
       <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
 
       {/* response title */}
-      <div className="items-center truncate h-fit text-gray-600">{<TranslatedText text={meta.version.title} />}</div>
+      <div className="relative group flex items-center min-w-0">
+        <div className="truncate text-gray-600">
+          <TranslatedText text={meta.version.title} />
+        </div>
+        <div className="
+          absolute -left-3 z-50
+          hidden
+          max-w-[90vw] px-3 py-2
+          bg-white rounded-md shadow
+          text-gray-600
+          whitespace-nowrap pointer-events-none
+          
+          group-hover:block"
+        >
+          <TranslatedText text={meta.version.title} />
+        </div>
+      </div>
 
       {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
       <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt, t)}</div>
