@@ -1301,7 +1301,7 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
           absolute -left-3 z-50
           hidden
           max-w-[90vw] px-3 py-2
-          bg-white rounded-md shadow
+          bg-white rounded-md shadow-[inset_0_0_6px_rgba(0,0,0,0.1)]
           text-gray-600
           whitespace-nowrap pointer-events-none
           
