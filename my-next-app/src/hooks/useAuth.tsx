@@ -44,6 +44,7 @@ export const useAuth = () => {
             localStorage.removeItem(RESPONSE_ID_KEY);
             localStorage.removeItem("myQuestionnaire");
             localStorage.removeItem("myProject");
+            localStorage.removeItem("myTranslatedText");
         }
     }, []);
 
