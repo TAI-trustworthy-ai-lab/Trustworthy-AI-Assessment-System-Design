@@ -1139,7 +1139,7 @@ export function ClickAwaySelect<T>({
         type="button"
         className="
           flex justify-center items-center 
-          px-3 py-2
+          px-3 py-2 w-full
           rounded-lg border border-gray-300 bg-white shadow-sm 
           cursor-pointer
           
