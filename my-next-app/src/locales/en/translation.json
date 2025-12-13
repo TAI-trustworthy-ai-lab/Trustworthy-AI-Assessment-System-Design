@@ -498,6 +498,13 @@
     "button": "Go to Login"
   },
   "adminPage": {
+    "loadingDashboard": "Loading admin dashboard data...",
+"error": {
+  "missingToken": "Login credentials not found or session is invalid. Please log in again.",
+  "permissionDeniedTitle": "⛔ Permission Denied",
+  "notAdminCannotView": "Your current role does not have permission to view this admin page.",
+  "accessAttemptLogged": "This access attempt has been logged."
+},
     "notAdminCannotFetchUsers": "You are not an ADMIN and cannot retrieve the user list.",
     "missingToken": "Missing authentication token. Please log in again.",
     "tokenInvalidOrForbidden": "Permission error: Invalid token or API access forbidden (401/403).",
