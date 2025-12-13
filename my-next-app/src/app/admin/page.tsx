@@ -160,7 +160,11 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         if (currentUserRole === ADMIN_ROLE) {
-            fetchQuestionnaires();
+            // ✅ 修正：在呼叫 fetchQuestionnaires 之前，檢查 AUTH_TOKEN_KEY
+            const authToken = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null;
+            if (authToken) {
+                fetchQuestionnaires();
+            }
         }
     }, [currentUserRole]);
 
