@@ -345,6 +345,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ editable, question, cu
   if(!currentAnswer.optionIds) return
 
   const options = question.options || []
+  options.sort((a, b) => a.id - b.id)
   const selectedOptionId = [...currentAnswer.optionIds][0]
   //console.log(`${options[0].id}, ${currentAnswer.optionIds[1]}`)
 
@@ -382,7 +383,9 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
   if(!currentAnswer.optionIds) return
 
   const options = question.options || [];
+  options.sort((a, b) => a.id - b.id)
   const selectedOptionId = [...currentAnswer.optionIds][0]
+  // console.log(`${question.text}, ${options[0].id}: ${options[0].text}: ${options[1].id}: ${options[1].text}, ${options[2].id}: ${options[2].text}`)
 
   return (
     <div className={`gap-3 w-full sm:w-fit grid ${options.length >= 4 ? " grid-cols-2" :`${gridColNum[options.length]}`} `}>
@@ -415,6 +418,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
   if(!currentAnswer.optionIds) return
   
   const options = question.options || [];
+  options.sort((a, b) => a.id - b.id)
   const selectedOptionIds = [...currentAnswer.optionIds]
 
   const handleOptionClick = (optionId: number) => {
