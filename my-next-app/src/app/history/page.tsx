@@ -267,7 +267,9 @@ export default function HistoryPage() {
 
   const myTranslate = async (text: string, source = "zh-CN", target = "en") => {
     if(!text || text.length === 0) return text
-    if (translatedText.hasOwnProperty(text)) return translatedText[text]
+    if (translatedText.hasOwnProperty(text)){
+      return translatedText[text].charAt(0).toUpperCase() + translatedText[text].slice(1)
+    }
 
     let data = ""
     try{
@@ -289,7 +291,7 @@ export default function HistoryPage() {
     })
 
     setTimeout(()=>{}, 100) // prevent too fast request
-    return data
+    return data.charAt(0).toUpperCase() + data.slice(1)
   }
 
   const gradualTranslate = async(r:ResponseData | null, q: QuestionnaireData | null, p: ProjectData | null) => {
@@ -394,23 +396,27 @@ export default function HistoryPage() {
     if(r === null || q === null || p === null){
       try{
         const [fetchR, fetchQ, fetchP] = await Promise.all([rRequest, qRequest, pRequest])
-        if(fetchR === null || fetchR === undefined){
+        if(r === null && (fetchR === null || fetchR === undefined)){
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchR is null")
+        } else if (r === null){
           r = fetchR
           setFetchList(prev=>({...prev, [id]: fetchR}))
         }
 
-        if(fetchQ === null || fetchQ === undefined){
+        if( q === null && (fetchQ === null || fetchQ === undefined)){
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchQ is null")
+        } else if (q === null){
           q = fetchQ
           setFetchQuestionnaireList(prev=>({...prev, [qId]: fetchQ}))
         }
 
-        if(fetchP === null || fetchP === undefined){
+        if(p === null && (fetchP === null || fetchP === undefined)){
+          console.log(p, fetchP)
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchP is null")
+        } else if (p === null){
           p = fetchP
           setFetchProjectList(prev=>({...prev, [pId]: fetchP}))
         }
@@ -420,6 +426,9 @@ export default function HistoryPage() {
         console.error("error while fetchData", e)
       }
     }
+
+    localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
+    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
 
     try{
       if(locale){
@@ -435,10 +444,6 @@ export default function HistoryPage() {
       setViewerState(ViewerState.fail)
       console.error("翻譯失敗")
     }
-
-    // console.log(fetchQuestionnaireList, fetchProjectList)
-    localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
-    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
     setViewerData({ response: r, questionnaire: q, project: p })
     setViewerState(finalState)
   }
@@ -1512,19 +1517,25 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   // fail
   if ((curState & ViewerState.fail)
     || (data.response === null || data.questionnaire === null || data.project === null)
-  ) return (
-    <div className="
-      flex items-center justify-center
-      w-full h-full"
-    >
-      <h2 className="
-        mb-4
-        text-red-600 text-lg font-semibold"
+  ){
+    if(curState & ViewerState.fail) console.error("Viewer state is fail")
+    if(data.response === null) console.log("Response data is null")
+    if(data.questionnaire === null) console.log("Questionnaire data is null")
+    if(data.project === null) console.log("Project data is null")
+    return (
+      <div className="
+        flex items-center justify-center
+        w-full h-full"
       >
-        {t('historyPage.fetchFail')}
-      </h2>
-    </div>
-  )
+        <h2 className="
+          mb-4
+          text-red-600 text-lg font-semibold"
+        >
+          {t('historyPage.fetchFail')}
+        </h2>
+      </div>
+    )
+  }
 
   function taiOrderChecker(orders: TaiOrder[]): boolean 
   {
