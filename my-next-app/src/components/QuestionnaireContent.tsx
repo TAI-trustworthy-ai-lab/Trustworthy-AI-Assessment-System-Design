@@ -272,6 +272,7 @@ interface QuestionRendererProps {
 // 1. SCALE
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
+    options.sort((a, b) => a.id - b.id)
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
@@ -304,6 +305,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
 // 2. SINGLE_CHOICE
 const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
+    options.sort((a, b) => a.id - b.id)
     const selectedOptionId = currentAnswer.optionIds?.[0];
 
     return (
@@ -328,6 +330,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
 // 3. MULTIPLE_CHOICE
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
+    options.sort((a, b) => a.id - b.id)
     const selectedOptionIds = currentAnswer.optionIds || [];
 
     const handleOptionClick = (optionId: number) => {
