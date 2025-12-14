@@ -57,7 +57,7 @@
       "fullNameLabel": "Full name",
       "fullNamePlaceholder": "Enter your full name",
       "button": "Register",
-      "success": "Verification email has been sent, please check your email.",
+      "success": "Successful registered. Please proceed to login.",
       "error500": "Internal server error. Please try again later. If the issue persists, please make sure that the name provided is the full name.",
       "error400": "This account has already been registered.",
       "errorUnknown": "Registration failed, an unknown error occurred.",

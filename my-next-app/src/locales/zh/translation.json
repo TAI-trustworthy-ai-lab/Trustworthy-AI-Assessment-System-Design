@@ -57,7 +57,7 @@
       "fullNameLabel": "姓名",
       "fullNamePlaceholder": "請輸入您的姓名",
       "button": "註冊",
-      "success": "驗證信已寄出，請至郵件查收。",
+      "success": "已成功注冊，請登入。",
       "error500": "伺服器內部錯誤，請稍後再試。若問題持續發生，請確認您提供的名字是完整的全名。",
       "error400": "此賬號已被註冊。",
       "errorUnknown": "註冊失敗，發生未知錯誤。",

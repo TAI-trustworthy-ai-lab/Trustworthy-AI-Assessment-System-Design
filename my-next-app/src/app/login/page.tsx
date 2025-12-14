@@ -99,10 +99,12 @@ export default function LoginPage() {
         try {
             // Register API call
             await register({ name, email, password });
+            setSuccess(t('loginPage.register.success'));
+            setIsRegistering(false);
             
             // Save email for verification status page
-            localStorage.setItem('verifingEmail', email); 
-            router.push('/verify-pending'); // Redirect to pending verification
+            // localStorage.setItem('verifingEmail', email); 
+            // router.push('/verify-pending'); // Redirect to pending verification
 
             // Reset form fields
             setName("");
@@ -157,6 +159,12 @@ export default function LoginPage() {
                 {error && (
                     <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
                         <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
+                    </div>
+                )}
+                {/* Success message box - NEWLY ADDED */}
+                {success && (
+                    <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm" role="status">
+                        <strong>{t('loginPage.common.successLabel', 'Success!')}</strong> {success}
                     </div>
                 )}
 

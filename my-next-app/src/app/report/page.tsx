@@ -200,6 +200,7 @@ const getScoreColor = (score: number) => {
 export default function ReportPage() {
     const router = useRouter();
     const { t, i18n } = useTranslation();
+    const currentLocale = i18n.language;
     const [report, setReport] = useState<ReportData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'generating' | 'success' | 'error'>('generating');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -338,7 +339,7 @@ export default function ReportPage() {
     // --- Data Processing for Success State ---
 
     // Format generation date
-    const formattedDate = new Date(report.generatedAt).toLocaleDateString('zh-TW', {
+    const formattedDate = new Date(report.generatedAt).toLocaleDateString(currentLocale, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
