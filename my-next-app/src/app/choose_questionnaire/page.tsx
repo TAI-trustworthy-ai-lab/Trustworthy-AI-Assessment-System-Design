@@ -5,17 +5,18 @@ import { useRouter } from 'next/navigation';
 import AuthHeader from '@/components/AuthHeader';
 import ProtectedLayout from '@/components/ProtectedLayout';
 import { useTranslation } from "react-i18next";
-import { fetchLatestQuestionnaires } from '@/services/questionnaireService';
+import { fetchLatestQuestionnaires } from '@/services/questionnaireService'; // API Service
 
+// Map Chinese stage names to internal keys.
 const STAGE_NAME_MAP: { [key: string]: 'before' | 'during' | 'after' } = {
     "建模前": 'before',
     "建模中": 'during',
     "建模後": 'after',
 };
 
-// ----------------------------------------------------
-//  CARD'S UI
-// ----------------------------------------------------
+// --- UI Configuration for Cards ---
+
+// Defines card content and styling.
 const stages = (t: any) => ({
     before: {
         title: t("choosePage.stages.before.title"),
@@ -46,20 +47,23 @@ const stages = (t: any) => ({
     },
 });
 
-
+// Main Page Component
 export default function ChooseQuestionnairePage() {
     const router = useRouter();
     const { t } = useTranslation();
+
+    // State for questionnaire IDs and loading status
     const [questionnaireMap, setQuestionnaireMap] = useState<{ [key: string]: number | undefined }>({});
     const [isLoading, setIsLoading] = useState(true);
 
+    // Data Fetching Hook
     useEffect(() => {
         const loadQuestionnaireData = async () => {
             try {
                 const data = await fetchLatestQuestionnaires();
-
                 const newMap: { [key: string]: number | undefined } = {};
 
+                // Map stage names to latest version ID
                 data.forEach((group: any) => {
                     const groupName = group.name;
                     const latestVersion = group.versions?.[0];
@@ -83,23 +87,26 @@ export default function ChooseQuestionnairePage() {
         loadQuestionnaireData();
     }, []);
 
+    // Common CSS for stage buttons
     const baseButtonClasses = `
         w-full p-6 text-left border-2 border-gray-200 rounded-xl shadow-lg cursor-pointer
         transition duration-300 ease-in-out transform 
         hover:shadow-2xl hover:-translate-y-1 active:translate-y-0 active:shadow-md
     `;
 
+    // Stage Click Handler
     const handleStageClick = (stage: "before" | "during" | "after") => {
         const versionId = questionnaireMap[stage];
         if (!versionId) {
             alert(t("choosePage.error.missingStage", { stage: stages(t)[stage].title }));
-            console.error(`Missing QuestionnaireID for stage: ${stage}`);
             return;
         }
+        // Save ID and Redirect
         localStorage.setItem("QuestionnaireID", String(versionId));
         router.push(`/questionnaire`);
     };
 
+    // Stage Button Component
     const StageButton = ({ stageKey }: { stageKey: keyof ReturnType<typeof stages> }) => {
         const stage = stages(t)[stageKey];
         const isDisabled = isLoading || !questionnaireMap[stageKey];
@@ -111,14 +118,17 @@ export default function ChooseQuestionnairePage() {
                 disabled={isDisabled}
             >
                 <div className="flex items-center space-x-5">
+                    {/* Icon display */}
                     <div className={`p-3 rounded-xl ${stage.iconBg} ${stage.accent}`}>
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stage.iconPath}></path>
                         </svg>
                     </div>
+                    {/* Title and Description */}
                     <div className="flex-1">
                         <h2 className="text-center text-2xl font-bold text-gray-800">
                             {stage.title}
+                            {/* Missing warning */}
                             {isDisabled && !isLoading && (
                                 <span className="ml-2 text-sm text-red-500 font-normal">
                                     {t("choosePage.error.missingQuestionnaire")}
@@ -134,6 +144,7 @@ export default function ChooseQuestionnairePage() {
         );
     };
 
+    // Loading State UI
     if (isLoading) {
         return (
             <ProtectedLayout>
@@ -148,11 +159,13 @@ export default function ChooseQuestionnairePage() {
         );
     }
 
+    // Main Page Content
     return (
         <ProtectedLayout>
             <div className="pt-20 min-h-screen bg-gray-50">
                 <AuthHeader />
                 <main className="flex flex-col items-center px-4 pt-10">
+                    {/* Page Headers */}
                     <div className="max-w-xl text-center mb-10">
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
                             {t("choosePage.title")}
@@ -161,6 +174,7 @@ export default function ChooseQuestionnairePage() {
                             {t("choosePage.description")}
                         </p>
                     </div>
+                    {/* Stage Buttons */}
                     <div className="flex flex-col space-y-6 w-full max-w-lg">
                         <StageButton stageKey="before" />
                         <StageButton stageKey="during" />

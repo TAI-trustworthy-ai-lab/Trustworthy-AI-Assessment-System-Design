@@ -58,7 +58,7 @@
       "fullNamePlaceholder": "Enter your full name",
       "button": "Register",
       "success": "Verification email has been sent, please check your email.",
-      "error500": "IInternal server error. Please try again later. If the issue persists, please make sure that the name provided is the full name.",
+      "error500": "Internal server error. Please try again later. If the issue persists, please make sure that the name provided is the full name.",
       "error400": "This account has already been registered.",
       "errorUnknown": "Registration failed, an unknown error occurred.",
       "switchToLogin": "Already have an account? Login now"
@@ -469,10 +469,11 @@
       "backHome": "Back to Home",
       "generatePdf": "Generate PDF",
       "preparingPdf": "Preparing PDF...",
-      "redo": "Retake Test"
+      "redo": "Retake Test",
+      "record": "Answer Record"
     },
     "confirmation": {
-      "redo": "Are you sure you want to re-evaluate?\n\nThis action will create a completely new historical record based on the current answers, allowing you to track your progress. The old report will be retained in your history."
+      "redo": "Are you sure you want to re-test?\n\nThis action will create a brand new history record based on your current answers to track progress.\n\nIf you only wish to modify the previous report, please go to the History page and select the Edit function."
     },
     "common": {
       "notAvailable": "N/A",
@@ -498,6 +499,13 @@
     "button": "Go to Login"
   },
   "adminPage": {
+    "loadingDashboard": "Loading admin dashboard data...",
+"error": {
+  "missingToken": "Login credentials not found or session is invalid. Please log in again.",
+  "permissionDeniedTitle": "⛔ Permission Denied",
+  "notAdminCannotView": "Your current role does not have permission to view this admin page.",
+  "accessAttemptLogged": "This access attempt has been logged."
+},
     "notAdminCannotFetchUsers": "You are not an ADMIN and cannot retrieve the user list.",
     "missingToken": "Missing authentication token. Please log in again.",
     "tokenInvalidOrForbidden": "Permission error: Invalid token or API access forbidden (401/403).",

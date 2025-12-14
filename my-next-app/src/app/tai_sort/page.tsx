@@ -3,14 +3,16 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthHeader from "@/components/AuthHeader";
 import ProtectedLayout from "@/components/ProtectedLayout";
+// Services
 import { checkTaiStatus, saveTaiPriority } from '@/services/taiService';
-import { TAI_INDICATOR_MAP_ZH_EN } from '@/config/constants';
+// Constants and Translation
+import { TAI_INDICATOR_MAP_ZH_EN, TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 import { useTranslation } from 'react-i18next';
 import translate from 'google-translate-api-x'; 
 
 
 // ----------------------------------------------------
-// 翻譯工具函式 (Google Translate API-X)
+// Translation Utility (API-X)
 // ----------------------------------------------------
 const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const res = await fetch("/api/translate", {
@@ -25,10 +27,10 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
 
 
 // ----------------------------------------------------
-// 權重預設、指標常數、排序模式
+// Constants and Types
 // ----------------------------------------------------
-const DEFAULT_WEIGHTS = [15, 15, 15, 15, 8, 8, 8, 4, 4, 4, 4];
-const initialIndicators = [
+const DEFAULT_WEIGHTS = [15, 15, 15, 15, 8, 8, 8, 4, 4, 4, 4]; // Default weights (sum to 100)
+const initialIndicators = [ // Default TAI indicators (in Chinese)
     "準確性", "可靠性", "安全性",
     "韌性", "透明性", "當責性",
     "可解釋性", "自主性", "隱私",
@@ -43,20 +45,22 @@ type SortingMode = 'drag-sort' | 'custom-weight' | 'disabled';
 
 
 // ----------------------------------------------------
-// 主要主要
+// Main Component
 // ----------------------------------------------------
 export default function TAISorter() {
     const router = useRouter();
     const { i18n,t } = useTranslation();
 
-    const [sortingMode, setSortingMode] = useState<SortingMode>('drag-sort'); // 預設為拖曳排序
-    const [indicators, setIndicators] = useState(initialIndicators);
+    // UI and Data states
+    const [sortingMode, setSortingMode] = useState<SortingMode>('drag-sort');
+    const [indicators, setIndicators] = useState(initialIndicators); // Indicator list (order changes in drag-sort mode)
     const [customWeights, setCustomWeights] = useState<string[]>(() => 
-        initialIndicators.map((_, index) => String(getWeightForIndex(index))) // 初始化時轉換為字串
+        initialIndicators.map((_, index) => String(getWeightForIndex(index))) // Weights (only used in custom-weight mode)
     );
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Dragging Refs (for complex D&D logic)
     const draggingIndexRef = useRef<number | null>(null);
     const dragOffsetRef = useRef<number>(0);
     const floatingElRef = useRef<HTMLDivElement | null>(null);
@@ -68,20 +72,20 @@ export default function TAISorter() {
 
 
     // -------------------
-    // 計算與驗證
+    // Calculations and Validation
     // -------------------
-    // 1. 根據目前模式，計算最終權重
+    // 1. Calculate final weights based on current mode
     const finalWeights = useMemo(() => {
         if (sortingMode === 'drag-sort') {
-            return indicators.map((_, index) => DEFAULT_WEIGHTS[index]);
+            return indicators.map((_, index) => DEFAULT_WEIGHTS[index]); // Use default weights in the new order
         }
         if (sortingMode === 'custom-weight') {
-            return customWeights;
+            return customWeights; // Use user input
         }
-        return indicators.map(() => 0);
+        return indicators.map(() => 0); // Disabled mode uses 0 (or equal division)
     }, [sortingMode, indicators, customWeights]);
 
-    // 2. 計算自訂權重的總和
+    // 2. Calculate total sum of custom weights
     const totalCustomWeight = useMemo(() => {
         return customWeights.reduce((sum, weightStr) => {
             const weight = parseInt(weightStr, 10);
@@ -90,18 +94,19 @@ export default function TAISorter() {
     }, [customWeights]);
 
 
-    // 3. 驗證自訂權重是否合格 (滿分100)
+    // 3. Check if custom weight sum is exactly 100
     const isCustomWeightValid = sortingMode === 'custom-weight' ? totalCustomWeight === 100 : true;
 
 
     // -------------------
-    // 處理權重輸入
+    // Weight Input Handler
     // -------------------
     const handleWeightChange = (index: number, value: string) => {
-        const cleanedValue = value.replace(/[^0-9]/g, '');
+        const cleanedValue = value.replace(/[^0-9]/g, ''); // Numeric only validation
 
         const numericValue = parseInt(cleanedValue, 10);
         let finalValueToStore = cleanedValue;
+        // Limit input to 100
         if (cleanedValue !== '' && numericValue > 100) {
             finalValueToStore = "100";
         }
@@ -115,16 +120,18 @@ export default function TAISorter() {
     };
 
     // -------------------
-    // 拽托模式
+    // Drag and Drop Logic
     // -------------------
     const enableSort = sortingMode === 'drag-sort';
+
+    // Start Drag
     const handleDragStart = (clientY: number, index: number, itemEl: HTMLDivElement) => {
         if (!enableSort) return;
 
         draggingIndexRef.current = index;
         setDragging(true);
 
-        // 取消舊動畫與 transform
+        // Reset previous transforms and transitions
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
             animationFrameRef.current = null;
@@ -135,7 +142,7 @@ export default function TAISorter() {
             c.style.visibility = "visible";
         });
 
-        // 先抓取最新初始座標與高度
+        // Capture initial positions and heights
         const childrenEls = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
         placeholderHeightsRef.current = childrenEls.map(item => item.getBoundingClientRect().height);
         initialTopsRef.current = childrenEls.map(item => item.getBoundingClientRect().top);
@@ -144,7 +151,7 @@ export default function TAISorter() {
         dragOffsetRef.current = clientY - rect.top;
         targetYRef.current = rect.top;
 
-        // 建立浮動元素
+        // Create floating element
         const floating = itemEl.cloneNode(true) as HTMLDivElement;
         Object.assign(floating.style, {
             position: "fixed",
@@ -159,17 +166,18 @@ export default function TAISorter() {
             boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
             borderRadius: "0.5rem",
             cursor: "grabbing",
-            opacity: "1", // 直接顯示
+            opacity: "1",
             transition: "transform 0.2s ease",
         });
 
         document.body.appendChild(floating);
         floatingElRef.current = floating;
 
-        // 隱藏原元素
+        // Hide original element
         itemEl.style.visibility = "hidden";
     };
 
+    // Handle Drag Movement
     const handleMove = (clientY: number) => {
         if (!dragging || draggingIndexRef.current === null) return;
         const floating = floatingElRef.current;
@@ -182,6 +190,7 @@ export default function TAISorter() {
         const children = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
         let newIndex = draggingIndexRef.current;
 
+        // Determine new position and calculate offset for siblings
         children.forEach((child, i) => {
             if (i === draggingIndexRef.current) return;
             const childMiddle = initialTopsRef.current[i] + placeholderHeightsRef.current[i] / 2;
@@ -197,6 +206,7 @@ export default function TAISorter() {
                 i > Math.min(draggingIndexRef.current!, newIndex) - 1 &&
                 i <= Math.max(draggingIndexRef.current!, newIndex)
             ) {
+                // Determine direction of shift
                 offset = draggingIndexRef.current! < newIndex ? -floatingHeight : floatingHeight;
             }
             child.style.transition = "transform 0.2s ease";
@@ -204,12 +214,13 @@ export default function TAISorter() {
         });
     };
 
+    // End Drag
     const handleDragEnd = () => {
         if (!dragging || draggingIndexRef.current === null) return;
         const floating = floatingElRef.current;
         if (!floating) return;
 
-        const children = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
+        // Determine final drop index
         const floatingHeight = placeholderHeightsRef.current[draggingIndexRef.current];
         const floatingMiddle = targetYRef.current + floatingHeight / 2;
 
@@ -220,20 +231,21 @@ export default function TAISorter() {
             if (floatingMiddle > childMiddle) newIndex++;
         }
 
-        // 移除 transform 並顯示原元素
+        // Reset all item transformations
+        const children = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
         children.forEach((c) => {
             c.style.transition = "none";
             c.style.transform = "translateY(0)";
             c.style.visibility = "visible";
         });
 
-        // 更新順序
+        // Update indicator order state
         const updated = [...indicators];
         const [moved] = updated.splice(draggingIndexRef.current, 1);
         updated.splice(newIndex, 0, moved);
         setIndicators(updated);
 
-        // 平滑落位
+        // Smooth landing animation (visually snap into place)
         requestAnimationFrame(() => {
             const newChildren = Array.from(document.querySelectorAll<HTMLDivElement>(".sortable-item"));
             newChildren.forEach((c) => {
@@ -242,23 +254,26 @@ export default function TAISorter() {
             });
         });
 
-        // 清理浮動元素
+        // Cleanup
         floating.remove();
         floatingElRef.current = null;
         draggingIndexRef.current = null;
         setDragging(false);
     };
 
+    // Floating element animation loop
     const animate = () => {
         if (!dragging) return;
         const floating = floatingElRef.current;
         if (!floating) return;
+        // Simple easing/damping effect
         const currentTop = parseFloat(floating.style.top || "0");
         const diff = targetYRef.current - currentTop;
         floating.style.top = `${currentTop + diff * 0.2}px`;
         animationFrameRef.current = requestAnimationFrame(animate);
     };
 
+    // Global event listeners for drag/touch
     useEffect(() => {
         const handleMouse = (e: MouseEvent) => handleMove(e.clientY);
         const handleTouch = (e: TouchEvent) => {
@@ -280,15 +295,17 @@ export default function TAISorter() {
             window.removeEventListener("mouseup", handleMouseUp);
             window.removeEventListener("touchmove", handleTouch);
             window.removeEventListener("touchend", handleTouchEnd);
-            cancelAnimationFrame(animationFrameRef.current!);
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
         };
     }, [dragging]);
 
 
-
     // -------------------
-    // 頁面處理
+    // Initial Load Check
     // -------------------
+    // Check if TAI priority has already been set for this project
     useEffect(() => {
         const checkStatusAndRedirect = async () => {
             const projectId = localStorage.getItem('currentProjectId');
@@ -298,14 +315,16 @@ export default function TAISorter() {
                 const responseBody = await checkTaiStatus(projectId);
                 const taiSortData = responseBody.data || [];
 
+                // If TAI data exists, redirect to questionnaire selection
                 if (Array.isArray(taiSortData) && taiSortData.length > 0) {
                     router.push('/choose_questionnaire'); 
                 } else {
+                    // TAI data not set, show the sorter page
                     setIsLoading(false); 
                     setCustomWeights(DEFAULT_WEIGHTS.map(weight => String(weight)));
                 }
             } catch (error: any) {
-                console.error("檢查 TAI 狀態失敗:", error);
+                console.error("Failed to check TAI status:", error);
                 setIsLoading(false); 
             }
         };
@@ -313,6 +332,9 @@ export default function TAISorter() {
     }, []);
 
 
+    // -------------------
+    // Start Button Handler
+    // -------------------
     const handleStart = async () => {
         const projectId = localStorage.getItem('currentProjectId');
         if (!projectId) {
@@ -320,6 +342,7 @@ export default function TAISorter() {
             return;
         }
         
+        // 1. Prepare initial data based on current sortingMode
         const initialData = indicators.map((indicatorZh, index) => {
             const indicatorEn = TAI_INDICATOR_MAP_ZH_EN[indicatorZh];
             let weightValue = 0;
@@ -330,39 +353,43 @@ export default function TAISorter() {
                 const parsedWeight = parseInt(customWeights[index], 10);
                 weightValue = isNaN(parsedWeight) ? 0 : parsedWeight;
             } else {
+                // Disabled mode: equal weight distribution (approx)
                 weightValue = 100 / indicators.length;
             }
 
             return {
                 indicator: indicatorEn,
-                rank: index + 1,
-                weight: weightValue,
+                rank: index + 1, // Current display rank (before custom weight sort)
+                weight: weightValue, // Weight in percent (0-100)
                 originalIndex: index,
             };
         });
 
+        // 2. Sort data again if in custom-weight mode (by weight value)
         let sortedData = [...initialData];
         if (sortingMode === 'custom-weight') {
             sortedData.sort((a, b) => {
                 if (b.weight !== a.weight) {
-                    return b.weight - a.weight; 
+                    return b.weight - a.weight; // Sort primarily by weight (desc)
                 }
-                return a.originalIndex - b.originalIndex;
+                return a.originalIndex - b.originalIndex; // Secondary sort by original index
             });
         }
 
+        // 3. Prepare final API payload (weights normalized to 0-1, final rank based on sorted order)
         const payload = sortedData.map((item, index) => ({
             indicator: item.indicator,
-            rank: index + 1, 
-            weight: item.weight / 100,
+            rank: index + 1, // Final rank after weight sort
+            weight: item.weight / 100, // Normalize to fraction (0.00-1.00)
         }));
 
-        // 提示訊息調整
+        // 4. Confirmation Message (includes translation and current settings summary)
         let confirmationMessage = t('sortPage.warning') + "\n\n";
         if (sortingMode !== 'disabled') {
-            const priorityDisplay = indicators.map((indicatorZh, index) => {
-                const weight = payload[index].weight;
-                return `${indicatorZh} (${(weight * 100).toFixed(0)}%)`;
+            const priorityDisplay = sortedData.map((item, index) => {
+                // Use sortedData to show the final weight/rank combination
+                const indicatorChineseName = TAI_INDICATOR_MAP_EN_ZH[item.indicator] || item.indicator; 
+                return `${indicatorChineseName} (${(item.weight).toFixed(0)}%)`;
             }).join(" → ");
             confirmationMessage += t('sortPage.currentPriority') + "\n" + priorityDisplay; 
 
@@ -370,13 +397,14 @@ export default function TAISorter() {
             confirmationMessage += t('sortPage.noSortSelected');
         }
 
-        // 翻譯確認訊息
+        // Translate confirmation message for English users
         if (i18n.language === "en") {
             confirmationMessage = await translateText(confirmationMessage, "zh-CN", "en");
         }
 
         const isConfirmed = confirm(confirmationMessage);
         
+        // 5. Save and Redirect
         if (isConfirmed) {
             try {
                 await saveTaiPriority(projectId, payload);
@@ -393,6 +421,7 @@ export default function TAISorter() {
     };
 
 
+    // --- Loading UI ---
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-50 text-gray-600">
@@ -417,7 +446,6 @@ export default function TAISorter() {
                     ></path>
                 </svg>
                 
-                {/* 替換原本的載入文字 */}
                 <p className="text-xl font-semibold text-gray-800">
                     {t("sortPage.loading")}
                 </p>
@@ -425,11 +453,13 @@ export default function TAISorter() {
         );
     }
 
+    // --- Main UI ---
     return (
         <ProtectedLayout>
             <div className="flex flex-col items-center justify-start min-h-screen bg-gray-100 p-6 space-y-6 select-none pt-30">
                 <AuthHeader />
 
+                {/* Header and Mode Selection Container */}
                 <div className="w-full max-w-2xl bg-white p-6 rounded-2xl shadow-xl border-t-4 border-indigo-500">
                     <h1 className="text-3xl text-center font-extrabold text-gray-900 mb-5">
                         {t("sortPage.title")}
@@ -441,9 +471,9 @@ export default function TAISorter() {
                         {t("sortPage.warning")}
                     </p>
 
-                    {/* 新增模式切換 */}
+                    {/* Mode Switch Buttons */}
                     <div className="flex sm:flex-row flex-col justify-center items-center gap-4 mb-6">
-                        {/* 拖曳排序按鈕 */}
+                        {/* Drag Sort Button */}
                         <button
                             onClick={() => { setSortingMode('drag-sort'); setError(null); }}
                             className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 
@@ -452,7 +482,7 @@ export default function TAISorter() {
                             {t("sortPage.dragSort")}
                         </button>
 
-                        {/* 自訂權重按鈕 */}
+                        {/* Custom Weight Button */}
                         <button
                             onClick={() => { setSortingMode('custom-weight'); setError(null); }}
                             className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 
@@ -461,7 +491,7 @@ export default function TAISorter() {
                             {t("sortPage.customSort")}
                         </button>
                         
-                        {/* 不使用排序按鈕 (保留您的原邏輯) */}
+                        {/* Disable Sort Button */}
                         <button
                             onClick={() => { setSortingMode('disabled'); setError(null); }}
                             className={`px-6 py-2 rounded-full font-semibold transition-all duration-300 shadow-lg transform hover:scale-105 
@@ -471,7 +501,7 @@ export default function TAISorter() {
                         </button>
                     </div>
 
-                    {/* 自訂權重總和顯示與錯誤提示 */}
+                    {/* Custom Weight Total Check */}
                     {sortingMode === 'custom-weight' && (
                         <div className={`text-center p-3 rounded-lg font-bold mb-4 ${isCustomWeightValid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {t('sortPage.totalWeight')}: {totalCustomWeight} / 100
@@ -483,15 +513,16 @@ export default function TAISorter() {
 
                 </div>
 
-                {/* 排序清單 */}
+                {/* Sortable/Input List */}
                 <div className={`flex flex-col w-full max-w-2xl space-y-3 relative ${sortingMode === 'disabled' ? 'opacity-50 cursor-default' : ''}`}>
                     {indicators.map((indicator, index) => (
                         <div
                             key={indicator}
+                            // Class for Drag-and-Drop system to identify items
                             className="sortable-item flex items-center p-4 rounded-xl border bg-white shadow-md transition-all duration-200"
                             style={{ cursor: enableSort ? 'grab' : 'default', boxShadow: enableSort ? '0 4px 6px rgba(0,0,0,0.05)' : 'none' }}
                             
-                            // 只有在 drag-sort 模式下才允許拖曳
+                            // Drag/Touch handlers (only active in drag-sort mode)
                             onMouseDown={(e) => {
                                 if (enableSort) {
                                     e.preventDefault();
@@ -500,32 +531,35 @@ export default function TAISorter() {
                             }}
                             onTouchStart={(e) => {
                                 if (enableSort) {
-                                    e.stopPropagation(); // 阻止頁面滾動，但保留您的邏輯
+                                    e.stopPropagation();
                                     handleDragStart(e.touches[0].clientY, index, e.currentTarget);
                                 }
                             }}
                         >
                             <span className="text-2xl font-extrabold mr-4 text-indigo-500 w-8">{index + 1}.</span>
-                            {/* 拖曳手柄，僅在 drag-sort 模式下顯示 */}
+                            
+                            {/* Drag Handle (Visible in drag-sort mode) */}
                             {enableSort && (
                                 <div className="flex flex-col justify-between h-5 w-4 mr-3 cursor-grab">
-                                    {/* 拖曳點點的視覺設計，保留您的原有設計 */}
                                     <div className="flex justify-center space-x-0.5"><div className="w-1 h-1 bg-gray-500 rounded-full"></div><div className="w-1 h-1 bg-gray-500 rounded-full"></div><div className="w-1 h-1 bg-gray-500 rounded-full"></div></div>
                                     <div className="flex justify-center space-x-0.5 mt-1"><div className="w-1 h-1 bg-gray-500 rounded-full"></div><div className="w-1 h-1 bg-gray-500 rounded-full"></div><div className="w-1 h-1 bg-gray-500 rounded-full"></div></div>
                                 </div>
                             )}
 
+                            {/* Indicator Name (Translated) */}
                             <span className={`flex-1 text-lg user-select-none ${enableSort ? '' : 'ml-4'}`}>
                                 {(i18n.language === "zh") ? indicator : TAI_INDICATOR_MAP_ZH_EN[indicator]}
                             </span>
 
-                            {/* 顯示權重或權重輸入框 */}
+                            {/* Weight Display or Input */}
                             <div className="ml-4 w-28 text-right font-bold flex items-center justify-end">
+                                {/* Display default weight in drag-sort mode */}
                                 {sortingMode === 'drag-sort' && (
                                     <span className="text-gray-700">
                                         {finalWeights[index]}%
                                     </span>
                                 )}
+                                {/* Input field in custom-weight mode */}
                                 {sortingMode === 'custom-weight' && (
                                     <div className="flex items-center space-x-1">
                                         <input
@@ -544,8 +578,10 @@ export default function TAISorter() {
                     ))}
                 </div>
 
+                {/* Start Button */}
                 <button
                     onClick={handleStart}
+                    // Disabled if in custom-weight mode and total weight != 100
                     disabled={sortingMode === 'custom-weight' && !isCustomWeightValid}
                     className={`mt-8 px-8 py-3 rounded-xl font-semibold shadow-md transition 
                         ${(sortingMode === 'custom-weight' && !isCustomWeightValid) 

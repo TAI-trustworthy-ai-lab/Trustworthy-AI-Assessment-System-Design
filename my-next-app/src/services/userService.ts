@@ -1,5 +1,8 @@
 import { USER_API_BASE } from "@/config/apiConfig"; 
 
+// ----------------------------------------------------
+// Payload Type Definitions
+// ----------------------------------------------------
 interface LoginPayload {
     email: string;
     password: string;
@@ -14,7 +17,10 @@ interface ResendPayload {
 }
 
 
-// 統一的 fetch 函數（可選，用於處理通用標頭、錯誤處理等）
+// ----------------------------------------------------
+// Universal Fetch API Utility
+// Handles headers, response check, and structured error throwing.
+// ----------------------------------------------------
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const url = `${USER_API_BASE}${endpoint}`;
     
@@ -31,7 +37,9 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
+        // Attempt to read structured error message
         const errorData = await response.json();
+        // Throw structured error object
         throw new Error(JSON.stringify({ 
             status: response.status, 
             message: errorData?.error?.message || 'Unknown API Error' 
@@ -39,10 +47,14 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     }
 
     console.log(response);
-    return response.json();
+    return response.json(); // Return parsed JSON data
 }
 
-// 1. 登入 API 函數
+// ----------------------------------------------------
+// User API Functions
+// ----------------------------------------------------
+
+// 1. User Login (POST /login)
 export async function login(payload: LoginPayload) {
     return apiFetch("/login", {
         method: "POST",
@@ -50,7 +62,7 @@ export async function login(payload: LoginPayload) {
     });
 }
 
-// 2. 註冊 API 函數
+// 2. User Registration (POST /register)
 export async function register(payload: RegisterPayload) {
     return apiFetch("/register", {
         method: "POST",
@@ -58,7 +70,7 @@ export async function register(payload: RegisterPayload) {
     });
 }
 
-// 3. 重寄email
+// 3. Resend Verification Email (POST /resend-verification)
 export async function resend(payload: ResendPayload) {
     return apiFetch("/resend-verification", {
         method: "POST",
