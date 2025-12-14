@@ -60,12 +60,6 @@ export interface SortingData{
   }
 }
 
-export enum InfoState {
-  idle,
-  in,
-  out
-}
-
 export class Notification{
   static delay: number
 
@@ -164,7 +158,7 @@ export default function HistoryPage() {
   const [responseGroup, setResponseGroup] = useState<{ groupName: string, items: ResponseMeta[] }[]>([]);
   const [responseList, setResponseList] = useState<ResponseMeta[]>([]);
   const [curResponse, setCurResponse] = useState<ResponseMeta | null>(null);
-  const [viewerState, setViewerState] = useState<ViewerState>(ViewerState.loading);
+  const [viewerState, setViewerState] = useState(0);
   const [viewerData, setViewerData] = useState<{
     response: ResponseData | null,
     questionnaire: QuestionnaireData | null,
@@ -186,6 +180,7 @@ export default function HistoryPage() {
     ProjectData | null
   >>({})
   const { i18n, t } = useTranslation();
+  const [translatedText, setTranslatedText] = useState<Record<string, string>>({});
 
   const [isLoading, setIsLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -225,11 +220,14 @@ export default function HistoryPage() {
   const settingHandler = () =>{
     const fetchListString = localStorage.getItem("myQuestionnaire");
     const fetchProjectListString = localStorage.getItem("myProject");
+    const myTranslatedTextString = localStorage.getItem("myTranslatedText");
     const dataQ = fetchListString ? JSON.parse(fetchListString) : {};
     const dataP = fetchProjectListString ? JSON.parse(fetchProjectListString) : {};
+    const dataTranslatedText = myTranslatedTextString ? JSON.parse(myTranslatedTextString) : {};
     setFetchQuestionnaireList(dataQ)
     setFetchProjectList(dataP)
-    //console.log(dataQ, dataP)
+    setTranslatedText(dataTranslatedText)
+    //console.log(dataTranslatedText)
 
     setIsSortLock(true)
     const sortingDataString = localStorage.getItem("sortingData");
@@ -267,47 +265,59 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  /*
-  const translateText = async(text: string | null, source = "zh-TW", target = "en") => {
-      if (text === null) return ""
+  const myTranslate = async (text: string, source = "zh-CN", target = "en") => {
+    if(!text || text.length === 0) return text
+    if (translatedText.hasOwnProperty(text)) return translatedText[text]
 
-      return text;
-    await new Promise(resolve => setTimeout(resolve, 430))
-
-    /*
-    const res = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q: text, source, target })
+    let data = ""
+    try{
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ q: text, source, target }),
+      })
+      data = (await res.json()).translatedText
+    } catch(e){
+      console.error("Translation error:", e)
+      return "Fail to Translate."
+    }
+    
+    setTranslatedText(prev=>{
+      const newData = {...prev, [text]: data}
+      localStorage.setItem("myTranslatedText", JSON.stringify(newData))
+      return newData
     })
-    const data = await res.json()
-    return data.translatedText;
-    return "this is English, cancel the comment in translateText() to use api"
+
+    setTimeout(()=>{}, 100) // prevent too fast request
+    return data
   }
 
-  const gradualTranslate = async(r:ResponseData, q: QuestionnaireData) => {
+  const gradualTranslate = async(r:ResponseData | null, q: QuestionnaireData | null, p: ProjectData | null) => {
+    if(r === null || q === null || p === null) return q
     const tanslatedQuestionnaire: QuestionnaireData = {
       id: q.id,
-      title: await translateText(q.title),
-      description: await translateText(q.description),
+      title: await myTranslate(q.title),
+      description: q.description === null ? "" : await myTranslate(q.description),
       questions: [],
       group: q.group
     }
 
+    setViewerState(ViewerState.loading)
     for(let i = 0; i < q.questions.length && isOpenRef.current; i++){
       const oldQ = q.questions[i]
       const newQ: Question = {
         id: oldQ.id,
-        text: await translateText(oldQ.text),
+        text: await myTranslate(oldQ.text),
         category: oldQ.category,
         order: oldQ.order,
-        type: oldQ.type, 
+        type: oldQ.type,
+        description: await myTranslate(oldQ.description), 
         required: oldQ.required,
         options: oldQ.options? await Promise.all(
           oldQ.options.map(async (o) => {
             const newO: Option = {
               id: o.id,
-              text: await translateText(o.text),
+              text: await myTranslate(o.text),
               value: o.value,
               order: o.order,
             };
@@ -315,11 +325,12 @@ export default function HistoryPage() {
         })) : undefined,
       }
       tanslatedQuestionnaire.questions.push(newQ)
-      setViewerData({ response: r, questionnaire: tanslatedQuestionnaire })
-      setViewerState(ViewerState.translating)
+      setViewerData({ response: r, questionnaire: tanslatedQuestionnaire, project: p})
+      setViewerState(ViewerState.translating | ViewerState.success)
+      // setTimeout(()=>{}, 1000) // debug
     }
     return tanslatedQuestionnaire
-  }*/
+  }
 
   // open
   // get response and questionnair from response id and qId (GET API)
@@ -410,31 +421,20 @@ export default function HistoryPage() {
       }
     }
 
-    //console.log(locale)
-    /*
     try{
       if(locale){
         switch(locale){
           case "en":
-            if(fetchList[id].locale?.en){
-              q = fetchList[id].locale.en
-            } else {
-              q = await gradualTranslate(r, q)
-              fetchList[id].locale = {
-                ...fetchList[id].locale,
-                "en": q
-              }
-            }
+            q = await gradualTranslate(r, q, p)
             break
           default:
-            q = fetchQuestionnaireList[qId]
             break
         }
       }
     } catch {
       setViewerState(ViewerState.fail)
       console.error("翻譯失敗")
-    }*/
+    }
 
     // console.log(fetchQuestionnaireList, fetchProjectList)
     localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
@@ -644,7 +644,7 @@ export default function HistoryPage() {
     }
     localStorage.setItem("sortingData", JSON.stringify(data))
     //console.log("saved: ", localStorage.getItem("sortingData"))
-  }, [sortWay, sortType, groupType, responseList, t])
+  }, [sortWay, sortType, groupType, responseList])
 
   const handleContextMenu = (e: React.MouseEvent) => {
     const { innerWidth, innerHeight } = window;
@@ -702,7 +702,7 @@ export default function HistoryPage() {
       {/* notification on left side */}
       <div
         className='
-          fixed bottom-0 right-0 z-[70] gap-3
+          fixed bottom-0 right-0 z-70 gap-3
           flex flex-col-reverse justify-start items-end
           w-5 h-full pb-8
           pointer-events-none'
@@ -736,7 +736,7 @@ export default function HistoryPage() {
               rounded overflow-hidden "
             >
               <div 
-                className='absolute top-4 left-4 z-[61] size-fit'
+                className='absolute top-4 left-4 z-61 size-fit'
                 onClick={() => { setIsOpen(false) }}
               >
                 <CircleX
@@ -748,7 +748,7 @@ export default function HistoryPage() {
                     lg:hidden'
                 />
               </div>
-              <div className='absolute z-53 size-[100%] rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
+              <div className='absolute z-53 size-full rounded shadow-[inset_0_0_5px_rgba(0,0,0,0.15)] pointer-events-none' />
               <ResponseWindow
                 state={viewerState}
                 data={viewerData}
@@ -1257,11 +1257,11 @@ export function ComfirmWindow({ text, comfirm, cancel }: {
   )
 }
 
-export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
+export function ResponseItem({ meta, selected, setCurResponse, showMenu, title, t }: {
   meta: ResponseMeta,
   selected: boolean,
   setCurResponse: () => void,
-  showMenu: (e: React.MouseEvent) => void
+  showMenu: (e: React.MouseEvent) => void,
   t: TFunction<"translation", undefined>}) 
 {
   const myRef = useRef<HTMLDivElement>(null);
@@ -1272,7 +1272,7 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
         grid grid-cols-[13px_1fr_1.5fr_35px] gap-4 items-center
         w-full h-[50] py-2 px-2
         rounded-lg
-        select-none cursor-pointer 
+        select-none cursor-pointer overflow-hidden 
         ${selected ? 
           "bg-[#e7f1ff] hover:bg-blue-100 active:bg-blue-200" :
           "hover:bg-gray-100 active:bg-gray-200"
@@ -1293,7 +1293,23 @@ export function ResponseItem({ meta, selected, setCurResponse, showMenu, t }: {
       <div className="hidden size-fit text-gray-600 md:flex">{meta.version.id}</div>
 
       {/* response title */}
-      <div className="items-center truncate h-fit text-gray-600">{<TranslatedText text={meta.version.title} />}</div>
+      <div className="relative group flex items-center min-w-0">
+        <div className="truncate text-gray-600">
+          <TranslatedText text={meta.version.title}/>
+        </div>
+        <div className="
+          absolute -left-3 z-50
+          hidden
+          max-w-[90vw] px-3 py-2
+          bg-white rounded-md
+          text-gray-600
+          whitespace-nowrap pointer-events-none
+          
+          group-hover:block"
+        >
+          <TranslatedText text={meta.version.title}/>
+        </div>
+      </div>
 
       {/* response date, with format? "2010-11-19T07:34:39.038Z" */}
       <div className="hidden size-fit text-gray-600 sm:flex md:flex">{formatRelativeTime(meta.submittedAt, t)}</div>
@@ -1768,11 +1784,7 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
       </div>
 
       <ResponseViewer
-        curState={
-          curState & ViewerState.editing?
-            ViewerState.editing:
-            ViewerState.success
-          }
+        curState={curState}
         data={{ response: data.response, questionnaire: data.questionnaire }}
         onEdit={()=>{
           onEdit()

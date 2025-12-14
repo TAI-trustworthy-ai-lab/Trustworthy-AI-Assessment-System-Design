@@ -91,6 +91,8 @@ export async function fetchApi(url: string, options: RequestInit = {}) {
     
     const response = await fetch(url, { ...options, headers });
     
+    // 關鍵修改：允許 204 通過！（204 是合法成功）
+    const isSuccess = response.ok || response.status === 204;
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -98,6 +100,11 @@ export async function fetchApi(url: string, options: RequestInit = {}) {
             status: response.status, 
             message: errorData.message || 'API 請求失敗' 
         }));
+    }
+
+    // 204 通常沒有 body，直接回傳空物件或 null 即可
+    if (response.status === 204) {
+        return {};
     }
     
     return response.json();

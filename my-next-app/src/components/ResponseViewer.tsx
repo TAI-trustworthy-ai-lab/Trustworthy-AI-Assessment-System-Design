@@ -59,7 +59,7 @@ const translateText = async (
 // ----------------------------------------------------
 // TranslatedText Component with cache + AbortController
 // ----------------------------------------------------
-const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
+/*const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     text,
     capitalize = false,
 }) => {
@@ -98,7 +98,7 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     }, [text, i18n.language, capitalize]);
 
     return <>{translated}</>;
-};
+};*/
 
 
 // ----------------------------------------------------
@@ -403,7 +403,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, quest
             ${editable ? (selectedOptionId === opt.id ? editableSelected : editableUnselected): ""}
             ${selectedOptionId === opt.id? styleSelected: styleUnselected}`}
         >
-          <TranslatedText text={opt.text} capitalize={ true } />
+          {opt.text}
         </button>
       ))}
     </div>
@@ -457,7 +457,7 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ editable, que
             ${selectedOptionIds.includes(opt.id)? styleSelected: styleUnselected 
           }`}
           >
-            <TranslatedText text={opt.text} capitalize={ true } />
+            {opt.text}
         </button>
       ))}
     </div>
@@ -562,9 +562,11 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     }, {}
   )
 
+  const [translating, setTranslating] = useState(false)
   const [editable, setEditable] = useState(false)
   useEffect(()=>{
     setEditable((curState & ViewerState.editing) !== 0)
+    setTranslating((curState & ViewerState.translating) !== 0)
   }, [curState])
 
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -882,7 +884,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         {/* show description */}
         {isExpandedState && (
           <div className="mx-3 mt-2">
-            <TranslatedText text={description} />
+            {description}
           </div>
         )}
       </div>
@@ -968,7 +970,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
         mb-4
         text-3xl font-extrabold text-gray-900 text-center"
       >
-        <TranslatedText text={q.title} />
+        {q.title}
       </h1>
 
       {/* quetionnaire description */}
@@ -977,7 +979,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
           mb-8
           text-center text-gray-500"
         >
-          <TranslatedText text={q.description} />
+          {q.description}
         </p>
       )}
 
@@ -1010,12 +1012,12 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                   flex flex-col gap-0.5 items-start justify-center'
                 >
                   {/* page title */}
-                  <div className="text-2xl font-bold text-gray-700 text-start">
-                    <TranslatedText text={page.title} />
-                  </div>
+                  <h2 className="text-2xl font-bold text-gray-700 text-start">
+                    {page.title}
+                  </h2>
                   {/* page content text */}
                   <div className="text-md text-gray-500 text-start">
-                    <TranslatedText text={page.content} />
+                    {page.content}
                   </div>
                 </div>
               </div>
@@ -1040,7 +1042,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
                     <div className="font-semibold text-gray-700 mb-3">
 
                       {/* question text */}
-                      <TranslatedText text={question.text} />
+                      {question.text}
 
                       {/* a "required" tip */}
                       {question.required &&
@@ -1094,7 +1096,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       {/* "translating..." tip, temporary no use */}
       <div className='h-20 w-full'>
         {
-          ((curState & ViewerState.translating) !== 0) && (
+          translating && (
             <LoadingComponent message='Translating...' />
           )
         }
@@ -1135,10 +1137,11 @@ export function ClickAwaySelect<T>({
         relative w-13 select-none
         sm:w-40"
     >
-      <div
+      <button
+        type="button"
         className="
           flex justify-center items-center 
-          px-3 py-2
+          px-3 py-2 w-full
           rounded-lg border border-gray-300 bg-white shadow-sm 
           cursor-pointer
           
@@ -1149,7 +1152,7 @@ export function ClickAwaySelect<T>({
         <span className={`text-xs transition-transform ${open ? "rotate-180" : ""}`}>
           <ChevronUp/>
         </span>
-      </div>
+      </button>
 
       {open && (
         <div className="
