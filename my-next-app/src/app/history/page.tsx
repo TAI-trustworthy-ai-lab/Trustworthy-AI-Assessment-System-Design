@@ -266,10 +266,16 @@ export default function HistoryPage() {
   }, [userId, authToken]);
 
   const myTranslate = async (text: string, source = "zh-CN", target = "en") => {
-    if(!text || text.length === 0) return text
+    if(!text || text === null) return ""
+
+    text = text.trim()
+    if(text.length === 0) return ""
+    if(text === "是") return "Yes"
+    if(text === "否") return "No"
+    if(text === "不適用") return "N/A"
     if (translatedText.hasOwnProperty(text)){
       return translatedText[text].charAt(0).toUpperCase() + translatedText[text].slice(1)
-    }
+    }    
 
     let data = ""
     try{
@@ -440,9 +446,9 @@ export default function HistoryPage() {
             break
         }
       }
-    } catch {
+    } catch(e) {
       setViewerState(ViewerState.fail)
-      console.error("翻譯失敗")
+      console.error("翻譯失敗", e)
     }
     setViewerData({ response: r, questionnaire: q, project: p })
     setViewerState(finalState)

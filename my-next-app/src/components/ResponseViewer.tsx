@@ -592,7 +592,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
       behavior: "smooth",
     })
   }
-
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -613,18 +612,6 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
 
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    SetIsExpanded(
-      q.questions.reduce<Record<number, boolean>>(
-        (acc, value) => {
-          if(value.description && value.description.length > 0)
-            acc[value.id] = false
-          return acc
-        }, {}
-      )
-    )
-  }, [q.questions])
 
   // map to corresponding title and content
   const getPageTitle = (category: string): string => CATEGORY_MAP[category.toUpperCase()][i18n.language].title || category
@@ -664,22 +651,40 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
     )
   })()
 
-  const [editQ, setEditQ] = useState<Record<number, boolean>>(
-    q.questions.reduce<Record<number, boolean>>(
-      (acc, value) => {
-        acc[value.id] = false
-        return acc
-      }, {}
-    )
-  )
-  const [doneQ, setDoneQ] = useState<Record<number, boolean>>(
-    q.questions.reduce<Record<number, boolean>>(
-      (acc, value) => {
-        acc[value.id] = true
-        return acc
-      }, {}
-    )
-  )
+  const [editQ, setEditQ] = useState<Record<number, boolean>>({})
+  const [doneQ, setDoneQ] = useState<Record<number, boolean>>({})
+
+  useEffect(() => {
+    const newQ = data.questionnaire
+    console.log(newQ.questions)
+
+    newQ.questions.forEach((question) => {
+      if(!(question.id in isExpanded)
+        && question.description
+        && question.description.length > 0
+      ){
+        SetIsExpanded(prev=>{
+          const p = {...prev}
+          p[question.id] = false
+          return p
+        })
+      }
+      if(!(question.id in editQ)){
+        setEditQ(prev=>{
+          const p = {...prev}
+          p[question.id] = false
+          return p
+        })
+      }
+      if(!(question.id in doneQ)){
+        setDoneQ(prev=>{
+          const p = {...prev}
+          p[question.id] = true
+          return p
+        })
+      }
+    })
+  }, [data])
 
   // original answer
   // reminder: key is questionId
