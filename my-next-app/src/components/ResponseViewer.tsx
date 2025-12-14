@@ -656,7 +656,7 @@ export default function ResponseViewer({curState, data, onEdit, onReport, notify
 
   useEffect(() => {
     const newQ = data.questionnaire
-    console.log(newQ.questions)
+    // console.log(newQ.questions)
 
     newQ.questions.forEach((question) => {
       if(!(question.id in isExpanded)
