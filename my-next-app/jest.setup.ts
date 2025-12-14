@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom'
+import 'jest-fetch-mock/setupJest';
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -61,3 +62,4 @@ jest.mock('i18next', () => ({
 
 // 這一行很重要！讓所有 import 'react-i18next' 的地方都走我們剛剛寫的 __mocks__/react-i18next.ts
 jest.mock('react-i18next', () => jest.requireActual('/__mocks__/react-i18next'));
+

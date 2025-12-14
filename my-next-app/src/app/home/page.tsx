@@ -571,7 +571,8 @@ const Home = () => {
                 "preferredLanguage",
                 "myQuestionnaire",
                 "myProject",
-                "sortingData"
+                "sortingData",
+                "myTranslatedText"
             ];
 
             const allKeys = Object.keys(localStorage);

@@ -1,7 +1,7 @@
 // src/services/llm.chat.service.ts
 
 // 根據您的 Docker 映射，後端 API 應運行在 3001 端口
-const BACKEND_API_URL = 'http://localhost:3001/api/llm/chat';
+import { LLM_API_BASE } from '@/config/apiConfig';
 
 interface SuccessResponse {
     response: string; 
@@ -32,7 +32,7 @@ export async function getLlmResponse(
     }
 
     try {
-        const response = await fetch(BACKEND_API_URL, {
+        const response = await fetch(`${LLM_API_BASE}/chat`, { // <-- ADD /chat here
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
