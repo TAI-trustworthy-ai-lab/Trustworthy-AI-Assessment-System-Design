@@ -469,10 +469,11 @@
       "backHome": "Back to Home",
       "generatePdf": "Generate PDF",
       "preparingPdf": "Preparing PDF...",
-      "redo": "Retake Test"
+      "redo": "Retake Test",
+      "record": "Answer Record"
     },
     "confirmation": {
-      "redo": "Are you sure you want to re-evaluate?\n\nThis action will create a completely new historical record based on the current answers, allowing you to track your progress. The old report will be retained in your history."
+      "redo": "Are you sure you want to re-test?\n\nThis action will create a brand new history record based on your current answers to track progress.\n\nIf you only wish to modify the previous report, please go to the History page and select the Edit function."
     },
     "common": {
       "notAvailable": "N/A",

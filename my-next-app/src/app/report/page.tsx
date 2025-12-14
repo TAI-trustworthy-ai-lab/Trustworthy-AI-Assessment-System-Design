@@ -750,7 +750,7 @@ export default function ReportPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m-6-8h6M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-3.414-3.414A1 1 0 0015.586 5H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    <span className = "hidden md:inline">填答紀錄</span>
+                    <span className = "hidden md:inline">{t("reportPage.button.record")}</span>
                 </button>
 
                 {/* 3. Redo Questionnaire Button */}
