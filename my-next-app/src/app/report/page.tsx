@@ -201,6 +201,7 @@ export default function ReportPage() {
     const router = useRouter();
     const { t, i18n } = useTranslation();
     const currentLocale = i18n.language;
+    const [translatedText, setTranslatedText] = useState<Record<string, string>>({});
     const [report, setReport] = useState<ReportData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'generating' | 'success' | 'error'>('generating');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -238,8 +239,11 @@ export default function ReportPage() {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const fetchListString = localStorage.getItem("myQuestionnaire");
+            const myTranslatedTextString = localStorage.getItem("myTranslatedText");
             const data = fetchListString ? JSON.parse(fetchListString) : [];
+            const dataTranslatedText = myTranslatedTextString ? JSON.parse(myTranslatedTextString) : {};
             setFetchQuestionnaireList(data)
+            setTranslatedText(dataTranslatedText)
         }
     }, []);
 
@@ -401,6 +405,91 @@ export default function ReportPage() {
         }
     };
 
+    const myTranslate = async (
+        text: string,
+        modified: {flag: boolean},
+        source = "zh-CN",
+        target = "en"
+      ) => {
+        if(!text || text === null) return ""
+    
+        text = text.trim()
+        if(text.length === 0) return ""
+        if(text === "是") return "Yes"
+        if(text === "否") return "No"
+        if(text === "不適用") return "N/A"
+        if (translatedText.hasOwnProperty(text)){
+          return translatedText[text].charAt(0).toUpperCase() + translatedText[text].slice(1)
+        }    
+    
+        modified.flag = true
+        let data = ""
+        try{
+          const res = await fetch("/api/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ q: text, source, target }),
+          })
+          data = (await res.json()).translatedText
+        } catch(e){
+          console.error("Translation error:", e)
+          return "Fail to Translate."
+        }
+        
+        setTranslatedText(prev=>{
+          const newData = {...prev, [text]: data}
+          localStorage.setItem("myTranslatedText", JSON.stringify(newData))
+          return newData
+        })
+    
+        setTimeout(()=>{}, 100) // prevent too fast request
+        return data.charAt(0).toUpperCase() + data.slice(1)
+      }
+    
+      const gradualTranslate = async(r:ResponseData | null, q: QuestionnaireData | null) => {
+        if(r === null || q === null) return q
+        const modified = {flag: false}
+        const tanslatedQuestionnaire: QuestionnaireData = {
+          id: q.id,
+          title: await myTranslate(q.title, modified),
+          description: q.description === null ? "" : await myTranslate(q.description, modified),
+          questions: [],
+          group: q.group
+        }
+    
+        setViewerState(ViewerState.loading)
+        for(let i = 0; i < q.questions.length && isOpenRef.current; i++){
+          modified.flag = false
+          const oldQ = q.questions[i]
+          const newQ: Question = {
+            id: oldQ.id,
+            text: await myTranslate(oldQ.text, modified),
+            category: oldQ.category,
+            order: oldQ.order,
+            type: oldQ.type,
+            description: await myTranslate(oldQ.description, modified), 
+            required: oldQ.required,
+            options: oldQ.options? await Promise.all(
+              oldQ.options.map(async (o) => {
+                const newO: Option = {
+                  id: o.id,
+                  text: await myTranslate(o.text, modified),
+                  value: o.value,
+                  order: o.order,
+                };
+              return newO;
+            })) : undefined,
+          }
+          tanslatedQuestionnaire.questions.push(newQ)
+          if(modified.flag){
+            setViewerData({ response: r, questionnaire: tanslatedQuestionnaire})
+            setViewerState(ViewerState.translating | ViewerState.success)
+          }
+          // setTimeout(()=>{}, 1000) // debug
+        }
+        return tanslatedQuestionnaire
+      }
+
     // Fetch response/questionnaire data for the viewer modal
     const getResponseAndQuestionnaire = async (id: number, locale: string | undefined, finalState: ViewerState) => 
     {
@@ -482,6 +571,22 @@ export default function ReportPage() {
     
         // Save cache and update viewer state
         localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
+
+        try{
+              if(locale){
+                switch(locale){
+                  case "en":
+                    q = await gradualTranslate(r, q)
+                    break
+                  default:
+                    break
+                }
+              }
+            } catch(e) {
+              setViewerState(ViewerState.fail)
+              console.error("翻譯失敗", e)
+            }
+
         setViewerData({ response: r, questionnaire: q })
         setViewerState(finalState)
     }

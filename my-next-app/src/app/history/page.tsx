@@ -265,10 +265,24 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  const myTranslate = async (text: string, source = "zh-CN", target = "en") => {
-    if(!text || text.length === 0) return text
-    if (translatedText.hasOwnProperty(text)) return translatedText[text]
+  const myTranslate = async (
+    text: string,
+    modified: {flag: boolean},
+    source = "zh-CN",
+    target = "en"
+  ) => {
+    if(!text || text === null) return ""
 
+    text = text.trim()
+    if(text.length === 0) return ""
+    if(text === "是") return "Yes"
+    if(text === "否") return "No"
+    if(text === "不適用") return "N/A"
+    if (translatedText.hasOwnProperty(text)){
+      return translatedText[text].charAt(0).toUpperCase() + translatedText[text].slice(1)
+    }    
+
+    modified.flag = true
     let data = ""
     try{
       const res = await fetch("/api/translate", {
@@ -289,35 +303,37 @@ export default function HistoryPage() {
     })
 
     setTimeout(()=>{}, 100) // prevent too fast request
-    return data
+    return data.charAt(0).toUpperCase() + data.slice(1)
   }
 
   const gradualTranslate = async(r:ResponseData | null, q: QuestionnaireData | null, p: ProjectData | null) => {
     if(r === null || q === null || p === null) return q
+    const modified = {flag: false}
     const tanslatedQuestionnaire: QuestionnaireData = {
       id: q.id,
-      title: await myTranslate(q.title),
-      description: q.description === null ? "" : await myTranslate(q.description),
+      title: await myTranslate(q.title, modified),
+      description: q.description === null ? "" : await myTranslate(q.description, modified),
       questions: [],
       group: q.group
     }
 
     setViewerState(ViewerState.loading)
     for(let i = 0; i < q.questions.length && isOpenRef.current; i++){
+      modified.flag = false
       const oldQ = q.questions[i]
       const newQ: Question = {
         id: oldQ.id,
-        text: await myTranslate(oldQ.text),
+        text: await myTranslate(oldQ.text, modified),
         category: oldQ.category,
         order: oldQ.order,
         type: oldQ.type,
-        description: await myTranslate(oldQ.description), 
+        description: await myTranslate(oldQ.description, modified), 
         required: oldQ.required,
         options: oldQ.options? await Promise.all(
           oldQ.options.map(async (o) => {
             const newO: Option = {
               id: o.id,
-              text: await myTranslate(o.text),
+              text: await myTranslate(o.text, modified),
               value: o.value,
               order: o.order,
             };
@@ -325,8 +341,10 @@ export default function HistoryPage() {
         })) : undefined,
       }
       tanslatedQuestionnaire.questions.push(newQ)
-      setViewerData({ response: r, questionnaire: tanslatedQuestionnaire, project: p})
-      setViewerState(ViewerState.translating | ViewerState.success)
+      if(modified.flag){
+        setViewerData({ response: r, questionnaire: tanslatedQuestionnaire, project: p})
+        setViewerState(ViewerState.translating | ViewerState.success)
+      }
       // setTimeout(()=>{}, 1000) // debug
     }
     return tanslatedQuestionnaire
@@ -394,23 +412,27 @@ export default function HistoryPage() {
     if(r === null || q === null || p === null){
       try{
         const [fetchR, fetchQ, fetchP] = await Promise.all([rRequest, qRequest, pRequest])
-        if(fetchR === null || fetchR === undefined){
+        if(r === null && (fetchR === null || fetchR === undefined)){
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchR is null")
+        } else if (r === null){
           r = fetchR
           setFetchList(prev=>({...prev, [id]: fetchR}))
         }
 
-        if(fetchQ === null || fetchQ === undefined){
+        if( q === null && (fetchQ === null || fetchQ === undefined)){
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchQ is null")
+        } else if (q === null){
           q = fetchQ
           setFetchQuestionnaireList(prev=>({...prev, [qId]: fetchQ}))
         }
 
-        if(fetchP === null || fetchP === undefined){
+        if(p === null && (fetchP === null || fetchP === undefined)){
+          console.log(p, fetchP)
           setViewerState(ViewerState.fail)
-        } else {
+          console.error("error while fetchData: fetchP is null")
+        } else if (p === null){
           p = fetchP
           setFetchProjectList(prev=>({...prev, [pId]: fetchP}))
         }
@@ -420,6 +442,9 @@ export default function HistoryPage() {
         console.error("error while fetchData", e)
       }
     }
+
+    localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
+    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
 
     try{
       if(locale){
@@ -431,14 +456,10 @@ export default function HistoryPage() {
             break
         }
       }
-    } catch {
+    } catch(e) {
       setViewerState(ViewerState.fail)
-      console.error("翻譯失敗")
+      console.error("翻譯失敗", e)
     }
-
-    // console.log(fetchQuestionnaireList, fetchProjectList)
-    localStorage.setItem("myQuestionnaire", JSON.stringify(fetchQuestionnaireList))
-    localStorage.setItem("myProject", JSON.stringify(fetchProjectList))
     setViewerData({ response: r, questionnaire: q, project: p })
     setViewerState(finalState)
   }
@@ -1512,19 +1533,25 @@ export function ResponseWindow({ state, data, onEdit, onReport, notify }: {
   // fail
   if ((curState & ViewerState.fail)
     || (data.response === null || data.questionnaire === null || data.project === null)
-  ) return (
-    <div className="
-      flex items-center justify-center
-      w-full h-full"
-    >
-      <h2 className="
-        mb-4
-        text-red-600 text-lg font-semibold"
+  ){
+    if(curState & ViewerState.fail) console.error("Viewer state is fail")
+    if(data.response === null) console.log("Response data is null")
+    if(data.questionnaire === null) console.log("Questionnaire data is null")
+    if(data.project === null) console.log("Project data is null")
+    return (
+      <div className="
+        flex items-center justify-center
+        w-full h-full"
       >
-        {t('historyPage.fetchFail')}
-      </h2>
-    </div>
-  )
+        <h2 className="
+          mb-4
+          text-red-600 text-lg font-semibold"
+        >
+          {t('historyPage.fetchFail')}
+        </h2>
+      </div>
+    )
+  }
 
   function taiOrderChecker(orders: TaiOrder[]): boolean 
   {
