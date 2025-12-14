@@ -368,7 +368,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         const modal = document.querySelector('.fixed.inset-0.bg-gray-700\\/40'); // 使用更具體的選擇器
         expect(modal).toBeInTheDocument();
         
-        // 方法 1: 使用 within 在 Modal 內查找按鈕
+        // 使用 within 在 Modal 內查找按鈕
         const viewReportButton = screen.getByRole('button', { name: 'View Report' });
         
         // 添加除錯資訊
@@ -381,18 +381,9 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         expect(viewReportButton).not.toBeDisabled();
         
         // 方法 2: 使用更詳細的點擊序列
-        await act(async () => {
-            // 先觸發 mouse down
-            fireEvent.mouseDown(viewReportButton);
-            fireEvent.mouseUp(viewReportButton);
-            // 再觸發 click
-            fireEvent.click(viewReportButton, { detail: 1 }); // detail: 1 表示單擊
-        });
-
-        // 7. 添加一個小的延遲，確保事件被處理
-        await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        });
+        await act(async () => {
+            fireEvent.click(viewReportButton);
+        });
 
         // 8. 檢查路由跳轉
         await waitFor(() => {
