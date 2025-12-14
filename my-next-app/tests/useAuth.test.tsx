@@ -306,7 +306,8 @@ describe('useAuth Hook - Authentication Management', () => {
             const { result } = renderHook(() => useAuth());
 
             // Should handle gracefully without crashing
-            expect(result.current.timeUntilLogout).toBeTruthy();
+            expect(result.current.isAuthenticated).toBe(false); 
+            expect(result.current.timeUntilLogout).toBeNull();
         });
 
         it('should cleanup timers on unmount', () => {
