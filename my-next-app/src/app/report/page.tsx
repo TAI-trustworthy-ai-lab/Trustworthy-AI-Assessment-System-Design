@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 // Services
 import { ResponseMeta, updateResponse } from '@/services/responseService'
 import { fetchReport as fetchReportService } from '@/services/reportService';
@@ -150,17 +151,6 @@ const TranslatedMarkdown: React.FC<{ content: string }> = ({ content }) => {
             {translatedContent}
         </ReactMarkdown>
     );
-};
-
-// Mock useRouter for client environment
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
 };
 
 // ----------------------------------------------------

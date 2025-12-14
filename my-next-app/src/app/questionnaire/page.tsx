@@ -11,6 +11,7 @@ export default function AfterQuestionnairePage() {
     // State to hold the fetched questionnaire ID
     const [questionnaireId, setQuestionnaireId] = useState<string | null>(null);
 
+    
     // Effect to load ID from local storage
     useEffect(() => {
         const id = localStorage.getItem('QuestionnaireID');

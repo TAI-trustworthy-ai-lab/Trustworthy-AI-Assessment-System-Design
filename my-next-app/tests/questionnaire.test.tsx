@@ -18,6 +18,7 @@ import { CATEGORY_MAP } from '../src/config/constants';
 // =======================================================
 // 1. Mock Variable Definitions
 // =======================================================
+const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockFetchQuestionnaire = fetchQuestionnaire as jest.Mock;
 const mockSubmitQuestionnaire = submitQuestionnaire as jest.Mock;
@@ -155,7 +156,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
     beforeEach(() => {
         // Mock router push/replace
         (useRouter as jest.Mock).mockReturnValue({ 
-            push: mockReplace, 
+            push: mockPush, 
             replace: mockReplace 
         });
         jest.clearAllMocks();
@@ -366,19 +367,11 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         await act(async () => {
             // Use fireEvent.click directly on the button element
             fireEvent.click(viewReportButton);
+            await Promise.resolve();
         });
 
         // 11. Check Redirection to '/report'
-        await waitFor(() => {
-            expect(mockReplace).toHaveBeenCalledWith('/report');
-        }, { 
-            timeout: 2000,
-            interval: 100,
-            onTimeout: (error: Error) => {
-                console.error('Redirection did not occur!');
-                throw error;
-            }
-        });
+        expect(mockPush).toHaveBeenCalledWith('/report');
     });
         
         it('should display error when submission API fails', async () => {

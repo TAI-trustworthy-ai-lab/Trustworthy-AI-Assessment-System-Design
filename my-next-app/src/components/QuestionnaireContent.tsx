@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation'; 
 // Floating chat window component
 import FloatingChatWindow from '@/components/FloatingChatWindow'; 
 // --- Data and Services ---
@@ -82,17 +83,6 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     }, [text, i18n.language, capitalize]);
 
     return <>{translated}</>;
-};
-
-// Simple hook replacement for Next.js router push
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
 };
 
 // ----------------------------------------------------
