@@ -6,7 +6,7 @@ import ProtectedLayout from "@/components/ProtectedLayout";
 // Services
 import { checkTaiStatus, saveTaiPriority } from '@/services/taiService';
 // Constants and Translation
-import { TAI_INDICATOR_MAP_ZH_EN } from '@/config/constants';
+import { TAI_INDICATOR_MAP_ZH_EN, TAI_INDICATOR_MAP_EN_ZH } from '@/config/constants';
 import { useTranslation } from 'react-i18next';
 import translate from 'google-translate-api-x'; 
 
@@ -388,7 +388,8 @@ export default function TAISorter() {
         if (sortingMode !== 'disabled') {
             const priorityDisplay = sortedData.map((item, index) => {
                 // Use sortedData to show the final weight/rank combination
-                return `${t(item.indicator)} (${(item.weight).toFixed(0)}%)`;
+                const indicatorChineseName = TAI_INDICATOR_MAP_EN_ZH[item.indicator] || item.indicator; 
+                return `${indicatorChineseName} (${(item.weight).toFixed(0)}%)`;
             }).join(" → ");
             confirmationMessage += t('sortPage.currentPriority') + "\n" + priorityDisplay; 
 
