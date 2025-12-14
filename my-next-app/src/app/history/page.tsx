@@ -265,7 +265,12 @@ export default function HistoryPage() {
     }
   }, [userId, authToken]);
 
-  const myTranslate = async (text: string, source = "zh-CN", target = "en") => {
+  const myTranslate = async (
+    text: string,
+    modified: {flag: boolean},
+    source = "zh-CN",
+    target = "en"
+  ) => {
     if(!text || text === null) return ""
 
     text = text.trim()
@@ -277,6 +282,7 @@ export default function HistoryPage() {
       return translatedText[text].charAt(0).toUpperCase() + translatedText[text].slice(1)
     }    
 
+    modified.flag = true
     let data = ""
     try{
       const res = await fetch("/api/translate", {
@@ -302,30 +308,32 @@ export default function HistoryPage() {
 
   const gradualTranslate = async(r:ResponseData | null, q: QuestionnaireData | null, p: ProjectData | null) => {
     if(r === null || q === null || p === null) return q
+    const modified = {flag: false}
     const tanslatedQuestionnaire: QuestionnaireData = {
       id: q.id,
-      title: await myTranslate(q.title),
-      description: q.description === null ? "" : await myTranslate(q.description),
+      title: await myTranslate(q.title, modified),
+      description: q.description === null ? "" : await myTranslate(q.description, modified),
       questions: [],
       group: q.group
     }
 
     setViewerState(ViewerState.loading)
     for(let i = 0; i < q.questions.length && isOpenRef.current; i++){
+      modified.flag = false
       const oldQ = q.questions[i]
       const newQ: Question = {
         id: oldQ.id,
-        text: await myTranslate(oldQ.text),
+        text: await myTranslate(oldQ.text, modified),
         category: oldQ.category,
         order: oldQ.order,
         type: oldQ.type,
-        description: await myTranslate(oldQ.description), 
+        description: await myTranslate(oldQ.description, modified), 
         required: oldQ.required,
         options: oldQ.options? await Promise.all(
           oldQ.options.map(async (o) => {
             const newO: Option = {
               id: o.id,
-              text: await myTranslate(o.text),
+              text: await myTranslate(o.text, modified),
               value: o.value,
               order: o.order,
             };
@@ -333,8 +341,10 @@ export default function HistoryPage() {
         })) : undefined,
       }
       tanslatedQuestionnaire.questions.push(newQ)
-      setViewerData({ response: r, questionnaire: tanslatedQuestionnaire, project: p})
-      setViewerState(ViewerState.translating | ViewerState.success)
+      if(modified.flag){
+        setViewerData({ response: r, questionnaire: tanslatedQuestionnaire, project: p})
+        setViewerState(ViewerState.translating | ViewerState.success)
+      }
       // setTimeout(()=>{}, 1000) // debug
     }
     return tanslatedQuestionnaire
