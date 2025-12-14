@@ -4,16 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from '@/components/Header';
 import { useTranslation } from "react-i18next";
+// API services for auth
 import { login, register } from "@/services/userService";
 
+// Auth token expiration time (1 hour)
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+// Main Login/Register Page
 export default function LoginPage() {
+    // Input states
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    // UI states
     const [isRegistering, setIsRegistering] = useState(false);
     const [loading, setLoading] = useState(false);
+    // Error handling states
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -22,7 +28,7 @@ export default function LoginPage() {
     const { t } = useTranslation();
 
     // ===================
-    //    登入 LOGIN
+    // LOGIN Handler
     // ===================
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,7 +43,7 @@ export default function LoginPage() {
             const user = data?.data?.user;
             const estimatedExpiryTimestampMs = Date.now() + ONE_HOUR_MS;
 
-            // If response.ok, save user info into local storage
+            // Save user info and redirect on success
             if (token && user && user.id && user.role) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('userId', user.id.toString());
@@ -48,7 +54,7 @@ export default function LoginPage() {
                 throw new Error(t('loginPage.login.errorIncomplete'));
             }
         } catch (err) {
-            // If !response.ok, output error (as bckend mostly return Obj:Obj , add-in more info in frontend)
+            // Handle and map API errors
             let errorMessage = err instanceof Error ? err.message : t('loginPage.login.errorUnknown');
             let statusCode = 0;
             let backendMessage = '';
@@ -58,14 +64,15 @@ export default function LoginPage() {
                 statusCode = errorObj.status;
                 backendMessage = errorObj.message;
 
+                // Map status codes to translation keys
                 if (statusCode === 401) {
-                    setErrorKey('loginPage.login.error401');
+                    setErrorKey('loginPage.login.error401'); // Invalid credentials
                 } else if (statusCode === 500) {
-                    setErrorKey('loginPage.login.error500');
+                    setErrorKey('loginPage.login.error500'); // Internal server error
                 } else if (statusCode === 404) {
-                    setErrorKey('loginPage.login.error404');
+                    setErrorKey('loginPage.login.error404'); // User not found
                 } else if (statusCode === 403) {
-                    setErrorKey('loginPage.login.error403Generic');
+                    setErrorKey('loginPage.login.error403Generic'); // Unverified account
                 } else {
                     setErrorKey('loginPage.login.errorUnknown');
                 }
@@ -80,7 +87,7 @@ export default function LoginPage() {
 
 
     // ===================
-    //    注冊 REGISTER
+    // REGISTER Handler
     // ===================
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -90,16 +97,19 @@ export default function LoginPage() {
         setErrorKey(null);
 
         try {
-            // If response.ok
+            // Register API call
             await register({ name, email, password });
-            localStorage.setItem('verifingEmail', email);
-            router.push('/verify-pending');
+            
+            // Save email for verification status page
+            localStorage.setItem('verifingEmail', email); 
+            router.push('/verify-pending'); // Redirect to pending verification
 
-            // REnew to be blank
+            // Reset form fields
             setName("");
             setEmail("");
             setPassword("");
         } catch (err) {
+            // Handle and map API errors
             let errorMessage = err instanceof Error ? err.message : t('loginPage.register.errorUnknown');
             let statusCode = 0;
             let backendMessage = '';
@@ -109,10 +119,11 @@ export default function LoginPage() {
                 statusCode = errorObj.status;
                 backendMessage = errorObj.message;
 
+                // Map status codes to translation keys
                 if (statusCode === 500) {
-                    setErrorKey('loginPage.register.error500');
+                    setErrorKey('loginPage.register.error500'); // Internal server error
                 } else if (statusCode === 400) {
-                    setErrorKey('loginPage.register.error400');
+                    setErrorKey('loginPage.register.error400'); // Excisting account
                 } else {
                     setErrorKey('loginPage.register.errorUnknown');
                 }
@@ -129,32 +140,33 @@ export default function LoginPage() {
 
 
     // ===================
-    //      UI
+    // Component UI
     // ===================
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
             <Header titleHref="/" />
             <div className="max-w-md w-full p-8 space-y-8 bg-white border border-blue-200 rounded-xl shadow-xl">
-                {/* title */}
+                {/* Title */}
                 <div>
                     <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
                         {isRegistering ? t('loginPage.register.title') : t('loginPage.login.title')}
                     </h2>
                 </div>
 
-                {/* error box */}
+                {/* Error message box */}
                 {error && (
                     <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm" role="alert">
                         <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
                     </div>
                 )}
 
-                {/* form handling */}
+                {/* Main Form */}
                 <form
                     className="mt-8 space-y-6"
                     onSubmit={isRegistering ? handleRegister : handleLogin}
                 >
                     <div className="rounded-md shadow-sm space-y-4">
+                        {/* Name Input (Register only) */}
                         {isRegistering && (
                             <div>
                                 <label htmlFor="full-name" className="sr-only">
@@ -175,6 +187,7 @@ export default function LoginPage() {
                             </div>
                         )}
 
+                        {/* Email Input */}
                         <div>
                             <label htmlFor="email-address" className="sr-only">
                                 {t('loginPage.login.emailLabel')}
@@ -192,6 +205,7 @@ export default function LoginPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
+                        {/* Password Input */}
                         <div>
                             <label htmlFor="password" className="sr-only">
                                 {t('loginPage.login.passwordLabel')}
@@ -211,6 +225,7 @@ export default function LoginPage() {
                         </div>
                     </div>
 
+                    {/* Action Buttons */}
                     <div className="flex flex-col space-y-3">
                         <button
                             type="submit"
@@ -219,6 +234,7 @@ export default function LoginPage() {
                         >
                             {loading ? t('loginPage.common.loading') : (isRegistering ? t('loginPage.register.button') : t('loginPage.login.button'))}
                         </button>
+                        {/* Toggle Register/Login */}
                         <button
                             type="button"
                             onClick={() => {

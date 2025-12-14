@@ -1,26 +1,29 @@
 "use client";
 
 import React from 'react';
-import { LogOut, Loader2, Clock } from 'lucide-react'; // 引入 Clock icon
+import { LogOut, Loader2, Clock } from 'lucide-react'; // Icons
 import Header from './Header';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../hooks/useAuth'; // Auth hook
 import { useTranslation } from 'react-i18next';
 
 
-// 統一 button 樣式
-// 從 baseButtonClasses 中移除 space-x-2
+// Common button styles
 const baseButtonClasses = "flex items-center py-2 px-4 rounded-2xl text-white font-bold transition duration-100 shadow-md";
-const titleLinkTarget = '/home';
+const titleLinkTarget = '/home'; // Home page link
 
+// Auth-protected Header Component
 export default function AuthHeader() {
-    const { isLoggingOut, handleLogout, timeUntilLogout } = useAuth();
+    const { isLoggingOut, handleLogout, timeUntilLogout } = useAuth(); // Auth state/logic
     const { t } = useTranslation();
 
+    // Logout button dynamic styles
     const logoutButtonClasses = isLoggingOut
         ? 'bg-blue-400 cursor-not-allowed'
         : 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600';
     
+    // Auto-logout timer styles
     const timerClasses = "text-sm font-semibold p-2 rounded-lg transition duration-100";
+    // Highlight timer when near expiry (simulated check)
     const timerColorClasses = timeUntilLogout && 
         ['00:01:00', '00:00:59', '00:00:58', '00:00:01', '00:00:02', '00:00:03'].includes(timeUntilLogout)
         ? 'text-red-600'
@@ -29,6 +32,7 @@ export default function AuthHeader() {
     return (
         <Header titleHref={titleLinkTarget}>
             <div className='flex justify-end sm:space-x-5 items-center'>
+                {/* Auto-Logout Timer Display */}
                 {timeUntilLogout && (
                     <div 
                         className={`
@@ -40,11 +44,13 @@ export default function AuthHeader() {
                             ${timerColorClasses}
                         `}
                     >
+                        {/* Clock icon and prefix text */}
                         <div className='flex items-center'> 
                             <Clock className="w-4 h-4" />
                             <span>{t('auth.autoLogoutPrefix')}</span>
                         </div>
                         
+                        {/* Time countdown and suffix text */}
                         <div className='flex items-center'>
                             <span className='text-center'>{timeUntilLogout}</span>
                             <span>{t('auth.autoLogoutSuffix')}</span> 
@@ -52,6 +58,7 @@ export default function AuthHeader() {
                     </div>
                 )}
                 
+                {/* Logout Button */}
                 <button
                     onClick={() => handleLogout()}
                     disabled={isLoggingOut}
@@ -62,11 +69,13 @@ export default function AuthHeader() {
                     `}
                     title={isLoggingOut ? t('auth.loggingOutTitle') : t('auth.logoutTitle')}
                 >
+                    {/* Icon: Loader or LogOut */}
                     {isLoggingOut ? (
                         <Loader2 className="w-5 h-5 sm:w-4 sm:h-4 animate-spin" />
                     ) : (
                         <LogOut className="w-5 h-5 sm:w-4 sm:h-4" />
                     )}
+                    {/* Text (visible on larger screens) */}
                     <span className="hidden sm:inline">
                         {isLoggingOut ? t('auth.loggingOut') : t('auth.logout')}
                     </span>

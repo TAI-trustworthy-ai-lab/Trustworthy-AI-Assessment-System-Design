@@ -3,9 +3,10 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom';
 import { useRouter } from 'next/navigation';
 
-// 修正 Element type is invalid 錯誤：使用 require().default
+// Component under test
 const QuestionnaireContent = require('../src/components/QuestionnaireContent').default; 
 
+// Mocked services
 import { 
     fetchQuestionnaire, 
     submitQuestionnaire,
@@ -14,35 +15,30 @@ import {
 import { CATEGORY_MAP } from '../src/config/constants';
 
 
-
 // =======================================================
-// 1. Mock 變數定義 (頂層)
+// 1. Mock Variable Definitions
 // =======================================================
 const mockReplace = jest.fn();
 const mockFetchQuestionnaire = fetchQuestionnaire as jest.Mock;
 const mockSubmitQuestionnaire = submitQuestionnaire as jest.Mock;
 const mockGenerateReport = generateReport as jest.Mock;
 
-// 修正 ReferenceError: fetch is not defined
-// Mock 全局 fetch API。注意：這個 Mock 必須是異步的，因為 TranslatedText 會調用它。
+// Mock Global Fetch API (for Translation API)
 global.fetch = jest.fn((url: string, options: RequestInit) => {
-    // 這裡使用 Promise.resolve 來確保異步行為正確
+    // Logic to handle translation mock
     if (url === "/api/translate" && options.body) {
         let originalText = "Translation error";
         try {
-            // 嘗試解析 body 以獲取原始文本 (q 欄位)
             const body = JSON.parse(options.body.toString());
             originalText = body.q;
         } catch (e) {
             console.error("Failed to parse fetch body in mock", e);
         }
         
-        // ⭐️ 核心修正: 讓 Mock 翻譯返回原始輸入文本，確保頁面標題正確顯示。
-        // 如果輸入文本是 Dimension Two: Reliability，就返回 Dimension Two: Reliability。
-        // 對於選項/問題文本，我們返回 [EN] 前綴，以匹配測試中的 fireEvent 呼叫。
+        // Return original text for page titles/main titles, and prefixed text for options/questions
         const translatedText = originalText.includes('Dimension') || originalText.includes('評估問卷')
-            ? originalText // 如果是頁面標題或主標題，直接返回原文 (假設它已是英文或我們需要的文本)
-            : `[EN] ${originalText}`; // 否則返回帶 [EN] 前綴的 Mock 結果 (用於選項/問題)
+            ? originalText
+            : `[EN] ${originalText}`;
 
         return Promise.resolve({
             ok: true,
@@ -50,13 +46,13 @@ global.fetch = jest.fn((url: string, options: RequestInit) => {
             status: 200,
         } as Response);
     }
-    // 預設 fallback
+    // Default fallback
     return Promise.resolve({ ok: false, json: async () => ({}), status: 404 } as Response);
 }) as jest.Mock;
 
 
 // =======================================================
-// 2. Mock 模組
+// 2. Mock Modules
 // =======================================================
 
 // 2.1 Mock next/navigation (useRouter)
@@ -64,14 +60,14 @@ jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
 }));
 
-// 2.2 Mock 服務 (responseService)
+// 2.2 Mock Services
 jest.mock('@/services/responseService', () => ({
     fetchQuestionnaire: jest.fn(),
     submitQuestionnaire: jest.fn(),
     generateReport: jest.fn(),
 }));
 
-// 2.3 Mock i18next (已包含對 TranslatedText 的模擬處理)
+// 2.3 Mock i18next (Translation strings)
 jest.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key: string, options: Record<string, any> = {}) => {
@@ -101,7 +97,7 @@ jest.mock('react-i18next', () => ({
     })
 }));
 
-// 2.4 Mock FloatingChatWindow (避免 react-markdown ESM 錯誤)
+// 2.4 Mock FloatingChatWindow
 jest.mock('@/components/FloatingChatWindow', () => {
     return (props: any) => <div data-testid="floating-chat-mock" data-visible={props.isVisible}>Chat Window Mock</div>;
 });
@@ -115,14 +111,9 @@ jest.mock('../src/config/constants', () => ({
 }));
 
 
-
-
-
-
 // =======================================================
-// 3. 測試資料設置
+// 3. Test Data Setup
 // =======================================================
-
 const MOCK_QUESTIONNAIRE_DATA = {
     id: 1,
     title: '可信賴 AI 評估問卷',
@@ -138,12 +129,12 @@ const MOCK_QUESTIONNAIRE_DATA = {
 
 
 // =======================================================
-// 4. 測試套件
+// 4. Test Suite
 // =======================================================
 
 describe('QuestionnaireContent - Full Workflow Tests', () => {
     
-    // Local Storage Mock 方式 (使用 defineProperty 修正 TypeError)
+    // Local Storage Mock setup
     const setupLocalStorageMock = (store: Record<string, string> = {}) => {
         const localStorageMock = {
             getItem: jest.fn((key: string) => store[key] || null),
@@ -162,12 +153,14 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
     };
     
     beforeEach(() => {
+        // Mock router push/replace
         (useRouter as jest.Mock).mockReturnValue({ 
             push: mockReplace, 
             replace: mockReplace 
         });
         jest.clearAllMocks();
         
+        // Setup default Local Storage values
         setupLocalStorageMock({
             userId: '100', 
             authToken: 'test-token',
@@ -175,7 +168,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         });
         
         mockFetchQuestionnaire.mockResolvedValue(MOCK_QUESTIONNAIRE_DATA);
-        jest.spyOn(console, 'error').mockImplementation(() => {});
+        jest.spyOn(console, 'error').mockImplementation(() => {}); // Suppress console error output
     });
 
     afterEach(() => {
@@ -188,20 +181,20 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         it('should show loading state initially and then render the first page', async () => {
             render(<QuestionnaireContent questionnaireId={1} />);
 
-            // 初始狀態: 顯示加載中
+            // Initial state: Loading
             expect(screen.getByText('Loading...')).toBeInTheDocument();
 
-            // 等待數據 API 呼叫完成
+            // Wait for data fetch
             await waitFor(() => {
                 expect(mockFetchQuestionnaire).toHaveBeenCalledWith(1);
             });
             
-            // ⭐️ 修正競態條件 1: 等待異步翻譯完成後，頁面標題才出現
+            // Wait for async translation of the main title
             await waitFor(() => {
-                 expect(screen.getByText('可信賴 AI 評估問卷')).toBeInTheDocument();
+                expect(screen.getByText('可信賴 AI 評估問卷')).toBeInTheDocument();
             });
 
-            // 檢查第一頁標題是否出現
+            // Check first page title
             expect(screen.getByText('Dimension One: Fairness')).toBeInTheDocument();
         });
 
@@ -211,6 +204,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
 
             render(<QuestionnaireContent questionnaireId={1} />);
 
+            // Wait for error state to render
             await waitFor(() => {
                 expect(screen.getByText('Failed to load questionnaire.')).toBeInTheDocument();
             });
@@ -219,7 +213,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         });
         
         it('should load saved answers and page progress from LocalStorage', async () => {
-            // 設置 Local Storage 中有保存的答案和進度 (停留在第二頁)
+            // Setup Local Storage to be on Page 2
             setupLocalStorageMock({
                 userId: '100',
                 authToken: 'test-token',
@@ -230,11 +224,12 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
 
             render(<QuestionnaireContent questionnaireId={1} />);
 
-            // ⭐️ 修正競態條件 2: 等待數據加載完成後，並等待頁面切換和異步翻譯完成
+            // Wait for data load and page switch/translation
             await waitFor(() => {
                 expect(screen.getByText('Dimension Two: Reliability')).toBeInTheDocument(); 
             });
 
+            // Check if progress bar reflects Page 2
             expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
         });
     });
@@ -248,28 +243,30 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
             const nextButton = screen.getByRole('button', { name: 'Next' });
             const prevButton = screen.getByRole('button', { name: 'Previous' });
             
-            // 1. 初始狀態
+            // 1. Initial State
             expect(prevButton).toBeDisabled();
             expect(nextButton).toBeDisabled(); 
 
-            // 2. 回答必填題 (Q101, Scale)
+            // 2. Answer required Q101 (Scale)
             fireEvent.click(screen.getByText('5')); 
             expect(nextButton).not.toBeDisabled();
             
-            // 3. 前進到第二頁 (同步狀態更新)
+            // 3. Navigate to Page 2
             fireEvent.click(nextButton);
 
-            // ⭐️ 修正競態條件 3: 等待頁面標題的異步翻譯完成
+            // Wait for Page 2 title translation
             await waitFor(() => screen.getByText('Dimension Two: Reliability'));
             
+            // On Page 2, Next is disabled until required Qs are answered
             expect(nextButton).toBeDisabled(); 
 
-            // 4. 回退到第一頁 (同步狀態更新)
+            // 4. Navigate back to Page 1
             fireEvent.click(prevButton);
             
-            // ⭐️ 修正競態條件 4: 等待頁面標題的異步翻譯完成
+            // Wait for Page 1 title translation
             await waitFor(() => screen.getByText('Dimension One: Fairness'));
             
+            // Check Local Storage update
             expect(localStorage.setItem).toHaveBeenCalledWith('questionnaireCurrentPage', '0');
         });
 
@@ -277,7 +274,7 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
             render(<QuestionnaireContent questionnaireId={1} />);
             await waitFor(() => screen.getByText('Dimension One: Fairness'));
 
-            // 1. 回答第一頁，進入第二頁
+            // 1. Answer Page 1 and move to Page 2
             fireEvent.click(screen.getByText('5'));
             fireEvent.click(screen.getByRole('button', { name: 'Next' }));
             await waitFor(() => screen.getByText('Dimension Two: Reliability'));
@@ -285,11 +282,11 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
             const submitButton = screen.getByRole('button', { name: 'Finish and Submit' });
             expect(submitButton).toBeDisabled();
 
-            // 2. 回答 Q201 (Single Choice)
+            // 2. Answer required Q201 (Single Choice)
             fireEvent.click(screen.getByText('[EN] 是'));
-            expect(submitButton).toBeDisabled(); 
+            expect(submitButton).toBeDisabled(); // Q202 is also required
 
-            // 3. 回答 Q202 (Multiple Choice)
+            // 3. Answer required Q202 (Multiple Choice)
             fireEvent.click(screen.getByText('[EN] 數據偏差'));
             expect(submitButton).not.toBeDisabled();
         });
@@ -301,100 +298,84 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
         it('should successfully submit answers, generate report, and redirect to report page', async () => {
         const MOCK_RESPONSE_ID = 999;
         
-        // 創建可控制的 Promise
+        // Setup promise control for generateReport
         let resolveGenerateReport: (value: boolean) => void;
         const generateReportPromise = new Promise<boolean>(resolve => {
             resolveGenerateReport = resolve;
         });
 
-        // Mock APIs
+        // Mock APIs behavior
         mockSubmitQuestionnaire.mockResolvedValueOnce({ id: MOCK_RESPONSE_ID });
         mockGenerateReport.mockReturnValueOnce(generateReportPromise);
 
         render(<QuestionnaireContent questionnaireId={1} />);
         
-        // 等待問卷載入完成
+        // Wait for questionnaire load
         await waitFor(() => {
             expect(screen.getByText('Dimension One: Fairness')).toBeInTheDocument();
         });
 
-        // 填寫第一頁的必填問題
+        // 1. Answer Page 1
         fireEvent.click(screen.getByText('5'));
         
-        // 前往第二頁
+        // 2. Go to Page 2
         fireEvent.click(screen.getByRole('button', { name: 'Next' }));
         
         await waitFor(() => {
             expect(screen.getByText('Dimension Two: Reliability')).toBeInTheDocument();
         });
 
-        // 填寫第二頁的必填問題
+        // 3. Answer Page 2
         fireEvent.click(screen.getByText('[EN] 是'));
         fireEvent.click(screen.getByText('[EN] 數據偏差'));
         
-        // 點擊提交按鈕
+        // 4. Click Submit
         const submitButton = screen.getByRole('button', { name: 'Finish and Submit' });
         expect(submitButton).toBeEnabled();
         fireEvent.click(submitButton);
 
-        // 1. 檢查提交 API 被呼叫
+        // 5. Check Submission API called
         await waitFor(() => {
             expect(mockSubmitQuestionnaire).toHaveBeenCalledTimes(1);
         });
 
-        // 2. 檢查正在生成報告的狀態
+        // 6. Check Report Generation Loading Overlay
         await waitFor(() => {
             expect(screen.getByText('Generating Report...')).toBeInTheDocument();
         });
 
-        // 3. 手動解決 generateReport 的 Promise
+        // 7. Resolve generateReport promise (simulating successful report generation)
         await act(async () => {
             resolveGenerateReport(true);
-            // 給 Promise 一個 tick 來解析
-            await Promise.resolve();
+            await Promise.resolve(); // Wait for promise resolution
         });
 
-        // 4. 等待成功 Modal 出現
+        // 8. Wait for Success Modal to appear
         await waitFor(() => {
             expect(screen.getByText('Submission Success!')).toBeInTheDocument();
             expect(screen.getByText('Report generated.')).toBeInTheDocument();
         });
 
-        // 5. 檢查 Local Storage 狀態
+        // 9. Check Local Storage updates
         expect(localStorage.removeItem).toHaveBeenCalledWith('questionnaireCurrentPage');
         expect(localStorage.setItem).toHaveBeenCalledWith('responseId', MOCK_RESPONSE_ID.toString());
 
-        // 6. 直接檢查 Modal 內的按鈕
-        const modal = document.querySelector('.fixed.inset-0.bg-gray-700\\/40'); // 使用更具體的選擇器
-        expect(modal).toBeInTheDocument();
-        
-        // 使用 within 在 Modal 內查找按鈕
+        // 10. Click 'View Report' button inside the Modal
         const viewReportButton = screen.getByRole('button', { name: 'View Report' });
         
-        // 添加除錯資訊
-        console.log('按鈕元素:', viewReportButton);
-        console.log('按鈕是否可見:', viewReportButton.getAttribute('aria-hidden'));
-        console.log('按鈕父元素:', viewReportButton.parentElement?.className);
-        console.log('Modal 層級:', modal?.childNodes.length);
-        
-        // 確保按鈕沒有被禁用
-        expect(viewReportButton).not.toBeDisabled();
-        
-        // 方法 2: 使用更詳細的點擊序列
-        await act(async () => {
-            fireEvent.click(viewReportButton);
-        });
+        await act(async () => {
+            // Use fireEvent.click directly on the button element
+            fireEvent.click(viewReportButton);
+        });
 
-        // 8. 檢查路由跳轉
+        // 11. Check Redirection to '/report'
         await waitFor(() => {
             expect(mockReplace).toHaveBeenCalledWith('/report');
         }, { 
             timeout: 2000,
             interval: 100,
             onTimeout: (error: Error) => {
-                console.error('路由跳轉沒有發生！');
-                console.log('當前 mockReplace 呼叫:', mockReplace.mock.calls);
-                console.log('Modal 是否仍然顯示:', screen.queryByText('Submission Success!'));
+                console.error('Redirection did not occur!');
                 throw error;
             }
         });
@@ -406,25 +387,24 @@ describe('QuestionnaireContent - Full Workflow Tests', () => {
             render(<QuestionnaireContent questionnaireId={1} />);
             await waitFor(() => screen.getByText('Dimension One: Fairness'));
 
-            // 模擬填寫所有問題
+            // 1. Simulate answering all required questions
             fireEvent.click(screen.getByText('5'));
             fireEvent.click(screen.getByRole('button', { name: 'Next' }));
             
-            // ⭐️ 修正競態條件 6: 等待頁面跳轉完成
             await waitFor(() => screen.getByText('Dimension Two: Reliability'));
             
             fireEvent.click(screen.getByText('[EN] 是'));
             fireEvent.click(screen.getByText('[EN] 數據偏差'));
             fireEvent.click(screen.getByRole('button', { name: 'Finish and Submit' }));
             
-            // 等待提交失敗
+            // 2. Wait for submission failure
             await waitFor(() => {
                 expect(mockSubmitQuestionnaire).toHaveBeenCalledTimes(1);
             });
 
-            // 檢查錯誤提示是否顯示 (ErrorAlert 組件會在頂部顯示)
+            // 3. Check if the error alert is displayed
             await waitFor(() => {
-                 expect(screen.getByText('提交過程中發生網路錯誤。')).toBeInTheDocument();
+                expect(screen.getByText('提交過程中發生網路錯誤。')).toBeInTheDocument();
             });
             
             expect(mockGenerateReport).not.toHaveBeenCalled();
