@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react'; // 引入 useEffect
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect, useRef } from 'react'; // React hooks
+import { useRouter } from 'next/navigation'; // Next.js router
+// API Configuration Constants
 import { USER_API_BASE, BASE_API_URL, API_PREFIX } from '../config/apiConfig';
 
+// Local Storage Keys
 const AUTH_TOKEN_KEY = 'authToken';
 const AUTH_EXPIRY_KEY = 'authExpiry'; 
 const USER_ID_KEY = 'userId';
@@ -13,6 +15,7 @@ const CURRENT_PROJECT_ID_KEY = 'currentProjectId';
 const RESPONSE_ID_KEY = 'responseId';
 
 
+// Utility function to format seconds into HH:MM:SS string
 const formatTime = (seconds: number): string => {
     const absSeconds = Math.max(0, seconds);
     const h = Math.floor(absSeconds / 3600);
@@ -25,14 +28,19 @@ const formatTime = (seconds: number): string => {
 }
 
 
+// Main Auth Hook
 export const useAuth = () => {
     const router = useRouter();
 
+    // State for UI indicator
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    // State for logout timer display
     const [secondsUntilLogout, setSecondsUntilLogout] = useState<number | null>(null);
+    // Ref to prevent duplicate logout calls
     const isLogoutPendingRef = useRef(false);
 
 
+    // Cleanup function for local storage
     const clearLocalStorage = useCallback(() => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -48,7 +56,7 @@ export const useAuth = () => {
         }
     }, []);
 
-    // handleLogout 現在接受一個參數 isAutomatic，表示是否為自動登出
+    // Logout handler (manual or automatic)
     const handleLogout = useCallback(async (isAutomatic = false) => {
         if (isLogoutPendingRef.current) {
             console.log("Logout already in progress, preventing duplicate call.");
@@ -59,13 +67,13 @@ export const useAuth = () => {
         setIsLoggingOut(true);
         setSecondsUntilLogout(0);
 
-        // 1. 嘗試從 localStorage 獲取 Token
+        // Get token before clearing storage
         let userToken: string | null = null;
         if (typeof window !== 'undefined') {
             userToken = localStorage.getItem(AUTH_TOKEN_KEY);
         }
 
-        // 僅在非自動登出時，執行後端 API 呼叫 
+        // Call backend API only for manual logout
         if (!isAutomatic) { 
             try {
                 if (userToken) {
@@ -78,30 +86,34 @@ export const useAuth = () => {
                     });
 
                     if (!response.ok) {
-                        
+                        // Log API error, but proceed with frontend logout
                     } else {
                         console.log("後端登出成功");
                     }
                 }
             } catch (error) {
-                console.error("登出 API 呼叫時發生錯誤:", error);
+                console.error("登出 API 呼叫時發生錯誤：", error);
             }
         }
 
+        // Clear local session data
         clearLocalStorage();
+        // Redirect to home/login page
         router.replace('/'); 
 
         isLogoutPendingRef.current = false;
         setIsLoggingOut(false);
     }, [clearLocalStorage, router]);
 
+    // Effect for the automatic logout timer
     useEffect(() => {
         let timer: NodeJS.Timeout | null = null;
 
+        // Recursive function to check expiry every second
         const checkAuthExpiry = () => {
             if (typeof window === 'undefined') return;
 
-            // 1. 檢查 Token 和 Expiry 是否存在
+            // 1. Check for token and expiry timestamp
             const token = localStorage.getItem(AUTH_TOKEN_KEY);
             const expiryString = localStorage.getItem(AUTH_EXPIRY_KEY);
 
@@ -110,55 +122,57 @@ export const useAuth = () => {
                 return;
             }
             
-            // 2. 計算剩餘時間 (秒)
-            const expiryTime = parseInt(expiryString, 10); // 假設儲存的是 Unix Timestamp (毫秒)
+            // 2. Calculate remaining time
+            const expiryTime = parseInt(expiryString, 10); // Expecting Unix Timestamp (ms)
 
             if (isNaN(expiryTime) || expiryTime <= 0) {
                  console.log("Auth expiry is invalid or missing, executing auto-logout.");
                  setSecondsUntilLogout(0);
-                 handleLogout(true); // 執行自動登出
-                 return; // 停止後續計時邏輯
+                 handleLogout(true); // Auto-logout
+                 return;
             }
             
             const now = Date.now();
+            // Remaining time in seconds
             const remainingSeconds = Math.floor((expiryTime - now) / 1000);
 
             setSecondsUntilLogout(remainingSeconds);
 
-            // 3. 如果時間到或已過期，則執行登出
+            // 3. Trigger logout if time is up or passed
             if (remainingSeconds <= 0) {
-                console.log("Token 已過期，執行自動登出。");
-                handleLogout(true); // 傳入 true 表示是自動登出
+                console.log("Token expired, executing auto-logout.");
+                handleLogout(true); // Auto-logout
                 return;
             }
             
-            // 4. 設定下一次檢查的時間
-            timer = setTimeout(checkAuthExpiry, 1000); 
+            // 4. Schedule next check
+            timer = setTimeout(checkAuthExpiry, 1000); // Check again in 1 second
         };
         
-        // 第一次檢查
+        // Start the process
         checkAuthExpiry();
 
-        // 清理函數：組件卸載時清除定時器
+        // Cleanup: Clear timer on unmount
         return () => {
             if (timer) {
                 clearTimeout(timer);
             }
         };
-    }, []); 
+    }, [handleLogout]); 
 
-    
-
-    
-    // 返回剩餘時間字串
+    // Formatted time string (HH:MM:SS) for display
     const timeUntilLogout = secondsUntilLogout !== null && secondsUntilLogout > 0
         ? formatTime(secondsUntilLogout)
         : null;
 
+    // Check auth status based on local storage token presence
+    const isAuthenticated = typeof window !== 'undefined' ? !!localStorage.getItem(AUTH_TOKEN_KEY) : false;
+
+    // Return necessary auth utilities and states
     return {
         isLoggingOut,
         handleLogout,
         timeUntilLogout, 
-        isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem(AUTH_TOKEN_KEY) : false,
+        isAuthenticated,
     };
 };

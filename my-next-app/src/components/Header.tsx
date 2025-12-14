@@ -1,19 +1,23 @@
-'use client';
+"use client";
 import React from 'react';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import i18n from 'i18next';
-import '@/lib/i18n'; // 確保初始化一次
+import '@/lib/i18n'; // i18n initialization
 import { useTranslation } from 'react-i18next';
+
+// Header component props
 interface HeaderProps {
-    children?: React.ReactNode;
-    titleHref?: string;
+    children?: React.ReactNode; // Optional right-side content
+    titleHref?: string; // Link target for the title
 }
 
+// Main Header Component
 export default function Header({ children, titleHref = '/'}: HeaderProps) {
     const { i18n: i18nInstance } = useTranslation();
     const { t } = useTranslation();
 
+    // Effect to load saved language from localStorage on mount
     useEffect(() => {
         const savedLang = localStorage.getItem('preferredLanguage');
         if (savedLang && savedLang !== i18n.language) {
@@ -21,6 +25,7 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
         }
     }, [i18n]);
 
+    // Language change handler
     const changeLanguage = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const lang = e.target.value;
         i18nInstance.changeLanguage(lang);
@@ -39,6 +44,7 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
                 h-full 
                 px-4 sm:px-6 
             '>
+                {/* Title Link */}
                 <Link 
                     href={titleHref} 
                     className='
@@ -49,11 +55,12 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
                     {t('header.title')}
                 </Link>
 
-                {/* 右側：客製化的內容 */}
+                {/* Right Side: Language Switch + Children */}
                 <div className='
                     flex space-x-2 sm:space-x-5 items-center
                     flex-shrink-0 
                 '>
+                    {/* Language Selector */}
                     <select
                         value={i18nInstance.language}
                         onChange={changeLanguage}
@@ -66,6 +73,7 @@ export default function Header({ children, titleHref = '/'}: HeaderProps) {
                         <option value=''>EN</option>
                         <option value='zh'>中</option>
                     </select>
+                    {/* Placeholder for custom content (e.g., Logout Button) */}
                     {children}
                 </div>
             </div>

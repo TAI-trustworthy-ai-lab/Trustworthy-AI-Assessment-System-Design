@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import FloatingChatWindow from '@/components/FloatingChatWindow';
-// ----------------------------------------------------
-//  其他檔案資料 IMPORT FROM OTHERS FOLDER
-// ----------------------------------------------------
+import { useRouter } from 'next/navigation'; 
+// Floating chat window component
+import FloatingChatWindow from '@/components/FloatingChatWindow'; 
+// --- Data and Services ---
 import { CATEGORY_MAP } from '@/config/constants'; 
 import { 
     fetchQuestionnaire as fetchQuestionnaireService, 
@@ -15,7 +15,7 @@ import {
 
 
 // ----------------------------------------------------
-// 暫存結構：中文原文 & 英文翻譯
+// Translation Cache and Utilities
 // ----------------------------------------------------
 const translationCache: {
     zh: Record<string, string>;
@@ -25,14 +25,13 @@ const translationCache: {
     en: {},
 };
 
-// ----------------------------------------------------
-// 翻譯工具函式
-// ----------------------------------------------------
+// Capitalize first letter utility
 const capitalizeFirstLetter = (text: string) => {
     if (!text) return text;
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
+// API call for text translation
 const translateText = async (text: string, source = "zh-CN", target = "en") => {
     const res = await fetch("/api/translate", {
         method: "POST",
@@ -44,9 +43,7 @@ const translateText = async (text: string, source = "zh-CN", target = "en") => {
     return data.translatedText;
 };
 
-// ----------------------------------------------------
-// TranslatedText Component with cache
-// ----------------------------------------------------
+// Translated Text Component with cache logic
 const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     text,
     capitalize = false,
@@ -54,54 +51,42 @@ const TranslatedText: React.FC<{ text: string; capitalize?: boolean }> = ({
     const { i18n } = useTranslation();
     const [translated, setTranslated] = useState(text);
     useEffect(() => {
-        let isActive = true; // 標記當前 effect 是否仍有效
+        let isActive = true; // Effect lifecycle flag
 
-        // 中文暫存：始終存原文
         if (!translationCache.zh[text]) {
-            translationCache.zh[text] = text;
+            translationCache.zh[text] = text; // Cache original text
         }
 
         if (i18n.language.startsWith("en")) {
-            // 英文情境：先檢查暫存
+            // Check English cache
             if (translationCache.en[text]) {
                 setTranslated(
                     capitalize ? capitalizeFirstLetter(translationCache.en[text]) : translationCache.en[text]
                 );
             } else {
-                // 沒有暫存 → 呼叫翻譯 API
+                // Fetch translation
                 translateText(text, "zh-CN", "en").then((result) => {
-                    if (isActive) { // 只有當前 effect 還有效才更新
-                        result = result || translationCache.zh[text];//如果翻譯未成功，顯示中文。
+                    if (isActive) {
+                        result = result || translationCache.zh[text]; // Fallback to Chinese
                         translationCache.en[text] = result;
                         setTranslated(capitalize ? capitalizeFirstLetter(result) : result);
                     }
                 });
             }
         } else {
-            // 中文情境：直接用中文暫存
+            // Use Chinese text directly
             setTranslated(translationCache.zh[text]);
         }
-        // cleanup：切語言時舊的請求結果不再生效
         return () => {
-            isActive = false;
+            isActive = false; // Cleanup
         };
     }, [text, i18n.language, capitalize]);
 
     return <>{translated}</>;
 };
 
-const useRouter = () => {
-    return {
-        push: (url: string) => {
-            if (typeof window !== 'undefined') {
-                window.location.href = url;
-            }
-        },
-    };
-};
-
 // ----------------------------------------------------
-// 後端回傳資料結構定義 BACKEND DATA STRUCT. HANDLE
+// Backend Data Structures
 // ----------------------------------------------------
 interface Option {
     id: number;
@@ -153,8 +138,9 @@ type PayloadAnswer = {
 
 
 type Answers = Record<number, AnswerValue>;
+
 // ----------------------------------------------------
-//  傳入後端 Answer 格式 FORMAT FOR ANS
+// Format Answers for API Submission
 // ----------------------------------------------------
 const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Question[]): PayloadAnswer => {
     return Object.entries(currentAnswers).reduce<PayloadAnswer>((acc, [idString, answerValue]) => {
@@ -164,7 +150,7 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
         if (!question) return acc;
         const scoreToSubmit = (typeof answerValue.score === 'number') ? answerValue.score : null;
 
-        // handle different type of questions
+        // Handle different question types
         if (question.type === 'SCALE') {
             const optionId = answerValue.optionIds?.[0] ?? null;
             acc.push({
@@ -208,14 +194,14 @@ const formatAnswersForSubmission = (currentAnswers: Answers, allQuestions: Quest
 };
 
 // ----------------------------------------------------
-// Loading UI - 提交按鈕上的指示器
+// Loading UI - Submission Button Indicator
 // ----------------------------------------------------
 const SubmissionLoadingIndicator: React.FC = () => {
     const { t } = useTranslation();
     return (
         <div className="flex items-center justify-center space-x-2">
             <span className="font-bold">{t('Questionnaire.submitting')}</span>
-            {/* Animated Dots using Tailwind's built-in animate-pulse */}
+            {/* Animated Dots */}
             <div className="flex items-end h-4 pb-0.5">
                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0s' }}></div>
                 <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
@@ -227,7 +213,7 @@ const SubmissionLoadingIndicator: React.FC = () => {
 
 
 // ----------------------------------------------------
-// Loading Overlay - 全頁面 loading 設計
+// Loading Overlay - Full Page Overlay
 // ----------------------------------------------------
 const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
     const { t } = useTranslation();
@@ -253,7 +239,7 @@ const FullPageLoadingOverlay: React.FC<{ message: string }> = ({ message }) => {
 };
 
 // ----------------------------------------------------
-// 錯誤提示組件 ERROR COMPONENT
+// Error Alert Component
 // ----------------------------------------------------
 const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({ message, onClose }) => {
     if (!message) return null;
@@ -275,7 +261,7 @@ const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({
 
 
 // ----------------------------------------------------
-// 根據 Type 渲染不同 UI  QUESTION TYPE UI
+// Question Type Renderers
 // ----------------------------------------------------
 interface QuestionRendererProps {
     question: Question;
@@ -283,7 +269,7 @@ interface QuestionRendererProps {
     onAnswer: (answer: AnswerValue) => void;
 }
 
-// 1. SCALE type
+// 1. SCALE
 const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
     const selectedOptionId = currentAnswer.optionIds?.[0];
@@ -291,7 +277,7 @@ const ScaleQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswe
     return (
         <div className="flex justify-center space-x-2 sm:space-x-4">
             {options.map((opt) => {
-                const displayScore = opt.order;
+                const displayScore = opt.order; // Display order as score number
 
                 return (
                     <button
@@ -339,7 +325,7 @@ const SingleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, curre
     );
 };
 
-// 3. MULTIPLE_CHOICE 
+// 3. MULTIPLE_CHOICE
 const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer, onAnswer }) => {
     const options = question.options || [];
     const selectedOptionIds = currentAnswer.optionIds || [];
@@ -347,19 +333,20 @@ const MultipleChoiceQuestion: React.FC<QuestionRendererProps> = ({ question, cur
     const handleOptionClick = (optionId: number) => {
         let newSelectedOptionIds;
         if (selectedOptionIds.includes(optionId)) {
-            // If selected, remove previous selection
+            // Remove selection
             newSelectedOptionIds = selectedOptionIds.filter(id => id !== optionId);
         } else {
-            // If didn't select, select
+            // Add selection
             newSelectedOptionIds = [...selectedOptionIds, optionId];
         }
 
+        // Recalculate total score from selected options
         const newScore = options
             .filter(opt => newSelectedOptionIds.includes(opt.id))
             .reduce((sum, opt) => {
                 const optionValue = Number(opt.value);
                 return sum + optionValue;
-            }, 0); // Initiate number = 0
+            }, 0); 
         onAnswer({ optionIds: newSelectedOptionIds, score: newScore });
     };
 
@@ -395,14 +382,14 @@ const TextQuestion: React.FC<QuestionRendererProps> = ({ question, currentAnswer
             onChange={(e) => onAnswer({ textValue: e.target.value })}
             placeholder={t('Questionnaire.placeholder.answer')}
             className="w-full p-3 border border-gray-300 rounded-lg resize-none text-gray-700 
-                       focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
+                        focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400"
         />
     );
 };
 
 
 // ----------------------------------------------------
-// 問題渲染器：根據 type 選擇組件
+// Question Renderer Switch
 // ----------------------------------------------------
 const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
     const { t } = useTranslation();
@@ -412,7 +399,7 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
         case 'SINGLE_CHOICE':
             return <SingleChoiceQuestion {...props} />;
         case 'MULTIPLE_CHOICE':
-            return <MultipleChoiceQuestion {...props} />; // Placeholder
+            return <MultipleChoiceQuestion {...props} />;
         case 'TEXT':
             return <TextQuestion {...props} />;
         default:
@@ -422,38 +409,73 @@ const QuestionRenderer: React.FC<QuestionRendererProps> = (props) => {
 
 
 // ----------------------------------------------------
-// 問卷內容主組件 QUESTIONNAIRE INFO CONTENT
+// Question Description Toggle Component
 // ----------------------------------------------------
+const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
+    const { t } = useTranslation();
+    const [isExpanded, setIsExpanded] = useState(false);
 
+    if (!description || description.trim() === '') {
+        return null;
+    }
+
+    return (
+        <div className="text-sm text-gray-500 mt-2 mb-3">
+            <button
+                onClick={() => setIsExpanded(prev => !prev)}
+                className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
+            >
+                {/* Toggle Icon */}
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
+                </svg>
+                {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
+            </button>
+            
+            {/* Expanded Content */}
+            {isExpanded && (
+                <div className="p-3">
+                    <TranslatedText text={description} />
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// ----------------------------------------------------
+// Main Questionnaire Content Component
+// ----------------------------------------------------
 export default function QuestionnaireContent({ questionnaireId }: { questionnaireId: string | number | null }) {
     const router = useRouter();
     const { t } = useTranslation();
+    // Data states
     const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(null);
     const [loadingStatus, setLoadingStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [currentPage, setCurrentPage] = useState(0);
     const [answers, setAnswers] = useState<Answers>({});
+    // UI/Navigation states
+    const [currentPage, setCurrentPage] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [submittedResponseId, setSubmittedResponseId] = useState<number | null>(null);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [isFinalizedProgress, setIsFinalizedProgress] = useState(false);
-    // 👇👇👇 補上這一行，紅字就會消失了 👇👇👇
-    const [isChatVisible, setIsChatVisible] = useState(false);
+    // Floating chat window state
+    const [isChatVisible, setIsChatVisible] = useState(false); 
 
     // =============
-    //     分頁
+    // Pagination & Data Grouping
     // =============
-        // 1. Using TAI MAP for description of every TAI
+    // Get page title (translated category name)
     const getPageTitle = (category: string): string => {
         return CATEGORY_MAP[category.toUpperCase()] || category;
     };
 
-        // 2. Data result handling for every page
+    // Group questions by category (page)
     const allPages: PageData[] = useMemo(() => {
         if (!questionnaire) return [];
 
-        // Reorder category, by TAI indicators
         const grouped = questionnaire.questions.reduce((acc, question) => {
             const category = question.category;
             if (!acc[category]) {
@@ -463,7 +485,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             return acc;
         }, {} as Record<string, PageData & { category: string }>);
 
-        // Order sequences for pages
+        // Sort pages based on TAI indicator order
         return Object.values(grouped)
             .sort((a, b) => {
                 const keys = Object.keys(CATEGORY_MAP);
@@ -474,20 +496,19 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             })
             .map(page => ({
                 pageTitle: getPageTitle(page.pageTitle),
-                questions: page.questions.sort((a, b) => a.order - b.order) // 保持頁面內的問題按 order 排序
+                questions: page.questions.sort((a, b) => a.order - b.order) // Sort questions within page
             }));
     }, [questionnaire]);
 
-    // 3. 總頁數與當前頁面資料
+    // Page properties
     const TOTAL_PAGES = allPages.length;
     const currentPageData = allPages[currentPage];
 
     // =============
-    //  BCKEND API
+    // Backend API Interaction
     // =============
-    // 取問卷内容
+    // Fetch questionnaire details
     const fetchQuestionnaire = useCallback(async () => {
-        // 預設問卷 ID 無誤 & 後端截取資料結構一定正確！
         setLoadingStatus('loading');
         if (!questionnaireId) { 
              setLoadingStatus('error');
@@ -507,7 +528,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 const errorObj = JSON.parse(error.message);
                 message = `問卷加載失敗 (${errorObj.status}): ${errorObj.message}`;
             } catch (e) {
-
+                // Ignore parse error
             }
 
             console.error('獲取問卷詳情失敗:', error);
@@ -516,7 +537,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     }, [questionnaireId]);
 
-    // 生成報告
+    // Generate report after submission
     const generateReport = async (responseId: number) => {
         try {
             await generateReportService(responseId);
@@ -529,18 +550,18 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
 
     // =============
-    //   useEffect
+    // Effects
     // =============
-    // 1. 下一頁自動划去最高點
+    // Scroll to top on page change
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
         setSubmissionError(null);
     }, [currentPage]);
 
-    // 2. 取問卷資料
+    // Initial data fetch and state recovery from localStorage
     useEffect(() => {
         fetchQuestionnaire().then(() => {
-            // 從 LocalStorage 載入答案
+            // Load saved answers
             const savedAnswersJson = localStorage.getItem('questionnaireAnswers');
             if (savedAnswersJson) {
                 try {
@@ -552,7 +573,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 }
             }
             
-            // 從 LocalStorage 載入頁面進度
+            // Load saved page progress
             const savedPage = localStorage.getItem('questionnaireCurrentPage');
             if (savedPage) {
                 const pageIndex = parseInt(savedPage, 10);
@@ -565,30 +586,34 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
 
     // =============
-    //   分頁進度
+    // Progress & Validation
     // =============
+    // Calculate progress percentage
     const progressPercent = useMemo(() => {
-        if (isFinalizedProgress) return 100;
+        if (isFinalizedProgress) return 100; // 100% when submitted/finalizing
 
         return TOTAL_PAGES > 0 ? Math.round(((currentPage) / TOTAL_PAGES) * 100) : 0;
     }, [currentPage, TOTAL_PAGES, isFinalizedProgress]);
 
+    // Check if current page is fully answered (required questions only)
     const isCurrentPageComplete = useMemo(() => {
         if (!currentPageData) return false;
 
         return currentPageData.questions.every(q => {
             const answer = answers[q.id];
-            if (!q.required) return true;
+            if (!q.required) return true; // Skip non-required questions
             if (!answer) return false;
 
             switch (q.type) {
                 case 'SCALE':
-                    return answer.score !== undefined;
                 case 'SINGLE_CHOICE':
-                    return answer.optionIds;
+                    // Check if score or option ID is set
+                    return answer.score !== undefined || answer.optionIds;
                 case 'MULTIPLE_CHOICE':
+                    // Check if at least one option is selected
                     return answer.optionIds && answer.optionIds.length > 0;
                 case 'TEXT':
+                    // Check if text is non-empty
                     return answer.textValue && answer.textValue.trim() !== '';
                 default:
                     return false;
@@ -596,41 +621,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         });
     }, [answers, currentPageData]);
 
-    // 問題描述可切換顯示組件
-    const QuestionDescriptionToggle: React.FC<{ description: string | null }> = ({ description }) => {
-        const { t } = useTranslation();
-        const [isExpanded, setIsExpanded] = useState(false);
-
-        if (!description || description.trim() === '') {
-            return null;
-        }
-
-        return (
-            <div className="text-sm text-gray-500 mt-2 mb-3">
-                <button
-                    onClick={() => setIsExpanded(prev => !prev)}
-                    className="flex items-center text-gray-600 hover:text-gray-800 transition duration-150 font-medium"
-                >
-                    {/* 顯示/隱藏 圖標 */}
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isExpanded ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-                    </svg>
-                    {t(isExpanded ? 'Questionnaire.actions.hideDetails' : 'Questionnaire.actions.showDetails')}
-                </button>
-                
-                {/* 展開時才顯示描述內容 */}
-                {isExpanded && (
-                    <div className="p-3">
-                        <TranslatedText text={description} />
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     // =============
-    //  不同處理
+    // Handlers
     // =============
+    // Update answer state and save to local storage
     const handleAnswer = (questionId: number, answerValue: AnswerValue) => {
         setAnswers(prev => {
             const newAnswers = {
@@ -642,6 +636,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         });
     };
 
+    // Navigate to next page
     const handleNext = () => {
         if (currentPage < TOTAL_PAGES - 1) {
             const newPage = currentPage + 1;
@@ -650,6 +645,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     };
 
+    // Navigate to previous page
     const handlePrevious = () => {
         if (currentPage > 0) {
             const newPage = currentPage - 1;
@@ -658,35 +654,30 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         }
     };
 
-    // =============
-    // 後端提交問卷
-    // =============
+    // Submit questionnaire answers
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setSubmissionError(null);
-        setIsFinalizedProgress(true);
+        setIsFinalizedProgress(true); // Visually set progress to 100%
 
         const currentUserId = localStorage.getItem('userId');
         const userToken = localStorage.getItem('authToken');
         const currentProjectId = localStorage.getItem('currentProjectId');
 
-        // 錯誤處理：基本不會使用到
+        // Basic validation check
         if (!currentUserId || !userToken) {
-            setSubmissionError("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。"); // ⭐️ 替換 alert
+            setSubmissionError("您尚未登入或登入資訊已過期，無法提交問卷。請重新登入。");
             setIsSubmitting(false);
             router.push('/login');
             return;
         }
-        if (!currentProjectId) {
-            setSubmissionError("錯誤：無法找到專案 ID。");
+        if (!currentProjectId || !questionnaire) {
+            setSubmissionError("錯誤：問卷或專案資料缺失。");
             setIsSubmitting(false);
             return;
         }
-        if (!questionnaire) {
-            setSubmissionError("錯誤：問卷資料尚未載入。");
-            setIsSubmitting(false);
-            return;
-        }
+
+        // Prepare payload data
         const answersPayload = formatAnswersForSubmission(answers, questionnaire.questions);
         const parsedUserId = parseInt(currentUserId, 10);
         const parsedProjectId = parseInt(currentProjectId, 10);
@@ -696,7 +687,6 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 ? parseInt(String(questionnaireId), 10)
                 : NaN;
 
-        // ** 最終提交的 Payload 結構 **
         const finalPayload = {
             userId: parsedUserId,
             projectId: parsedProjectId,
@@ -704,29 +694,28 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
             answers: answersPayload,
         };
 
-        console.log(finalPayload);
-
-
-        // --- 提交問卷給後端 --- //
+        // --- Submit to Backend --- //
         try {
             const data = await submitQuestionnaireService(finalPayload);
             const responseId = data.id;
-            console.log('問卷已提交 (新回覆)');
 
             if (!responseId) {
                 throw new Error('提交或更新後未取得回覆 ID。');
             }
 
+            // Cleanup local storage and save response ID
             localStorage.setItem('responseId', responseId.toString());
             localStorage.removeItem('questionnaireCurrentPage');
             setSubmittedResponseId(responseId);
             setIsGeneratingReport(true);
 
+            // Generate report in the background
             const reportGeneratedSuccessfully = await generateReport(responseId); 
             if (!reportGeneratedSuccessfully) {
-                throw new Error('提交報告發生錯誤。'); 
+                throw new Error('報告生成服務發生錯誤。'); 
             }
-            setShowSuccessModal(true);
+            setShowSuccessModal(true); // Show success modal
+
         } catch (error) {
             console.error('提交錯誤:', error);
             setSubmissionError("提交過程中發生網路錯誤。");
@@ -737,7 +726,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     };
 
 
-    // 10. 成功提交後的 Modal 組件
+    // 10. Success Modal Component
     const SuccessModal = () => (
         <div className="fixed inset-0 bg-gray-700/40 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm text-center">
@@ -764,7 +753,7 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
         </div>
     );
 
-    // 11. loading / error 狀態處理
+    // 11. Loading / Error States UI
     if (loadingStatus === 'loading') {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -791,11 +780,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
     }
 
 
-
-    // 12. 正常問卷內容渲染!!!
+    // 12. Main Questionnaire Content Render
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* 頂部錯誤提示 */}
+            {/* Top Error Alert */}
             <ErrorAlert
                 message={submissionError}
                 onClose={() => setSubmissionError(null)}
@@ -803,17 +791,17 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
             <main className="pt-8 flex flex-col items-center min-h-[calc(100vh)] px-4">
                 <div className="w-full max-w-3xl bg-white p-8 rounded-xl shadow-lg mt-15">
-                    {/* 問卷題目 titleA */}
+                    {/* Questionnaire Title */}
                     <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
                         {<TranslatedText text={questionnaire.title} />}
                     </h1>
 
-                    {/* 问卷描述 description */}
+                    {/* Questionnaire Description */}
                     {questionnaire.description && (
                         <p className="text-left text-gray-500 mb-8">{<TranslatedText text={questionnaire.description} />}</p>
                     )}
 
-                    {/* 进度条 (Progress Bar) */}
+                    {/* Progress Bar */}
                     <div className="w-full mb-8">
                         <div className="text-sm font-medium text-gray-700 mb-2 flex justify-between">
                             <span>{t('Questionnaire.progress.page', { current: currentPage + 1, total: TOTAL_PAGES })}</span>
@@ -827,23 +815,27 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                         </div>
                     </div>
 
-                    {/* 當期分頁內容 */}
+                    {/* Current Page Content */}
                     {currentPageData && (
                         <div>
+                            {/* Page / Category Title */}
                             <h2 className="text-xl font-bold text-gray-800 mb-6 text-left border-b pb-3">
                                 {<TranslatedText text={currentPageData.pageTitle} />}
                             </h2>
 
+                            {/* Questions List */}
                             <div className="space-y-6">
                                 {currentPageData.questions.map((q) => (
                                     <div key={q.id} className="p-4 border rounded-lg bg-gray-50">
+                                        {/* Question Text */}
                                         <p className="font-semibold text-gray-700 mb-3">
                                             {<TranslatedText text={q.text} />}
                                             {q.required && <span className="text-red-500 ml-1">*</span>}
                                         </p>
+                                        {/* Description Toggle */}
                                         <QuestionDescriptionToggle description={q.description} />
 
-                                        {/* 根據 type 渲染不同 UI */}
+                                        {/* Answer Renderer */}
                                         <div className="flex justify-center sm:justify-start">
                                             <QuestionRenderer
                                                 question={q}
@@ -857,9 +849,10 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                         </div>
                     )}
 
-                    {/* 導航按鈕 */}
+                    {/* Navigation Buttons */}
                     <div className="flex justify-between mt-10 pt-6 border-t px-4 sm:px-0">
 
+                        {/* Previous Button */}
                         <button
                             onClick={handlePrevious}
                             disabled={currentPage === 0 || isSubmitting}
@@ -868,15 +861,18 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                             {t('Questionnaire.actions.prev')}
                         </button>
 
+                        {/* Next or Submit Button */}
                         {currentPage < TOTAL_PAGES - 1 ? (
+                            // Next Page
                             <button
                                 onClick={handleNext}
-                                disabled={!isCurrentPageComplete || isSubmitting} // 未填完或提交中不給進入下一頁
+                                disabled={!isCurrentPageComplete || isSubmitting} // Disabled if incomplete or submitting
                                 className="py-2 px-6 bg-green-600 text-white font-bold rounded-lg transition duration-150 hover:bg-green-500 disabled:opacity-50 flex items-center justify-center"
                             >
                                 {t('Questionnaire.actions.next')}
                             </button>
                         ) : (
+                            // Submit (Final Page)
                             <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || !isCurrentPageComplete}
@@ -888,10 +884,12 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                     </div>
                 </div>
             </main>
-            {/* Modal 渲染移到最頂層，由狀態控制 */}
+            
+            {/* Modals and Overlays */}
             {showSuccessModal && <SuccessModal />}
             {isGeneratingReport && <FullPageLoadingOverlay message={t('Questionnaire.report.generating')} />}
-            {/* --- 這裡開始是新增的聊天按鈕 --- */}
+            
+            {/* Floating AI Chat Window and Toggle Button */}
             <FloatingChatWindow 
                 isVisible={isChatVisible} 
                 onClose={() => setIsChatVisible(false)} 
@@ -902,13 +900,13 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
                 className="fixed bottom-4 right-4 p-4 rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition duration-300 z-50"
                 title="AI 助手"
             >
+                {/* Icon based on chat visibility */}
                 {isChatVisible ? (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 ) : (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 )}
             </button>
-            {/* --- 新增結束 --- */}
         </div>
     );
 }

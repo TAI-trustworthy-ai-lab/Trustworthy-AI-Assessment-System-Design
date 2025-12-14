@@ -2,26 +2,30 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next'; // 引入 i18n
+import { useTranslation } from 'react-i18next'; // i18n support
 
 interface ProtectedLayoutProps {
-    children: React.ReactNode;
+    children: React.ReactNode; // Content to be protected
 }
 
-const AUTH_TOKEN_KEY = 'authToken'; // 確保與 useAuth.tsx 中的鍵名一致
+const AUTH_TOKEN_KEY = 'authToken'; // Auth token key
 
+// Layout Component for Protected Routes
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
     const router = useRouter();
+    // UI state for loading
     const [isLoading, setIsLoading] = React.useState(true);
+    // Auth status state
     const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-    const { t } = useTranslation(); // 使用 i18n
+    const { t } = useTranslation(); // Translation hook
 
+    // Auth check logic
     useEffect(() => {
         const token = localStorage.getItem(AUTH_TOKEN_KEY);
 
         if (!token) {
             console.log("ProtectedLayout: Token not found, redirecting to /.");
-            router.replace('/');
+            router.replace('/'); // Redirect to homepage/login
             setIsAuthenticated(false);
         } else {
             setIsAuthenticated(true);
@@ -30,13 +34,15 @@ export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
         setIsLoading(false);
     }, [router]);
 
+    // Loading/Redirecting UI
     if (isLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <p>{t('auth.verifying')}</p> {/* 使用 i18n key */}
+                <p>{t('auth.verifying')}</p> 
             </div>
         );
     }
 
+    // Render protected content
     return <>{children}</>;
 }
