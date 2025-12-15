@@ -99,7 +99,7 @@ export default function LoginPage() {
         try {
             // Register API call
             await register({ name, email, password });
-            setSuccess(t('loginPage.register.success'));
+            setSuccess('loginPage.register.success');
             setIsRegistering(false);
             
             // Save email for verification status page
@@ -161,10 +161,10 @@ export default function LoginPage() {
                         <strong>{t('loginPage.common.errorLabel')}</strong> {errorKey ? t(errorKey) : null}
                     </div>
                 )}
-                {/* Success message box - NEWLY ADDED */}
+                {/* Success message box */}
                 {success && (
                     <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded-md text-sm" role="status">
-                        <strong>{t('loginPage.common.successLabel', 'Success!')}</strong> {success}
+                        <strong>{t('loginPage.common.successLabel', 'Success!')}</strong> {t(success)}
                     </div>
                 )}
 
