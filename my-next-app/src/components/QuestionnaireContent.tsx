@@ -245,7 +245,7 @@ const ErrorAlert: React.FC<{ message: string | null, onClose: () => void }> = ({
     if (!message) return null;
     return (
         <div
-            className="fixed top-0 left-0 right-0 z-50 p-4 bg-red-600 text-white shadow-lg flex items-center justify-between transition-opacity duration-300"
+            className="fixed top-0 left-0 left-0 z-50 p-4 bg-red-600 text-white shadow-lg flex items-center justify-between transition-opacity duration-300"
             role="alert"
         >
             <p className="font-medium">{message}</p>
@@ -900,7 +900,9 @@ export default function QuestionnaireContent({ questionnaireId }: { questionnair
 
             <button
                 onClick={() => setIsChatVisible(prev => !prev)}
-                className="fixed bottom-4 right-4 p-4 rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition duration-300 z-50"
+                className={`fixed bottom-4 left-4 p-4 rounded-full bg-indigo-600 text-white shadow-xl hover:bg-indigo-700 transition duration-300 z-50
+                    ${isChatVisible ? 'hidden' : ''} 
+                `}
                 title="AI 助手"
             >
                 {/* Icon based on chat visibility */}

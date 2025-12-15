@@ -131,8 +131,8 @@ const FloatingChatWindow: React.FC<FloatingChatWindowProps> = ({ onClose, isVisi
                 fixed bg-white shadow-2xl transition-all duration-300 ease-in-out border border-gray-200 z-50 flex flex-col
                 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}
                 ${isExpanded 
-                    ? 'bottom-4 right-4 w-[90vw] h-[85vh] max-w-5xl rounded-lg' 
-                    : 'bottom-20 right-4 w-full max-w-sm h-[400px] rounded-xl' 
+                    ? 'bottom-4 left-4 w-[90vw] h-[85vh] max-w-5xl rounded-lg' 
+                    : 'bottom-20 left-4 w-full max-w-sm h-[400px] rounded-xl' 
                 }
             `}
         >
