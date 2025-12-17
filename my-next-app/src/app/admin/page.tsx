@@ -8,11 +8,11 @@ import { useRouter } from 'next/navigation';
 import { createQuestionnaire, deleteQuestionnaire, fetchAllQuestionnaires, duplicateQuestionnaire, updateQuestionnaireVersion } from '@/services/questionnaireService';
 import ResponseViewer from "@/app/admin/QuestionnaireEditor";
 import { ViewerState } from "@/services/responseService";
+import { GET_USER_API_BASE } from "@/config/apiConfig"; 
 
 // API 常量
-const API_BASE_URL = "http://localhost:3001/api";
-const USER_LIST_API_URL = `${API_BASE_URL}/user`;
-const LOGIN_API_URL = `${API_BASE_URL}/user/login`;
+const USER_LIST_API_URL = GET_USER_API_BASE;
+const LOGIN_API_URL = `${GET_USER_API_BASE}/login`;
 
 // localStorage Key 常量
 const AUTH_TOKEN_KEY = 'authToken';
