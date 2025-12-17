@@ -148,8 +148,22 @@ export default function AdminDashboard() {
         setQLoading(true);
         setQError(null);
         try {
-            const data = await fetchAllQuestionnaires();
-            setQuestionnaires(data || []);
+
+            const groups = ["建模前", "建模中", "建模後"];
+
+            // 1. 同時發送三個請求
+            const results = await Promise.all(
+                groups.map(groupName => fetchAllQuestionnaires({ groupName }))
+            );
+
+            // 2. 將三個陣列展開並合併成一個大陣列
+            // results 的結構會是 [[...], [...], [...]]
+            const combinedData = results.flat();
+
+            // 3. 更新 State
+            setQuestionnaires(combinedData || []);
+            //const data = await fetchAllQuestionnaires({ groupName:"建模中"});
+            //setQuestionnaires(data || []);
         } catch (err: any) {
             console.error("載入問卷失敗:", err);
             setQError(err.message || "未知錯誤");
