@@ -2,7 +2,6 @@ import { QUESTIONNAIRE_API_BASE } from "@/config/apiConfig";
 
 // API Endpoints
 const QUESTIONNAIRE_LATEST_URL = `${QUESTIONNAIRE_API_BASE}/group/latest`; // Latest versions by group
-const QUESTIONNAIRE_ALL_URL = `${QUESTIONNAIRE_API_BASE}/all`; // All questionnaire versions
 
 // 1. Fetch Latest Questionnaires by Group (GET)
 export const fetchLatestQuestionnaires = async () => {
@@ -29,8 +28,11 @@ export const fetchLatestQuestionnaires = async () => {
 };
 
 // 2. Fetch All Questionnaire Versions (GET)
-export const fetchAllQuestionnaires = async () => {
+export const fetchAllQuestionnaires = async (payload: {
+    groupName: string;
+}) => {
     try {
+        const QUESTIONNAIRE_ALL_URL = `${QUESTIONNAIRE_API_BASE}/all?groupName=${payload.groupName}`;
         const response = await fetch(QUESTIONNAIRE_ALL_URL, {
             method: 'GET',
             headers: {
@@ -45,13 +47,16 @@ export const fetchAllQuestionnaires = async () => {
                 message: result.error || `HTTP error! Status: ${response.status}`
             }));
         }
-
-        return result.data?.items || []; // Returns all versions/items
+        //result.data?.items.map((q: any) => { alert(q.group?.name); });
+        
+        // 這裡回傳的是 result.data.items
+        return result.data?.items || [];
     } catch (error) {
         console.error("獲取所有問卷列表失敗 (Service):", error);
         throw error;
     }
 };
+
 
 // 3. Create New Questionnaire (POST)
 export const createQuestionnaire = async (payload: {
