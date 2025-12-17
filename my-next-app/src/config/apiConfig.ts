@@ -7,3 +7,4 @@ export const QUESTIONNAIRE_API_BASE = `${BASE_API_URL}${API_PREFIX}/questionnair
 export const RESPONSE_API_BASE = `${BASE_API_URL}${API_PREFIX}/response`; 
 export const REPORT_API_BASE = `${BASE_API_URL}${API_PREFIX}/report`;
 export const LLM_API_BASE = `${BASE_API_URL}${API_PREFIX}/llm`;
+export const GET_USER_API_BASE = `${BASE_API_URL}${API_PREFIX}/user`;
