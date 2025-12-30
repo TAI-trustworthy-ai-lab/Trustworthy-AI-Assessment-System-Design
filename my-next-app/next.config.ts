@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
     // 部署階段先略過 TypeScript 型別錯誤
     ignoreBuildErrors: true,
   },
+  // 針對較新版本 Next.js 的隱藏設定
+  devIndicators: false,
 };
 
 export default nextConfig;
