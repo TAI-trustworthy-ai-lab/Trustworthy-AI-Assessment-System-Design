@@ -796,31 +796,26 @@ export default function ResponseEditor({
     // ----------------------------------------------------
     // 分頁（依 category 分組）
     // ----------------------------------------------------
+    // ----------------------------------------------------
+    // 分頁（確保所有定義好的分類都會顯示，即使沒有題目）
+    // ----------------------------------------------------
     const pages = (() => {
-        const grouped = questionnaire.questions.reduce((acc, question) => {
-            const category = question.category;
-            if (!acc[category]) {
-                acc[category] = {
-                    category,
-                    questions: [],
-                };
-            }
-            acc[category].questions.push(question);
-            return acc;
-        }, {} as Record<string, { category: string; questions: Question[] }>);
+        // 取得所有定義好的分類 Key (排除 UNKNOWN)
+        const allCategoryKeys = Object.keys(CATEGORY_MAP).filter(key => key !== 'UNKNOWN');
 
-        return Object.values(grouped)
-            .sort((a, b) => {
-                const keys = Object.keys(CATEGORY_MAP);
-                const indexA = keys.indexOf(a.category.toUpperCase());
-                const indexB = keys.indexOf(b.category.toUpperCase());
-                return indexA - indexB;
-            })
-            .map((page) => ({
-                title: getPageTitle(page.category),
-                content: getPageContent(page.category),
-                questions: page.questions.sort((a, b) => a.order - b.order),
-            }));
+        return allCategoryKeys.map((categoryKey) => {
+            // 從目前問卷數據中找屬於該分類的題目
+            const categoryQuestions = questionnaire.questions
+                .filter((q) => q.category.toUpperCase() === categoryKey)
+                .sort((a, b) => a.order - b.order);
+
+            return {
+                category: categoryKey, // 儲存原始 Key 方便後續按鈕使用
+                title: getPageTitle(categoryKey),
+                content: getPageContent(categoryKey),
+                questions: categoryQuestions,
+            };
+        });
     })();
 
     // ----------------------------------------------------
@@ -1043,25 +1038,18 @@ export default function ResponseEditor({
                             </div>
 
                             {/* 右側：新增問題按鈕 */}
+                            {/* 右側：新增問題按鈕 */}
                             <button
                                 onClick={() => {
                                     const newId = Date.now();
-
-                                    const titleToCategory = Object.fromEntries(
-                                        Object.entries(CATEGORY_MAP).map(([key, value]) => [
-                                            value[i18n.language].title,
-                                            key,
-                                        ])
-                                    );
-                                    const category = titleToCategory[page.title];
+                                    // 直接從 page 取得正確的 category key (例如: "ACCURACY")
+                                    const category = page.category;
 
                                     setQuestionnaire((prev) => {
-                                        // 先把同一個 category 的題目抓出來，並依原本 order 排好
                                         const sameCategory = prev.questions
                                             .filter((q) => q.category === category)
                                             .sort((a, b) => a.order - b.order);
 
-                                        // 新題目插在最上面（order 先給 1）
                                         const newQuestion: Question = {
                                             id: newId,
                                             text: t('questionnaireEditor.newQuestion'),
@@ -1070,20 +1058,15 @@ export default function ResponseEditor({
                                             type: "SINGLE_CHOICE",
                                             required: false,
                                             options: [
-                                                { id: newId + 1, text:  t('questionnaireEditor.defaultOption1') , value: 1, order: 1 },
-                                                { id: newId + 2, text:  t('questionnaireEditor.defaultOption2') , value: 2, order: 2 },
+                                                { id: newId + 1, text: t('questionnaireEditor.defaultOption1'), value: 1, order: 1 },
+                                                { id: newId + 2, text: t('questionnaireEditor.defaultOption2'), value: 2, order: 2 },
                                             ],
                                         };
 
-                                        // 其他同 category 題目往後排，order 重新編號
                                         const reorderedSameCategory = [newQuestion, ...sameCategory].map(
-                                            (q, index) => ({
-                                                ...q,
-                                                order: index + 1,
-                                            })
+                                            (q, index) => ({ ...q, order: index + 1 })
                                         );
 
-                                        // 把不同 category 的題目保留原狀
                                         const otherQuestions = prev.questions.filter(
                                             (q) => q.category !== category
                                         );
@@ -1111,72 +1094,58 @@ export default function ResponseEditor({
 
                     {/* 問題列表 */}
                     <div className="space-y-4">
-                        {page.questions.map((question) => (
-                            <div
-                                key={question.id}
-                                className={`
-                  p-5 rounded-xl border transition-all cursor-pointer
-                  ${editingQuestionId === question.id
-                                        ? "border-indigo-500 shadow-md bg-indigo-50"
-                                        : "border-gray-200 hover:border-indigo-300 hover:shadow-sm"
-                                    }
+                        {page.questions.length > 0 ? (
+                            page.questions.map((question) => (
+                                <div
+                                    key={question.id}
+                                    className={`
+                    p-5 rounded-xl border transition-all cursor-pointer
+                    ${editingQuestionId === question.id
+                                            ? "border-indigo-500 shadow-md bg-indigo-50"
+                                            : "border-gray-200 hover:border-indigo-300 hover:shadow-sm"
+                                        }
                 `}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingQuestionId(question.id);
-                                }}
-                            >
-                                {/* ✅ 如果正在編輯 → 顯示編輯介面 */}
-                                {editingQuestionId === question.id ? (
-                                    <QuestionEditor
-                                        key={question.id}
-                                        question={question}
-                                        onChange={() => setIsDirty(true)}
-                                        onUpdate={(updatedQuestion) => updateQuestion(updatedQuestion)}
-                                        onDeleteQuestion={deleteQuestion}
-                                    />
-                                ) : (
-                                    <>
-                                        {/* ✅ 題目標題 + 必填 tooltip */}
-                                        <div className="flex justify-between items-center mb-3">
-                                            <div className="flex items-center gap-1 font-semibold text-gray-800 relative group">
-                                                <span>{question.text}</span>
-
-                                                {question.required && (
-                                                    <span className="text-red-500 font-bold relative">
-                                                        *
-                                                        {/* ✅ tooltip */}
-                                                        <span
-                                                            className="
-                  absolute left-3 top-1/2 -translate-y-1/2
-                  opacity-0 group-hover:opacity-100
-                  bg-red-500 text-white text-xs px-2 py-1 rounded
-                  whitespace-nowrap shadow transition-opacity
-                "
-                                                        >
-                                                            必填
-                                                        </span>
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* 題目描述（可展開/收合） */}
-                                        {question.description && (
-                                            <QuestionDescriptionToggle description={question.description} />
-                                        )}
-
-                                        {/* ✅ 題型渲染 */}
-                                        <QuestionRenderer
-                                            editable={editable}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingQuestionId(question.id);
+                                    }}
+                                >
+                                    {/* ... (保留原本的 QuestionEditor / Renderer 邏輯) ... */}
+                                    {editingQuestionId === question.id ? (
+                                        <QuestionEditor
+                                            key={question.id}
                                             question={question}
-                                            currentAnswer={a[question.id] || {}}
-                                            onAnswer={(ans) => handleAnswer(question.id, ans)}
+                                            onChange={() => setIsDirty(true)}
+                                            onUpdate={(updatedQuestion) => updateQuestion(updatedQuestion)}
+                                            onDeleteQuestion={deleteQuestion}
                                         />
-                                    </>
-                                )}
+                                    ) : (
+                                        <>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <div className="flex items-center gap-1 font-semibold text-gray-800">
+                                                    <span>{question.text}</span>
+                                                    {question.required && <span className="text-red-500">*</span>}
+                                                </div>
+                                            </div>
+                                            {question.description && (
+                                                <QuestionDescriptionToggle description={question.description} />
+                                            )}
+                                            <QuestionRenderer
+                                                editable={editable}
+                                                question={question}
+                                                currentAnswer={a[question.id] || {}}
+                                                onAnswer={(ans) => handleAnswer(question.id, ans)}
+                                            />
+                                        </>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            // ✅ 當該 Category 沒有任何題目時顯示
+                            <div className="text-center py-10 border-2 border-dashed border-gray-100 rounded-xl text-gray-400 text-sm">
+                                {t('questionnaireEditor.noQuestionsInCategory', '此分類目前尚無題目')}
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             ))}
