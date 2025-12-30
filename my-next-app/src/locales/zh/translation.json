@@ -561,7 +561,8 @@
   "close": "關閉",
   "backendReminder": "* 請確保後端服務正在運行，Login API 響應格式正確。",
   "questionnaireEditor": {
-
+    "noQuestionsInCategory": "此分類目前尚無題目。",
+    
     "unknownQuestionType": "未知問題類型",
 
     "descriptionLabel": "題目描述（可選）",
