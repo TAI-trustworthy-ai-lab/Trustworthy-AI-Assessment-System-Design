@@ -558,6 +558,8 @@
     "backendReminder": "* Please ensure the backend service is running and the Login API response format is correct."
   },
   "questionnaireEditor": {
+    "noQuestionsInCategory": "There are currently no questions in this category.",
+    
     "unknownQuestionType": "Unknown question type",
 
     "descriptionLabel": "Question description (optional)",
