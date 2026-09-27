@@ -1,203 +1,161 @@
-# Trustworthy AI Assessment System
+# Trustworthy AI (TAI) Assessment System — Frontend
 
-A comprehensive web-based platform for evaluating AI systems across 11 key trustworthiness indicators, including Accuracy, Reliability, Safety, Resilience, Transparency, Accountability, Explainability, Autonomy, Privacy, Fairness, and Security.
+[![Next.js](https://img.shields.io/badge/Next.js-15_(App_Router)-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.0-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
+[![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20ZH--TW-orange)](#-localized-experience)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🌟 Features
+An interdisciplinary software engineering platform engineered to audit, quantify, and visualize machine learning system trustworthiness across **11 core TAI dimensions**. Developed under the **TAI Trustworthy AI Lab** in collaboration with domain experts from the Departments of Law and Political Science to bridge regulatory governance policies with algorithmic assessment metrics.
 
-- **Multi-stage Assessment**: Evaluate AI systems at three stages - before, during, and after modeling
-- **TAI Priority Sorting**: Customize the importance ranking of trustworthiness indicators for your project
-- **Comprehensive Reports**: Generate detailed radar charts and analysis reports with scoring
-- **Project Management**: Create and manage multiple AI assessment projects
-- **Response History**: View, edit, and track all previous assessment responses
-- **Multilingual Support**: Full support for English and Chinese (Traditional) via i18next
-- **Admin Dashboard**: User management and system administration features
 
-## 🚀 Getting Started
+## 🎬 System Demonstration & Documentation
+
+| 📺 Video Demonstration | 📑 Technical Presentation |
+| :--- | :--- |
+| [![Watch the Demo](https://img.youtube.com/vi/jxtBbBmE0rw/hqdefault.jpg)](https://www.youtube.com/watch?v=jxtBbBmE0rw) | <br> **Trustworthy AI Assessment System** <br> *Comprehensive Architecture, Governance & Evaluation Report* <br><br> [![Download PDF](https://img.shields.io/badge/View_Presentation-PDF-red?style=for-the-badge&logo=adobe-acrobat-reader&logoColor=white)](docs/FinalProjectPresentation.pdf) |
+| **Platform Walkthrough:** End-to-end audit demonstration covering indicator prioritization, questionnaire flows, and radar chart generation. | **System Architecture Report:** Interdisciplinary legal/policy frameworks, scoring rubrics, and campus deployment specifications. |
+
+
+## 🌟 Core System Architecture
+
+```
+[ Auditor / Domain Practitioner ]
+                │
+                ▼
+[ Interactive Next.js 15 Web Portal ] (This Repository)
+    ├── Multilingual App Router Architecture (EN / ZH-TW)
+    ├── Drag-and-Drop Indicator Prioritization Engine (`/tai_sort`)
+    ├── Tri-Stage Lifecycle Questionnaire Pipeline (Pre / Mid / Post Modeling)
+    └── Dynamic Radar Chart & Risk Report Engine (Chart.js)
+                │
+                ▼ (Asynchronous REST API / JSON Payloads)
+[ TAI Lab Backend & Scoring Engine ] (`http://localhost:3001`)
+```
+
+## 🎯 Evaluation Methodology & 11 TAI Dimensions
+
+The platform operationalizes AI governance across the entire modeling lifecycle:
+
+* **Lifecycle Coverage:**
+  * **Pre-modeling:** Assesses training data integrity, legal provenance, representation bias, and privacy guarantees.
+  * **Mid-modeling:** Audits hyperparameter stability, feature selection transparency, and training resilience.
+  * **Post-modeling:** Quantifies inference explainability, adversarial robustness, accountability structures, and accuracy metrics.
+* **11 Core TAI Pillars:**
+  `Accuracy` • `Reliability` • `Safety` • `Resilience` • `Transparency` • `Accountability` • `Explainability` • `Autonomy` • `Privacy` • `Fairness` • `Security`
+
+
+## 🚀 Key Functional Modules
+
+* **Lifecycle Questionnaire Pipeline (`/questionnaire`):** Dynamically loads questions mapped to the selected project phase, with real-time field validation, draft saving, and structured payload generation.
+* **Priority Weighting (`/tai_sort`):** Interactive drag-and-drop interface allowing stakeholders to define project-specific indicator weights prior to assessment.
+* **Evaluation Dashboard & Reports (`/report`):** Visualizes multi-dimensional compliance via normalized **Chart.js Radar Charts**, generating diagnostic strengths, vulnerability scores, and mitigation guidance.
+* **Project & Audit History (`/home`, `/history`):** Persistent audit trails enabling project teams to monitor trustworthiness drift across model iterations.
+* **Localized Experience:** Full bilingual support (English and Traditional Chinese) powered by `react-i18next` and dynamic translation pipelines.
+
+
+## 🛠️ Tech Stack
+
+* **Core Framework:** [Next.js 15](https://nextjs.org/) (App Router Architecture, React Server/Client Components)
+* **Language:** TypeScript 5 (Strict type checking)
+* **Styling & Design System:** Tailwind CSS, PostCSS, Lucide React
+* **Data Visualization:** Chart.js, react-chartjs-2
+* **Internationalization:** i18next, react-i18next
+* **Content & Parser:** react-markdown with remark-gfm
+
+
+## 📁 Repository Structure
+
+```text
+.
+├── src/
+│   ├── app/                      # Next.js App Router route handlers & pages
+│   │   ├── page.tsx              # Portal landing page & framework overview
+│   │   ├── login/                # Authentication & session handling
+│   │   ├── home/                 # Project management console
+│   │   ├── tai_sort/             # Drag-and-drop indicator prioritization
+│   │   ├── choose_questionnaire/ # Lifecycle stage selector (Pre/Mid/Post)
+│   │   ├── questionnaire/        # Multi-stage questionnaire workflows
+│   │   ├── report/               # Analytical radar chart & report generator
+│   │   ├── history/              # Historical evaluation log
+│   │   └── admin/                # Role-based administration dashboard
+│   ├── components/               # Modular UI component library
+│   │   ├── Header.tsx            # Global navigation & language switcher
+│   │   ├── QuestionnaireContent.tsx # Dynamic form rendering engine
+│   │   └── ReportRadarChart.tsx  # Dynamic 11-axis Chart.js radar component
+│   ├── lib/                      # Shared client utilities & i18n initialization
+│   └── locales/                  # Localized dictionaries (EN, ZH-TW)
+├── docs/                         # Architecture documentation & presentation assets
+├── public/                       # Static brand assets & documentation media
+├── tailwind.config.ts            # Design tokens & responsive breakpoints
+├── tsconfig.json                 # TypeScript compiler options
+└── next.config.ts                # Next.js build parameters & API proxy rewrites
+```
+
+## ⚡ Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm, yarn, pnpm, or bun
-- Backend API running on `http://localhost:3001` (see backend repository)
+* **Node.js:** `v18.17.0` or higher
+* **Package Manager:** `npm`, `pnpm`, or `yarn`
+* **TAI Backend API:** Service running on `http://localhost:3001` (refer to [TAI Backend Repository](https://github.com/TAI-trustworthy-ai-lab/backend?utm_source=gemini))
 
-### Installation
 
-1. Clone the repository and navigate to the project directory:
+### 🔗 Backend Service Dependency
+
+This frontend application requires the TAI Backend Scoring Engine to handle questionnaire retrieval, response persistence, and radar chart calculations.
+
+* **Backend Repository:** [`TAI-trustworthy-ai-lab/backend`](https://github.com/TAI-trustworthy-ai-lab/backend)
+
+
+### Installation & Local Run
+
+1. **Clone the repository:**
 ```bash
-cd my-next-app
+git clone [https://github.com/TAI-trustworthy-ai-lab/Trustworthy-AI-Assessment-System-Design.git](https://github.com/TAI-trustworthy-ai-lab/Trustworthy-AI-Assessment-System-Design.git)
+cd Trustworthy-AI-Assessment-System-Design
 ```
 
-2. Install dependencies:
+
+2. **Install project dependencies:**
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-3. Run the development server:
+
+3. **Configure Environment Variables:**
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+```
+
+
+4. **Launch development server:**
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
+Navigate to `http://localhost:3000` in your browser.
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-### Environment Setup
-
-Ensure your backend API is running at `http://localhost:3001`. The application expects the following API endpoints:
-
-- `/api/auth/*` - Authentication
-- `/api/project/*` - Project management
-- `/api/questionnaire/*` - Questionnaire data
-- `/api/response/*` - User responses
-- `/api/report/*` - Assessment reports
-
-## 📁 Project Structure
-
-```
-my-next-app/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx           # Landing page (pre-login)
-│   │   ├── login/             # Authentication
-│   │   ├── home/              # Project dashboard
-│   │   ├── tai_sort/          # TAI indicator prioritization
-│   │   ├── choose_questionnaire/ # Questionnaire stage selection
-│   │   ├── questionnaire/             # Questionnaire pages 
-│   │   ├── report/            # Assessment report viewer
-│   │   ├── history/           # Response history
-│   │   └── admin/             # Admin dashboard
-│   ├── components/            # Reusable React components
-│   │   ├── Header.tsx
-│   │   ├── AuthHeader.tsx
-│   │   ├── QuestionnaireContent.tsx
-│   │   └── ReportRadarChart.tsx
-│   ├── lib/                   # Utilities and configurations
-│   │   └── i18n.tsx          # Internationalization setup
-│   └── locales/               # Translation files
-│       ├── en/
-│       └── zh/
-├── public/                    # Static assets
-├── tailwind.config.ts        # Tailwind CSS configuration
-└── next.config.ts            # Next.js configuration
-```
-
-## 🎯 Key Pages
-
-### Authentication Flow
-- [`/`](src/app/page.tsx) - Landing page with TAI introduction
-- [`/login`](src/app/login/page.tsx) - Login and registration
-- [`/about`](src/app/about/page.tsx) - About the system
-
-### Main Application
-- [`/home`](src/app/home/page.tsx) - Project dashboard (create/view/delete projects)
-- [`/tai_sort`](src/app/tai_sort/page.tsx) - Drag-and-drop TAI indicator prioritization
-- [`/choose_questionnaire`](src/app/choose_questionnaire/page.tsx) - Select assessment stage
-- [`/questionnaire`](src/app/questionnaire/page.tsx) - Auto fetch pre-modeling, mid-modeling and post-modeling questionnaire
-- [`/report`](src/app/report/page.tsx) - View detailed assessment report
-- [`/history`](src/app/history/page.tsx) - Browse all past responses
-
-### Administration
-- [`/admin`](src/app/admin/page.tsx) - User management (admin only)
-
-## 🛠️ Technologies Used
-
-- **Framework**: [Next.js 15](https://nextjs.org/) with App Router
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Charts**: Chart.js with react-chartjs-2
-- **Internationalization**: i18next + react-i18next
-- **Translation API**: Google Translate API-X (custom API route)
-- **Markdown Rendering**: react-markdown with remark-gfm
-- **Icons**: Lucide React
-
-## 🌐 Internationalization
-
-Add translations by updating files in [`src/locales/`](src/locales/):
-- [`en/translation.json`](src/locales/en/translation.json) - English
-- [`zh/translation.json`](src/locales/zh/translation.json) - Chinese (Traditional)
-
-See [`src/languageSetup.md`](src/languageSetup.md) for detailed instructions.
-
-## 🔐 Authentication
-
-User authentication is handled via:
-- Login/Registration: [`/login`](src/app/login/page.tsx)
-- Protected routes wrapped with [`ProtectedLayout`](src/components/ProtectedLayout.tsx)
-- Tokens stored in `localStorage` (`authToken`, `userId`)
-
-## 📊 Assessment Workflow
-
-1. **Create Project** - Define your AI project in [`/home`](src/app/home/page.tsx)
-2. **Set TAI Priority** - Rank indicators at [`/tai_sort`](src/app/tai_sort/page.tsx)
-3. **Choose Stage** - Select assessment stage at [`/choose_questionnaire`](src/app/choose_questionnaire/page.tsx)
-4. **Complete Questionnaire** - Answer questions at `/questionnaire`
-5. **View Report** - See results at [`/report`](src/app/report/page.tsx)
-6. **Review History** - Access past assessments at [`/history`](src/app/history/page.tsx)
-
-## 🧪 Development
-
-### Build for Production
+5. **Production Build & Linting:**
 ```bash
-npm run build
-npm run start
+npm run lint        # Run ESLint verification
+npx tsc --noEmit    # Type-check TypeScript sources
+npm run build       # Compile optimized production bundle
 ```
 
-### Linting
-```bash
-npm run lint
-```
+## 👥 Engineering Team & Modules
 
-### Type Checking
-```bash
-npx tsc --noEmit
-```
+Developed collaboratively by the **TAI Trustworthy AI Lab** frontend team:
 
-### Testing
-```bash
-# Run all tests
-npm test
+| Teammate | Focus Area | Key Contributions |
+| :--- | :--- | :--- |
+| **劉靖媛**<br>([@jyliew1912](https://github.com/jyliew1912)) | **Project Console & Evaluation Engine** | • Engineered Home dashboard, Report page, and multi-stage Questionnaire flows with component testing<br>• Optimized Login and TAI-sort indicator prioritization interfaces |
+| **呂辰祐**<br>([@Shangguanmoxi520](https://github.com/Shangguanmoxi520)) | **Audit History & Response Viewer** | • Implemented Response History log (`/history`) and Pre-login onboarding landing views<br>• Built structured evaluation Response Viewer components |
+| **王峻文**<br>([@codingkcc](https://github.com/codingkcc)) | **Administration & Localization** | • Developed Admin dashboard (`/admin`) and About page documentation<br>• Integrated multilingual translation pipeline (i18n) and drafted initial TAI-sort module |
+| **Max Drechsler**<br>([@MaxDrechsler](https://github.com/MaxDrechsler)) | **Authentication & Quality Assurance** | • Developed initial Login workflow architecture<br>• Coordinated frontend development standards and established unit testing infrastructure |
 
-# Run tests in watch mode
-npm run test:watch
 
-# Generate coverage report
-npm run test:coverage
-```
-
-See [`tests/README.md`](tests/README.md) for detailed testing documentation.
-
-## 📝 Configuration Files
-
-- [`next.config.ts`](next.config.ts) - Next.js configuration
-- [`tailwind.config.ts`](tailwind.config.ts) - Tailwind CSS theming
-- [`tsconfig.json`](tsconfig.json) - TypeScript compiler options
-- [`eslint.config.mjs`](eslint.config.mjs) - ESLint rules
-- [`postcss.config.mjs`](postcss.config.mjs) - PostCSS configuration
-
-### Environment Variables
-Ensure your backend API URL is configured correctly in all files using `BASE_URL` or `API_BASE_URL`.
-
-## 📚 Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Chart.js](https://www.chartjs.org/docs/)
-- [i18next](https://www.i18next.com/)
-
-## 🤝 Contributing
-
-See [`InterfaceSpecifications.md`](../InterfaceSpecifications.md) for detailed interface specifications and contribution guidelines.
 
 ## 📄 License
 
-## 👥 Team
-
----
-
-Built with ❤️ using Next.js and Tailwind CSS
+This project is distributed under the **MIT License**. See the [`LICENSE`](LICNESE) file for complete terms.
