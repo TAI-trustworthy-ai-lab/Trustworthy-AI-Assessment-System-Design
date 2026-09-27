@@ -3,7 +3,6 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15_(App_Router)-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.0-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
-[![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20ZH--TW-orange)](#-localized-experience)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 An interdisciplinary software engineering platform engineered to audit, quantify, and visualize machine learning system trustworthiness across **11 core TAI dimensions**. Developed under the **TAI Trustworthy AI Lab** in collaboration with domain experts from the Departments of Law and Political Science to bridge regulatory governance policies with algorithmic assessment metrics.
