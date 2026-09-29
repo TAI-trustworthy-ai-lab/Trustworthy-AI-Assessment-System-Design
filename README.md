@@ -111,7 +111,7 @@ This frontend application requires the TAI Backend Scoring Engine to handle ques
 
 1. **Clone the repository:**
 ```bash
-git clone [https://github.com/TAI-trustworthy-ai-lab/Trustworthy-AI-Assessment-System-Design.git](https://github.com/TAI-trustworthy-ai-lab/Trustworthy-AI-Assessment-System-Design.git)
+git clone https://github.com/TAI-trustworthy-ai-lab/Trustworthy-AI-Assessment-System-Design.git
 cd Trustworthy-AI-Assessment-System-Design
 ```
 
